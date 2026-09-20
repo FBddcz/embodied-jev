@@ -115,7 +115,7 @@ $("#app").innerHTML = `
 <dialog id="connection-dialog" class="connection-dialog" aria-labelledby="connection-title">
  <form id="connection-form">
   <div class="dialog-heading"><div><span class="eyebrow">MODEL CONNECTION</span><h2 id="connection-title">模型连接</h2></div><button type="button" class="icon-button" id="connection-close" aria-label="关闭模型连接">${icon("x")}</button></div>
-  <label class="field-label" for="api-provider">接口类型</label><select id="api-provider"><option value="chat">OpenAI 兼容 API</option><option value="jev">TypeSafe Jev</option><option value="local">Jev / 结构化决策 API</option></select>
+  <label class="field-label" for="api-provider">接口类型</label><select id="api-provider"><option value="chat">OpenAI 兼容 API</option><option value="claude">Claude 原生 API</option><option value="jev">TypeSafe Jev</option><option value="local">Jev / 结构化决策 API</option></select>
   <label class="field-label" for="api-url">Base URL / 接口地址</label><input id="api-url" type="url" required placeholder="https://your-provider.example/v1" autocomplete="off">
   <label class="field-label" for="api-model">模型 ID</label><input id="api-model" required placeholder="平台提供的模型名称" autocomplete="off">
   <label class="field-label" for="api-key">API Key <span id="key-state">未配置</span></label><input id="api-key" type="password" placeholder="API Key" autocomplete="off" spellcheck="false">
@@ -426,8 +426,10 @@ function renderState(s) {
   $("#decision-provider").textContent =
     s.provider === "baseline"
       ? "RULE BASELINE"
-      : s.provider === "chat"
-        ? "CHAT / JSON"
+      : ["chat", "claude"].includes(s.provider)
+        ? s.provider === "claude"
+          ? "CLAUDE / TOOL"
+          : "CHAT / JSON"
         : s.provider.toUpperCase();
   $("#latency").textContent = s.last_decision?.model_call
     ? s.last_decision.latency_ms.toFixed(0) + " ms"
@@ -535,14 +537,19 @@ function renderState(s) {
   ))
     el.disabled = locked;
   $("#threshold").disabled =
-    locked || ["baseline", "chat"].includes(s.provider);
-  $("#threshold-value").textContent = ["baseline", "chat"].includes(s.provider)
+    locked || ["baseline", "chat", "claude"].includes(s.provider);
+  $("#threshold-value").textContent = ["baseline", "chat", "claude"].includes(
+    s.provider,
+  )
     ? "N/A"
     : Number($("#threshold").value).toFixed(2);
-  $("#threshold").title =
-    s.provider === "chat" ? "聊天接口不提供原生候选概率" : "";
+  $("#threshold").title = ["chat", "claude"].includes(s.provider)
+    ? "生成式接口不提供原生候选概率"
+    : "";
   if (s.provider === "chat")
     $("#provider-note").textContent = "API · 结构化选择";
+  if (s.provider === "claude")
+    $("#provider-note").textContent = "Claude API · 工具选择";
   if (s.provider === "local")
     $("#provider-note").textContent = "API · 候选概率";
   if (s.message && s.message !== renderState.lastMessage) {
@@ -735,7 +742,12 @@ function fillConnection() {
   $("#api-url").value =
     provider === "chat"
       ? (saved.url || "").replace(/\/chat\/completions$/, "")
-      : saved.url || "";
+      : provider === "claude"
+        ? (saved.url || "https://api.anthropic.com/v1").replace(
+            /\/messages$/,
+            "",
+          )
+        : saved.url || "";
   $("#api-url").readOnly = provider === "jev";
   $("#api-model").value = saved.model || "";
   $("#api-key").value = "";
@@ -750,7 +762,9 @@ function fillConnection() {
 $("#model-connect").onclick = async () => {
   try {
     connectionValues = await api("/api/connections");
-    $("#api-provider").value = ["jev", "local", "chat"].includes(state.provider)
+    $("#api-provider").value = ["jev", "local", "chat", "claude"].includes(
+      state.provider,
+    )
       ? state.provider
       : "chat";
     fillConnection();

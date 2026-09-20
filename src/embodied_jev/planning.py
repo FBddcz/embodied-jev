@@ -12,6 +12,19 @@ PHASES = {
     "release": "松开夹爪", "withdraw": "向上撤离", "recover": "张开重试", "finish": "完成",
 }
 
+PHASE_GUIDANCE = {
+    "approach": "Move above the object with the gripper open. Useful when TCP is not horizontally aligned with the object. If already aligned above it, repeating this does not descend or grasp.",
+    "descend": "Lower the OPEN gripper from above the object to its height. Useful when TCP is horizontally aligned with the object but still above it. This positions the fingers for grasping; it is not releasing an object.",
+    "grasp": "Close the fingers around the object after the open gripper reaches its height. Useful when TCP and object are aligned in XY and Z.",
+    "lift": "Raise a held object to travel height. Useful when grasp contacts exist and the object is too low for transport. Repeating at travel height does not move toward the destination.",
+    "carry": "Move the HELD object horizontally to the destination at travel height. Useful after lifting and before lowering. If already above the destination, carrying again does not place it.",
+    "lower": "Lower the held object onto the destination support. Useful when object XY matches destination but object Z is still higher. This keeps the fingers closed.",
+    "release": "Open the fingers after the object reaches destination height and support. Needed before withdrawing. Do not repeatedly lower an object that is already supported at the destination.",
+    "withdraw": "Raise the empty, OPEN gripper away from the placed object so completion can be verified.",
+    "recover": "Open the fingers after a failed grasp with no held object, allowing another approach/descend attempt.",
+    "finish": "Finish only after the measured physical success condition is true.",
+}
+
 
 def eligible_phases(world: RobotWorld):
     s = world.observe()

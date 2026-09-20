@@ -20,7 +20,7 @@ class Setup(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
     task: Literal["transfer", "stack", "barrier"] = "transfer"
     seed: int = Field(default=0, ge=0, le=99999)
-    provider: Literal["baseline", "jev", "minicpm", "local", "chat"] = "baseline"
+    provider: Literal["baseline", "jev", "minicpm", "local", "chat", "claude"] = "baseline"
     preview: bool = True
     threshold: float = Field(default=.55, ge=0, le=1)
     max_cycles: int = Field(default=30, ge=1, le=100)
@@ -34,7 +34,7 @@ class Control(BaseModel):
 
 class ConnectionInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    provider: Literal["jev", "chat", "local"]
+    provider: Literal["jev", "chat", "local", "claude"]
     url: str = Field(min_length=1, max_length=2048)
     model: str = Field(min_length=1, max_length=256)
     api_key: SecretStr = SecretStr("")
@@ -77,7 +77,7 @@ def create_app():
     @app.get("/api/connections")
     def connections():
         result = {}
-        for provider in ("jev", "chat", "local"):
+        for provider in ("jev", "chat", "local", "claude"):
             item = app.state.connections.get(provider, environment_connection(provider))
             result[provider] = {"url": item["url"], "model": item["model"],
                                 "key_configured": bool(item.get("key")), "json_mode": item.get("json_mode", True)}
@@ -90,6 +90,8 @@ def create_app():
             raise HTTPException(422, "TypeSafe Jev uses its official endpoint")
         if value.provider == "chat" and not url.endswith("/chat/completions"):
             url += "/chat/completions"
+        if value.provider == "claude" and not url.endswith("/messages"):
+            url += "/messages"
         with app.state.lock:
             previous = app.state.connections.get(value.provider, environment_connection(value.provider))
             key = value.api_key.get_secret_value().strip()
@@ -97,11 +99,13 @@ def create_app():
                 key = previous.get("key", "")
             if value.provider == "jev" and not key:
                 raise HTTPException(422, "TypeSafe API key is required")
+            if value.provider == "claude" and not key:
+                raise HTTPException(422, "Claude API key is required")
             app.state.connections[value.provider] = {"url": url, "model": value.model.strip(), "key": key, "json_mode": value.json_mode}
         return {"saved": True, "provider": value.provider, "key_configured": bool(key)}
 
     @app.post("/api/connections/{provider}/test")
-    def test_connection(provider: Literal["jev", "chat", "local"]):
+    def test_connection(provider: Literal["jev", "chat", "local", "claude"]):
         try:
             policy = DecisionPolicy(provider, app.state.connections.get(provider))
             result = policy.choose({"purpose": "Connection test; no robot command will execute"},

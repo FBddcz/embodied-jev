@@ -6,8 +6,10 @@ import time
 import uuid
 
 from .physics import RobotWorld
-from .planning import PHASES, baseline_phase, candidates, eligible_phases
+from .planning import PHASES, PHASE_GUIDANCE, baseline_phase, candidates, eligible_phases
 from .policies import DecisionPolicy, minicpm_status
+
+POLICY_VERSION = "phase-conditions-v2"
 
 
 class Session:
@@ -103,9 +105,11 @@ class Session:
                     self.last_intent = None
                     self.current_candidates = []
                 intent = self.policy.choose(observation,
-                    "Choose the next manipulation phase using measured contacts and object geometry. "
-                    "Never claim success unless observation.success is true.",
-                    {p: PHASES[p] for p in phases}, baseline_phase(self.world), self.history)
+                    "Choose the next manipulation phase that changes the state toward task completion. "
+                    "Use the phase conditions and measured relative geometry. If the last action achieved its target, "
+                    "advance to the next useful phase instead of repeating it. Offered phases are possible choices, "
+                    "not a recommended order. Never claim success unless observation.success is true.",
+                    {p: PHASE_GUIDANCE[p] for p in phases}, baseline_phase(self.world), self.history)
                 if not self._wait():
                     return
                 with self.lock:
@@ -211,6 +215,7 @@ class Session:
                     "last_decision": self.last_decision, "last_intent": self.last_intent,
                     "frame_count": len(self.frames),
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
+                    "output_tokens": self.policy.output_tokens,
                     "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
                     "wall_seconds": round((self.finished or time.perf_counter()) - self.started, 2) if self.started else 0}
 
@@ -233,8 +238,10 @@ class Session:
                     "seed": self.world.seed, "scene_hash": self.world.scene_hash, "provider": self.policy.provider,
                     "preview": self.preview, "status": self.status, "success": self.last_frame["observation"]["success"],
                     "model": self.policy.model, "threshold": self.threshold, "max_cycles": self.max_cycles,
+                    "policy_version": POLICY_VERSION,
                     "history": list(self.history), "frames": list(self.frames),
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
+                    "output_tokens": self.policy.output_tokens,
                     "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
                     "model_latency_ms": list(self.policy.latencies), "last_decision": self.last_decision,
                     "last_intent": self.last_intent,

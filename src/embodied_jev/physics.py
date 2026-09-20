@@ -204,6 +204,13 @@ class RobotWorld:
         fingers, support, forbidden = self.contacts()
         return {"task": TASKS[self.task]["goal"], "source": "MuJoCo geometry and contacts", "units": "metres",
                 "tcp": self.position.round(5).tolist(), "object": self.cube.round(5).tolist(),
+                "relative_geometry": {
+                    "tcp_object_xy_distance_m": round(float(np.linalg.norm(self.position[:2] - self.cube[:2])), 4),
+                    "tcp_above_object_m": round(float(self.position[2] - self.cube[2]), 4),
+                    "object_destination_xy_distance_m": round(float(np.linalg.norm(self.cube[:2] - self.target[:2])), 4),
+                    "object_above_destination_m": round(float(self.cube[2] - self.target[2]), 4),
+                    "travel_tcp_height_m": TRAVEL_Z,
+                },
                 "destination": self.target.tolist(), "gripper": "closed" if self.closed else "open",
                 "finger_contacts": sorted(fingers), "held": len(fingers) == 2 and self.closed,
                 "grasp_secured": self.contact_seconds >= .16, "support_contact": support,

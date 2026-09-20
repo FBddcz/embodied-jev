@@ -157,3 +157,26 @@ test("model connection form works on desktop and mobile without exposing keys", 
   await page.screenshot({ path: "docs/model-connection-mobile.png" });
   await page.locator("#connection-close").click();
 });
+
+test("Claude native configuration is separate and does not expose credentials", async ({
+  page,
+}) => {
+  await openScene(page);
+  await page.locator("#model-connect").click();
+  await page.locator("#api-provider").selectOption("claude");
+  await expect(page.locator("#api-url")).toHaveValue(
+    "https://api.anthropic.com/v1",
+  );
+  await expect(page.locator("#json-mode-row")).toBeHidden();
+  await page.locator("#api-model").fill("claude-test");
+  await page.locator("#api-key").fill("test-claude-secret");
+  await page.locator("#connection-save").click();
+  await expect(page.locator("#provider")).toHaveValue("claude");
+  await expect(page.locator("#threshold")).toBeDisabled();
+  await expect(page.locator("#provider-note")).toContainText("Claude API");
+  await page.locator("#model-connect").click();
+  await expect(page.locator("#api-provider")).toHaveValue("claude");
+  await expect(page.locator("#api-key")).toHaveValue("");
+  await expect(page.locator("#key-state")).toHaveText("已配置");
+  await page.locator("#connection-close").click();
+});

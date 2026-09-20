@@ -12,7 +12,7 @@ def main():
     bench.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     bench.add_argument("--tasks", nargs="+", choices=["transfer", "stack", "barrier"], default=["transfer", "stack", "barrier"])
     bench.add_argument("--output", default="runs/benchmark.json")
-    bench.add_argument("--provider", choices=["baseline", "minicpm"], default="baseline")
+    bench.add_argument("--provider", choices=["baseline", "minicpm", "chat", "claude", "jev", "local"], default="baseline")
     bench.add_argument("--threshold", type=float, default=.55)
     bench.add_argument("--max-cycles", type=int, default=30)
     bench.add_argument("--timeout", type=float, default=600)
@@ -41,8 +41,8 @@ def main():
                 row = {"task": task, "seed": seed, "success": exported["success"], "status": session.status,
                        "cycles": session.cycles, "max_lift_m": session.world.max_lift,
                        "forbidden_contact_steps": session.world.unsafe_contacts, "message": session.message,
-                       **{key: exported[key] for key in ("model", "model_runtime", "model_calls", "input_tokens",
-                                                        "model_latency_ms", "wall_seconds", "last_decision")}}
+                       **{key: exported[key] for key in ("model", "model_runtime", "policy_version", "model_calls", "input_tokens",
+                                                        "output_tokens", "model_latency_ms", "wall_seconds", "last_decision")}}
                 episode = output.with_name(f"{output.stem}-{task}-{seed}.json")
                 episode.write_text(json.dumps(exported, ensure_ascii=False, indent=2))
                 results.append(row)
