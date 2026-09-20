@@ -21,8 +21,13 @@ POLICY_VERSION = PROMPT_VERSION
 class Session:
     def __init__(self, task="transfer", seed=0, provider="baseline", preview=True,
                  threshold=.55, max_cycles=30, speed=1.5, connection=None,
-                 scene_config=None, user_context=None):
+                 scene_config=None, user_context=None, observation_mode="privileged"):
+        if observation_mode not in {"privileged", "rgbd"}:
+            raise ValueError("Unknown observation mode")
         self.id = uuid.uuid4().hex[:12]
+        self.observation_mode = observation_mode
+        self.observer = None
+        self.perception_history = []
         self.user_context = validate_user_context(user_context)
         self.world = RobotWorld(task, seed, scene_config=scene_config)
         self.policy = DecisionPolicy(provider, connection)
@@ -40,6 +45,14 @@ class Session:
         self.history = []
         self.events = deque(maxlen=200)
         self.frames = []
+        if observation_mode == "rgbd":
+            from .perception import VisualObserver
+            self.observer = VisualObserver(self.world)
+        try:
+            self.observation = self._observe()
+        except Exception:
+            self._close_resources()
+            raise
         self.last_frame = self.world.frame()
         self.current_candidates = []
         self.last_decision = None
@@ -52,6 +65,30 @@ class Session:
         self._record(self.last_frame)
         self._event("created", "实验已就绪")
 
+    def _observe(self):
+        try:
+            observation = self.observer.observe() if self.observer else self.world.observe()
+        except Exception:
+            snapshot = self.camera_snapshot()
+            if snapshot:
+                self.perception_history.append(copy.deepcopy(snapshot["metadata"]))
+            raise
+        self.observation = copy.deepcopy(observation)
+        metadata = observation.get("perception")
+        if metadata and (not self.perception_history or
+                         self.perception_history[-1].get("capture_id") != metadata.get("capture_id")):
+            self.perception_history.append(copy.deepcopy(metadata))
+        return observation
+
+    def camera_snapshot(self):
+        # The observer owns its render thread; HTTP reads only cached bytes.
+        return self.observer.camera_snapshot() if self.observer else None
+
+    def _close_resources(self):
+        self.policy.close()
+        if self.observer:
+            self.observer.close()
+
     def _event(self, event, message, level="info"):
         with self.lock:
             entry = {"time": datetime.now(timezone.utc).isoformat(), "event": event,
@@ -62,6 +99,14 @@ class Session:
 
     def _record(self, frame):
         with self.lock:
+            if self.observer:
+                frame = dict(frame)
+                observation = copy.deepcopy(self.observation)
+                now = float(frame["time"]) - self.world.start_time
+                observation["sim_seconds"] = round(now, 3)
+                metadata = observation.get("perception", {})
+                metadata["age_sim_seconds"] = round(max(0, now - metadata.get("sim_time", now)), 3)
+                frame["observation"] = observation
             self.last_frame = frame
             self.frames.append({"time": frame["time"], "qpos": frame["qpos"],
                                 "observation": frame["observation"], "cycle": self.cycles,
@@ -105,8 +150,8 @@ class Session:
             self.finished = time.perf_counter()
             if was_active:
                 self._event("stopped", "实验已停止")
-        if self.worker is None:
-            self.policy.close()
+        if self.worker is None or not self.worker.is_alive():
+            self._close_resources()
 
     def _wait(self):
         while not self.cancel.is_set():
@@ -130,9 +175,11 @@ class Session:
                 with self.lock:
                     if self.cancel.is_set():
                         return
-                    observation = self.world.observe()
+                    observation = self._observe()
+                    if self.observer:
+                        self._record(self.world.frame())
                     model_observation = {**observation, **({"user_context": self.user_context} if self.user_context else {})}
-                    phases = eligible_phases(self.world)
+                    phases = eligible_phases(self.world, observation)
                     self.stage = "deciding"
                     self.last_decision = None
                     self.last_intent = None
@@ -142,7 +189,7 @@ class Session:
                 intent = self._choose("phase", model_observation,
                     "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. "
                     "Avoid repeating a motion that has already reached its target.",
-                    phase_options(self.world, phases), baseline_phase(self.world), self.history)
+                    phase_options(self.world, phases, observation), baseline_phase(self.world, observation), self.history)
                 if intent is None or not self._wait():
                     return
                 with self.lock:
@@ -162,7 +209,7 @@ class Session:
                         return
                     self.stage = "previewing"
                     shadow = self.world.clone()
-                options = candidates(shadow, phase, self.preview)
+                options = candidates(shadow, phase, self.preview, observation=observation)
                 with self.lock:
                     if self.cancel.is_set():
                         return
@@ -191,7 +238,7 @@ class Session:
                     self.cycles += 1
                     self.last_decision = decision
                     self.stage = "executing"
-                before = self.world.observe()
+                before = copy.deepcopy(observation)
                 bad_contacts = self.world.unsafe_contacts
                 motion = self.world.motion(selected.target, selected.gripper, selected.seconds)
                 while True:
@@ -212,7 +259,10 @@ class Session:
                             raise ValueError("执行层检测到台面或障碍接触，已停止")
                     if self.speed > 0 and self.cancel.wait(.04 / self.speed):
                         return
-                after = self.world.observe()
+                with self.lock:
+                    after = self._observe()
+                    if self.observer:
+                        self._record(self.world.frame())
                 record = {"cycle": self.cycles, "phase": phase, "label": selected.label, "intent": intent,
                           "decision": decision, "action": selected.serialise(), "before": before, "after": after,
                           "candidates": [c.serialise() for c in options],
@@ -250,7 +300,7 @@ class Session:
                     self.finished = time.perf_counter()
                     self._event("error", self.message, "error")
         finally:
-            self.policy.close()
+            self._close_resources()
 
     def _choose(self, stage, *args):
         # Admit each decision under the control lock, then release it before
@@ -323,6 +373,8 @@ class Session:
                     "task": self.world.task, "seed": self.world.seed, "speed": self.speed,
                     "cycles": self.cycles, "max_cycles": self.max_cycles, "provider": self.policy.provider,
                     "profile_id": self.profile_id, "scene_config": copy.deepcopy(self.world.scene_config),
+                    "observation_mode": self.observation_mode,
+                    "perception": copy.deepcopy((self.camera_snapshot() or {}).get("metadata")),
                     "user_context": copy.deepcopy(self.user_context),
                     "preview": self.preview, "threshold": self.threshold, "message": self.message,
                     "frame": self.last_frame, "history": list(self.history), "candidates": self.current_candidates,
@@ -353,8 +405,10 @@ class Session:
             return {"format": "embodied-jev-episode-v1", "id": self.id, "task": self.world.task,
                     "seed": self.world.seed, "scene_hash": self.world.scene_hash, "provider": self.policy.provider,
                     "profile_id": self.profile_id, "scene_config": copy.deepcopy(self.world.scene_config),
+                    "observation_mode": self.observation_mode,
+                    "perception_history": copy.deepcopy(self.perception_history),
                     "user_context": copy.deepcopy(self.user_context),
-                    "preview": self.preview, "status": self.status, "success": self.last_frame["observation"]["success"],
+                    "preview": self.preview, "status": self.status, "success": bool(self.world.success()),
                     "model": self.policy.model, "threshold": self.threshold, "max_cycles": self.max_cycles,
                     "policy_version": POLICY_VERSION,
                     "history": list(self.history), "frames": list(self.frames),
@@ -366,14 +420,18 @@ class Session:
                     "last_intent": self.last_intent,
                     "last_decision_inputs": dict(self.last_decision_inputs),
                     "wall_seconds": self.snapshot()["wall_seconds"], "message": self.message,
-                    "observation_source": "privileged simulator geometry and contacts"}
+                    "observation_source": ("RGB-D color perception with simulated proprioception and contacts"
+                                           if self.observer else "privileged simulator geometry and contacts"),
+                    "safety_source": "privileged simulator safety filter" if self.preview else "live simulator contact checks",
+                    "evaluation_source": "privileged simulator physical success conditions"}
 
 
 def run_headless(task="transfer", seed=0, preview=True, max_cycles=30,
-                 provider="baseline", threshold=.55, timeout=600, scene_config=None, user_context=None):
+                 provider="baseline", threshold=.55, timeout=600, scene_config=None, user_context=None,
+                 observation_mode="privileged"):
     session = Session(task=task, seed=seed, preview=preview, max_cycles=max_cycles,
                       speed=0, provider=provider, threshold=threshold,
-                      scene_config=scene_config, user_context=user_context)
+                      scene_config=scene_config, user_context=user_context, observation_mode=observation_mode)
     session.start()
     deadline = time.monotonic() + timeout
     while session.worker.is_alive():

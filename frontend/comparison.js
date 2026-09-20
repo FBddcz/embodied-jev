@@ -82,8 +82,9 @@ export async function createComparison(container, { api, toast }) {
       <label>动作预算<input id="cmp-budget" type="number" min="1" max="100" value="30"></label>
       <label>概率门槛<input id="cmp-threshold" type="number" min="0" max="1" step="0.05" value="0"></label>
       <label>执行速度<input id="cmp-speed" type="number" min="0.5" max="4" step="0.5" value="1.5"></label>
+      <label>共同观测来源<select id="cmp-observation-mode"><option value="privileged">仿真真值 · 默认</option><option value="rgbd">RGB-D 视觉 · 实验</option></select></label>
       <label class="comparison-checkbox"><input id="cmp-preview" type="checkbox" checked> 动作预演</label>
-    </div><p>门槛仅用于返回原生候选概率的接口。任务、起点、预算一致，模型仍可能走出不同轨迹。</p></details>
+    </div><p>门槛仅用于原生候选概率。RGB-D 模式通过颜色与深度估计已知物体位置，各路独立采集相机观测；画面展示各自的实际仿真。</p></details>
     <p id="cmp-preset-label" class="comparison-hint" hidden></p><p class="comparison-hint">API 地址和 Key 继承默认连接或「扩展 → 模型配置」。这里可覆盖模型 ID；填写名称不代表账号已获使用权限。未配置 API 时可先用两个规则基线体验。</p></details>
     <div class="comparison-toolbar"><button class="primary" id="cmp-start" disabled>开始对比</button><button class="secondary" id="cmp-pause" disabled>暂停</button><button class="secondary" id="cmp-stop" disabled>停止</button><button class="secondary" id="cmp-export" disabled>导出记录</button></div>
     <p id="cmp-message" class="comparison-message" role="status"></p>
@@ -316,6 +317,7 @@ export async function createComparison(container, { api, toast }) {
           ["budget", "max_cycles"],
           ["threshold", "threshold"],
           ["speed", "speed"],
+          ["observation-mode", "observation_mode"],
         ])
           if (next.config?.[key] !== undefined)
             $(`#cmp-${field}`).value = next.config[key];
@@ -483,6 +485,7 @@ export async function createComparison(container, { api, toast }) {
         task: $("#cmp-task").value,
         scene_config: sceneConfig,
         user_context: userContext,
+        observation_mode: $("#cmp-observation-mode").value,
         seed: Number($("#cmp-seed").value),
         preview: $("#cmp-preview").checked,
         threshold: Number($("#cmp-threshold").value),

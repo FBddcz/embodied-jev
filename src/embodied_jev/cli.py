@@ -20,6 +20,7 @@ def main():
     bench.add_argument("--threshold", type=float, default=.55)
     bench.add_argument("--max-cycles", type=int, default=30)
     bench.add_argument("--timeout", type=float, default=600)
+    bench.add_argument("--observation-mode", choices=["privileged", "rgbd"], default="privileged")
     sub.add_parser("warmup", help="Load MiniCPM5-2B and make a real two-candidate decision")
     args = parser.parse_args()
     if args.command == "serve":
@@ -57,10 +58,12 @@ def main():
             for seed in args.seeds:
                 session = run_headless(task, seed, provider=args.provider, threshold=args.threshold,
                                        max_cycles=args.max_cycles, timeout=args.timeout,
+                                       observation_mode=args.observation_mode,
                                        scene_config=preset["scene_config"] if preset else None,
                                        user_context=preset["user_context"] if preset else None)
                 exported = session.export()
                 row = {"task": task, "seed": seed, "success": exported["success"], "status": session.status,
+                       "observation_mode": args.observation_mode,
                        "cycles": session.cycles, "max_lift_m": session.world.max_lift,
                        "forbidden_contact_steps": session.world.unsafe_contacts, "message": session.message,
                        **{key: exported[key] for key in ("model", "model_runtime", "policy_version", "model_calls", "input_tokens",

@@ -60,13 +60,15 @@ class Comparison:
     """One bounded group of independent episodes; a lane keeps Session's control flow."""
 
     def __init__(self, lanes, *, task="transfer", seed=0, preview=True, threshold=.55,
-                 max_cycles=30, speed=1.5, mode="sequential", scene_config=None, user_context=None, secrets=()):
+                 max_cycles=30, speed=1.5, mode="sequential", scene_config=None, user_context=None, secrets=(),
+                 observation_mode="privileged"):
         if mode not in {"sequential", "parallel"} or not 2 <= len(lanes) <= 3:
             raise ValueError("比较模式或模型数量无效。")
         self.id = uuid.uuid4().hex[:12]
         self.mode = mode
         self.max_parallel = 1 if mode == "sequential" else 2
         self.config = {"task": task, "seed": seed, "preview": preview, "threshold": threshold,
+                       "observation_mode": observation_mode,
                        "max_cycles": max_cycles, "speed": speed,
                        "scene_config": deepcopy(scene_config), "user_context": deepcopy(user_context)}
         self.lock = threading.RLock()
@@ -212,6 +214,8 @@ class Comparison:
                      for lane in self.lanes]
             ends = [self._bounds(lane["session"])[1] for lane in self.lanes]
             notes = ["各路使用独立仿真；阶段选择完成后才进行动作选择。"]
+            if self.config["observation_mode"] == "rgbd":
+                notes.append("RGB-D 估计用于阶段与目标生成；接触反馈、预演安全过滤和最终评分仍来自仿真。")
             if any(lane["provider"] == "minicpm" for lane in self.lanes):
                 notes.append("本地 MiniCPM 共享权重与推理锁；并行模式下 MiniCPM 推理仍串行执行。")
             if self.mode == "parallel":

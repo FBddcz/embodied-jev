@@ -66,6 +66,11 @@ def compact_observation(observation):
         "forbidden_contact": observation["forbidden_contact"],
         "success": observation["success"],
     }
+    if isinstance(observation.get("perception"), dict):
+        compact["source"] = observation.get("source", "RGB-D estimated geometry")
+        compact["perception"] = {key: observation["perception"][key] for key in
+                                 ("source", "status", "sim_time", "age_sim_seconds", "objects", "assumptions")
+                                 if key in observation["perception"]}
     scene = observation.get("scene_config")
     if isinstance(scene, dict) and (scene.get("source_xy") is not None
             or scene.get("target_xy") != [.43, .18]

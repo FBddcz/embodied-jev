@@ -15,7 +15,7 @@ from typing import Literal
 import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
@@ -60,6 +60,7 @@ class Setup(ScenarioInput):
     task: Literal["transfer", "stack", "barrier"] = "transfer"
     seed: int = Field(default=0, ge=0, le=99999)
     provider: Literal["baseline", "jev", "minicpm", "local", "chat", "claude"] = "baseline"
+    observation_mode: Literal["privileged", "rgbd"] = "privileged"
     preview: bool = True
     threshold: float = Field(default=.55, ge=0, le=1)
     max_cycles: int = Field(default=30, ge=1, le=100)
@@ -91,6 +92,7 @@ class ComparisonSetup(ScenarioInput):
     lanes: list[ComparisonLane] = Field(min_length=2, max_length=3)
     task: Literal["transfer", "stack", "barrier"] = "transfer"
     seed: int = Field(default=0, ge=0, le=99999)
+    observation_mode: Literal["privileged", "rgbd"] = "privileged"
     preview: bool = True
     threshold: float = Field(default=.55, ge=0, le=1)
     max_cycles: int = Field(default=30, ge=1, le=100)
@@ -528,6 +530,29 @@ def create_app(store=None):
     @app.get("/api/state")
     def state():
         return public_result(current_session().snapshot())
+
+    def cached_perception(episode_id, capture_id=None):
+        session = current_session()
+        check_episode(episode_id, session)
+        snapshot = session.camera_snapshot()
+        if not snapshot:
+            raise HTTPException(404, "当前实验没有相机观测，请选择 RGB-D 视觉模式。")
+        if capture_id is not None and str(snapshot["metadata"]["capture_id"]) != capture_id:
+            raise HTTPException(409, "相机帧已更新，请读取最新观测。")
+        return snapshot
+
+    @app.get("/api/perception")
+    def perception(episode_id: str = Query(min_length=1, max_length=64),
+                   capture_id: str | None = Query(default=None, max_length=64)):
+        return public_result(cached_perception(episode_id, capture_id)["metadata"])
+
+    @app.get("/api/perception/{image_name}.png")
+    def perception_image(image_name: Literal["rgb", "depth"],
+                         episode_id: str = Query(min_length=1, max_length=64),
+                         capture_id: str | None = Query(default=None, max_length=64)):
+        snapshot = cached_perception(episode_id, capture_id)
+        data = snapshot["rgb"] if image_name == "rgb" else snapshot.get("depth_display", snapshot["depth"])
+        return Response(data, media_type="image/png", headers={"Cache-Control": "no-store"})
 
     @app.post("/api/reset")
     def reset(setup: Setup):

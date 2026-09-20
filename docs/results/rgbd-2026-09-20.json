@@ -1,0 +1,187 @@
+{
+  "provider": "baseline",
+  "observation_mode": "rgbd",
+  "seed": 0,
+  "preview": true,
+  "max_cycles": 16,
+  "timeout_seconds": 90,
+  "execution_speed": 0,
+  "source_sha256": {
+    "perception.py": "82be14ffb2778039e7734502968d9f5a723d77c0edaf072873a55a9e4497e432",
+    "runtime.py": "3007d63475147bd525f90a4b923e6feb88637205c06b427a9ada973a69a9fb9f",
+    "planning.py": "faae2d85a349ff6518cb0a214154559906881f6a8e2248678a6672ab328c86ed",
+    "physics.py": "117a79a4a6bf1988eaef4155c97718ac72be1eddf8abf5a76275e4d81cc2dad1",
+    "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197"
+  },
+  "results": [
+    {
+      "task": "transfer",
+      "status": "completed",
+      "physical_success": true,
+      "passed": true,
+      "cycles": 8,
+      "model_calls": 0,
+      "wall_seconds": 1.88,
+      "message": null,
+      "captures": 9,
+      "perception_latency_ms": [
+        212.72,
+        34.9,
+        26.74,
+        25.65,
+        23.86,
+        25.24,
+        24.57,
+        22.2,
+        22.03
+      ],
+      "episode": {
+        "file": "rgbd-2026-09-20-transfer-seed0.json.gz",
+        "raw_sha256": "87ade7f0a8bd01af25ef40c7cfaf0bec9834838e0a3401bf30e070d7b14daca2",
+        "gzip_sha256": "ab18adcd6d7391030ab52a9dfbfd82c1a23526adcf75880905de32c7c0a11296",
+        "task": "transfer",
+        "status": "completed",
+        "physical_success": true,
+        "cycles": 8,
+        "message": null
+      },
+      "mean_warm_perception_ms": 25.65
+    },
+    {
+      "task": "stack",
+      "status": "completed",
+      "physical_success": true,
+      "passed": true,
+      "cycles": 8,
+      "model_calls": 0,
+      "wall_seconds": 1.79,
+      "message": null,
+      "captures": 9,
+      "perception_latency_ms": [
+        64.32,
+        31.3,
+        24.49,
+        22.12,
+        22.92,
+        23.88,
+        22.43,
+        24.26,
+        22.62
+      ],
+      "episode": {
+        "file": "rgbd-2026-09-20-stack-seed0.json.gz",
+        "raw_sha256": "28ed7bb4b5df831cb5b4d5db64630800f528d637e261304eb1f9c546ee867770",
+        "gzip_sha256": "b3421605648fa8401628ba82d768f5a283f2642d8e92533c9c827e9b627937ab",
+        "task": "stack",
+        "status": "completed",
+        "physical_success": true,
+        "cycles": 8,
+        "message": null
+      },
+      "mean_warm_perception_ms": 24.25
+    },
+    {
+      "task": "barrier",
+      "status": "completed",
+      "physical_success": true,
+      "passed": true,
+      "cycles": 8,
+      "model_calls": 0,
+      "wall_seconds": 1.82,
+      "message": null,
+      "captures": 9,
+      "perception_latency_ms": [
+        56.13,
+        30.94,
+        25.8,
+        25.57,
+        24.5,
+        25.4,
+        24.11,
+        23.6,
+        27.48
+      ],
+      "episode": {
+        "file": "rgbd-2026-09-20-barrier-seed0.json.gz",
+        "raw_sha256": "57a238c28ce75105ff3a631919d3c98b48561016cc0d685a432528050d9e91cf",
+        "gzip_sha256": "58ad624aa8d38f5e9da785355a256b3ada92721bb73562b3d08c81dcf4e4d5b3",
+        "task": "barrier",
+        "status": "completed",
+        "physical_success": true,
+        "cycles": 8,
+        "message": null
+      },
+      "mean_warm_perception_ms": 25.93
+    }
+  ],
+  "date": "2026-09-20",
+  "scope": "Development validation of RGB-D perception with the rule baseline; not model evaluation.",
+  "camera": {
+    "width": 640,
+    "height": 480,
+    "azimuth": 180,
+    "elevation": -65
+  },
+  "development_attempts": [
+    {
+      "file": "rgbd-2026-09-20-overhead-transfer-seed0.json.gz",
+      "raw_sha256": "a659648f2c6b8be4904048b05c6c4adb1c04e2067c2a424356c5774cf57d4a9c",
+      "gzip_sha256": "04627d03eee0fb8f4ea28ac66bbeb8ffd9b727374a646285d01db305c4e161b7",
+      "task": "transfer",
+      "status": "error",
+      "physical_success": true,
+      "cycles": 7,
+      "message": "看不到必需的方块、目标或障碍，且没有有效视觉定位；已停止，未使用仿真真值补齐。",
+      "camera": "azimuth 90, elevation -90"
+    },
+    {
+      "file": "rgbd-2026-09-20-overhead-stack-seed0.json.gz",
+      "raw_sha256": "67d249546768c32257e5c14e79172e55851d4ecd10f422bd9f0f07a250c82a06",
+      "gzip_sha256": "f9cae74cd221f3b5f64ab7a71dab12609209ab2c42d9b34ff428493ed7802fd8",
+      "task": "stack",
+      "status": "error",
+      "physical_success": true,
+      "cycles": 7,
+      "message": "看不到必需的方块、目标或障碍，且没有有效视觉定位；已停止，未使用仿真真值补齐。",
+      "camera": "azimuth 90, elevation -90"
+    },
+    {
+      "file": "rgbd-2026-09-20-overhead-barrier-seed0.json.gz",
+      "raw_sha256": "fa80951d46b15e0dc62af2d120d463ee57556ea84448a5cd6e587de1570b7a4d",
+      "gzip_sha256": "e14d707cf698b0c511bdc047fcb727aa5dd8d95be0a49abc1aee97b0760a7dc8",
+      "task": "barrier",
+      "status": "error",
+      "physical_success": true,
+      "cycles": 7,
+      "message": "看不到必需的方块、目标或障碍，且没有有效视觉定位；已停止，未使用仿真真值补齐。",
+      "camera": "azimuth 90, elevation -90"
+    },
+    {
+      "file": "rgbd-2026-09-20-robot-side-transfer-seed0.json.gz",
+      "raw_sha256": "2b41cd6ae5482934adece20386b62821c6aeb5ca94a0f159f5e7ca78f2efffc7",
+      "gzip_sha256": "e70f7484a48c9f7226f540693e5abebcd0dfaf8d4caa434683d0f634c1185682",
+      "task": "transfer",
+      "status": "error",
+      "physical_success": false,
+      "cycles": 7,
+      "message": "看不到必需的方块、目标或障碍，且没有有效视觉定位；已停止，未使用仿真真值补齐。",
+      "camera": "azimuth 90, elevation -65"
+    },
+    {
+      "task": "stack",
+      "status": "initialization_error",
+      "camera": "azimuth 90, elevation -65",
+      "file": null,
+      "note": "Target detection was unavailable at initialization; no episode was created. Reported in the development log."
+    }
+  ],
+  "notes": [
+    "All three final trials use seed 0 and the same hand-written motion primitives as the state baseline.",
+    "Physical success alone is not a pass: status must also be completed.",
+    "Geometry estimates come from RGB masks and calibrated depth; simulated proprioception and contact signals are retained.",
+    "Preview safety filtering and final evaluation still use simulator truth. No model or cloud API calls were made.",
+    "The final camera was selected after the development attempts; this is not a held-out generalization benchmark.",
+    "Wall time uses unpaced headless execution and excludes initial Session/camera setup; capture latency list includes the first capture.",
+    "macOS renderer reported ARB_clip_control unavailable; no systematic depth-accuracy benchmark is claimed."
+  ]
+}

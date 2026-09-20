@@ -26,21 +26,23 @@ PHASE_GUIDANCE = {
 }
 
 
-def eligible_phases(world: RobotWorld):
-    s = world.observe()
-    p, cube, target = world.position, world.cube, world.target
+def eligible_phases(world: RobotWorld, observation=None):
+    s = world.observe() if observation is None else observation
+    p, cube, target = (np.asarray(s[key], dtype=float) for key in ("tcp", "object", "destination"))
+    closed = s["gripper"] == "closed"
+    travel_z = s.get("relative_geometry", {}).get("travel_tcp_height_m", TRAVEL_Z)
     near_destination = np.linalg.norm(cube[:2] - target[:2]) < .025
     if s["success"]:
         return ["finish"]
-    if not world.closed and near_destination and s["support_contact"]:
+    if not closed and near_destination and s["support_contact"]:
         return ["withdraw"]
     if s["held"]:
         if np.linalg.norm(p[:2] - target[:2]) < .02:
             return ["lower", "release"] if abs(cube[2] - target[2]) < .012 else ["lower", "carry"]
-        if cube[2] < TRAVEL_Z - .045:
+        if cube[2] < travel_z - .045:
             return ["lift"]
         return ["carry", "lift"]
-    if world.closed:
+    if closed:
         return ["recover", "grasp"]
     if np.linalg.norm(p[:2] - cube[:2]) > .007:
         return ["approach"]
@@ -49,19 +51,21 @@ def eligible_phases(world: RobotWorld):
     return ["grasp", "approach"]
 
 
-def baseline_phase(world):
-    eligible = eligible_phases(world)
-    if "release" in eligible and abs(world.cube[2] - world.target[2]) < .012:
+def baseline_phase(world, observation=None):
+    s = world.observe() if observation is None else observation
+    eligible = eligible_phases(world, s)
+    if "release" in eligible and abs(s["object"][2] - s["destination"][2]) < .012:
         return "release"
     return eligible[0]
 
 
-def phase_options(world, phases):
+def phase_options(world, phases, observation=None):
     """Describe planned effects without recommending or dropping any offered phase."""
     options = {}
     for phase in phases:
-        option = candidates(world, phase, preview=False)[0]
-        delta = np.asarray(option.target) - world.position
+        option = candidates(world, phase, preview=False, observation=observation)[0]
+        position = world.position if observation is None else np.asarray(observation["tcp"])
+        delta = np.asarray(option.target) - position
         moves = []
         for axis, value in zip(("X", "Y", "Z"), delta):
             if abs(value) >= .002:
@@ -88,8 +92,12 @@ class Candidate:
         return asdict(self)
 
 
-def candidates(world, phase, preview=True):
-    p, cube, dest = world.position, world.cube, world.target
+def candidates(world, phase, preview=True, observation=None):
+    state = world.observe() if observation is None else observation
+    p, cube, dest = (np.asarray(state[key], dtype=float) for key in ("tcp", "object", "destination"))
+    travel_z = float(state.get("relative_geometry", {}).get("travel_tcp_height_m", TRAVEL_Z))
+    if not np.isfinite(travel_z) or not .02 <= travel_z <= .42:
+        raise ValueError("观测中的安全搬运高度超出工作区")
     target, grip, duration = p.copy(), None, .8
     if phase == "approach":
         target = cube + [0, 0, .14]
@@ -99,10 +107,10 @@ def candidates(world, phase, preview=True):
     elif phase == "grasp":
         grip, duration = "close", .65
     elif phase == "lift":
-        target = np.r_[p[:2], TRAVEL_Z]
+        target = np.r_[p[:2], travel_z]
         duration = 1.1
     elif phase == "carry":
-        target = np.r_[dest[:2] + (p - cube)[:2], TRAVEL_Z]
+        target = np.r_[dest[:2] + (p - cube)[:2], travel_z]
         duration = 1.6
     elif phase == "lower":
         target = dest + (p - cube) + [0, 0, .002]
@@ -110,7 +118,7 @@ def candidates(world, phase, preview=True):
     elif phase in {"release", "recover"}:
         grip, duration = "open", .8
     elif phase == "withdraw":
-        target = np.r_[p[:2], TRAVEL_Z]
+        target = np.r_[p[:2], travel_z]
         duration = 1.0
     elif phase != "finish":
         raise ValueError("Unknown phase")
@@ -132,10 +140,14 @@ def candidates(world, phase, preview=True):
                                   "target_error_m": round(float(np.linalg.norm(shadow.cube - shadow.target)), 4)}
                 if shadow.unsafe_contacts > before_bad:
                     option.admitted, option.rejection = False, "预演发生机械臂与台面或障碍接触"
-                elif phase in {"lift", "carry"} and world.observe()["held"] and not state["held"]:
+                elif phase in {"lift", "carry"} and (observation or world.observe())["held"] and not state["held"]:
                     option.admitted, option.rejection = False, "预演丢失双侧抓取接触"
                 elif phase == "carry" and shadow.cube[2] < initial_z - .045:
                     option.admitted, option.rejection = False, "预演物体下落"
             except (ValueError, RuntimeError) as exc:
                 option.admitted, option.rejection = False, str(exc)
+            if observation is not None and observation.get("perception"):
+                # This remains an explicit simulator safety filter. Do not give
+                # visual policies the oracle's predicted positions or goal error.
+                option.preview = {"source": "simulator_safety_filter", "safe": option.admitted}
     return result

@@ -104,6 +104,7 @@ $("#app").innerHTML = `
    <p class="task-goal" id="task-goal"></p></section>
   <div class="divider"></div>
   <section><div class="section-topline"><h2>决策模型</h2><button class="icon-button connection-button" id="model-connect" title="模型连接" aria-label="模型连接">${icon("plug-zap")}</button></div><div class="select-wrap"><select id="provider" aria-label="决策模型"></select>${icon("chevron-down")}</div><div class="provider-status"><span class="dot"></span><span id="provider-note">离线 · 确定性策略</span></div></section>
+  <section class="observation-setting"><label class="field-label" for="observation-mode">观测来源</label><div class="select-wrap"><select id="observation-mode" aria-describedby="observation-help"><option value="privileged">仿真真值 · 默认</option><option value="rgbd">RGB-D 视觉 · 实验</option></select>${icon("chevron-down")}</div><p id="observation-help">直接读取仿真中的物体位置。</p></section>
   <div class="divider"></div>
   <section class="input-section" id="input-section"><div class="section-topline"><h2>输入状态</h2><span class="eyebrow">m</span></div><p class="input-context" id="input-context">实时观测</p><table class="input-table"><thead><tr><th>位置</th><th>X</th><th>Y</th><th>Z</th></tr></thead><tbody id="input-positions"></tbody></table><div class="input-contacts" id="input-contacts">等待观测</div></section>
   <details class="advanced-settings" id="advanced-settings"><summary>执行设置 <span>预演 / 速度 / 预算</span></summary><section>
@@ -115,7 +116,7 @@ $("#app").innerHTML = `
   </section></details><div class="sidebar-bottom"><span>FRANKA PANDA</span><span>7 自由度 · 双指夹爪</span></div>
  </aside>
  <main class="workspace">
-  <div class="scene-toolbar"><nav class="tabs"><button class="tab active" data-tab="scene">${icon("box")} 场景</button><button class="tab" data-tab="data">${icon("braces")} 观测</button><button class="tab decision-tab" id="decision-open">${icon("git-branch")} 决策</button></nav><div class="scene-tools"><button class="icon-button" id="camera-top" title="俯视" aria-label="俯视">${icon("scan")}</button><button class="icon-button" id="camera-home" title="复位视角" aria-label="复位视角">${icon("focus")}</button></div></div>
+  <div class="scene-toolbar"><nav class="tabs" aria-label="实验视图"><button class="tab active" data-tab="scene">${icon("box")} 场景</button><button class="tab" data-tab="vision">${icon("scan-line")} 视觉</button><button class="tab" data-tab="data">${icon("braces")} 观测</button><button class="tab decision-tab" id="decision-open">${icon("git-branch")} 决策</button></nav><div class="scene-tools"><button class="icon-button" id="camera-top" title="俯视" aria-label="俯视">${icon("scan")}</button><button class="icon-button" id="camera-home" title="复位视角" aria-label="复位视角">${icon("focus")}</button></div></div>
   <div class="viewport" id="viewport"><div class="viewport-label"><h1>Franka Panda</h1><p>MANIPULATION / <span id="scene-task">TRANSFER</span></p></div><div class="scene-status" id="scene-status"><span class="dot"></span><span id="status-text">待命</span></div><div class="scene-axis"><span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span><span>WORLD / m</span></div><span class="scene-bottom-right" id="scene-time">t = 0.00 s</span><div class="success-stamp" id="success-stamp">${icon("circle-check")}物体稳定 · 夹爪已撤离</div><div class="loading" id="loading">加载机器人场景…</div><pre class="raw-state" id="raw-state"></pre></div>
   <div class="telemetry"><div class="metric"><div class="metric-label">末端 X</div><div class="metric-value"><span id="tcp-x">—</span><small>m</small></div></div><div class="metric"><div class="metric-label">末端 Y</div><div class="metric-value"><span id="tcp-y">—</span><small>m</small></div></div><div class="metric"><div class="metric-label">末端 Z</div><div class="metric-value"><span id="tcp-z">—</span><small>m</small></div></div><div class="metric"><div class="metric-label">物体抬升</div><div class="metric-value"><span id="lift">0</span><small>mm</small></div></div></div>
   <div class="timeline"><button class="icon-button" id="replay-play" aria-label="播放轨迹" title="播放轨迹">${icon("play")}</button><div class="timeline-track"><div class="timeline-caption"><span id="timeline-label">EPISODE TIMELINE</span><span id="frame-label">0000 / 0000</span></div><input id="timeline" type="range" min="0" max="0" value="0" aria-label="轨迹时间轴"></div><button class="live-link" id="live">LIVE</button></div>
@@ -125,7 +126,7 @@ $("#app").innerHTML = `
   <section class="inspector-section decision-section" id="decision-section" tabindex="-1"><div class="section-topline"><h2 id="decision-heading">当前决策</h2><span class="eyebrow" id="stage">READY</span></div><div class="decision-context"><span id="decision-context" role="status">实时 · 等待开始</span><button type="button" class="text-button" id="decision-live" hidden>返回实时</button></div><div class="decision-title">${icon("git-branch")}<span id="decision-title">等待开始</span></div><div class="decision-meta"><span id="decision-provider">RULE BASELINE</span><span id="latency">— ms</span></div><div id="intent-panel" hidden><div class="decision-meta"><span>01 · 操作阶段</span><span id="intent-latency"></span></div><div class="probabilities" id="intent-probabilities"></div><div class="decision-meta"><span>02 · 执行动作</span></div></div><div class="probabilities" id="probabilities"><div class="empty">尚无候选动作</div></div><p class="decision-note" id="decision-note"></p><div class="history-observations" id="history-observations" hidden><details><summary>执行前 · 结构化观测</summary><pre id="history-before"></pre></details><details><summary>执行后 · 结构化观测</summary><pre id="history-after"></pre></details><details><summary>候选与模型返回</summary><pre id="history-payload"></pre></details><details id="history-inputs-detail" hidden><summary>本步模型输入</summary><pre id="history-inputs"></pre></details></div></section>
   <section class="inspector-section"><div class="section-topline"><h2 id="feedback-heading">物理反馈</h2><span class="eyebrow">FEEDBACK</span></div><div class="sensors"><span class="name">夹爪状态</span><span class="sensor-value" id="gripper">OPEN</span><span class="name">双侧接触</span><div class="contacts"><span class="contact" id="contact-l">L</span><span class="contact" id="contact-r">R</span></div><span class="name">目标支撑接触</span><span class="sensor-value" id="support">NO</span><span class="name">稳定时长</span><span class="sensor-value" id="stable">0.00 s</span><span class="name">动作预演</span><span class="sensor-value" id="preview-state">ON</span></div></section>
   <div class="event-heading"><div class="section-topline"><h2>执行记录</h2><span class="eyebrow" id="event-count">0 步</span></div></div><ol class="events" id="events"><li class="empty">暂无执行记录</li></ol><details class="runtime-log" id="runtime-log"><summary>运行日志 <span id="log-count">0 条</span></summary><ol id="log-entries"></ol><p>仅展示最近 12 条，完整日志可随实验导出。</p></details><div class="inspector-footer"><span id="model-calls">调用 0 次</span><span id="tokens">输入 0 tokens</span></div>
- </aside></div><footer class="bottom-bar"><div class="bottom-left"><span id="connection">连接中</span><span>物理仿真 500 Hz</span><span>几何与接触状态</span></div><span class="bottom-right" id="episode-id">实验 / —</span></footer>
+ </aside></div><footer class="bottom-bar"><div class="bottom-left"><span id="connection">连接中</span><span>物理仿真 500 Hz</span><span id="observation-source">仿真真值 · 几何与接触</span></div><span class="bottom-right" id="episode-id">实验 / —</span></footer>
 </div><div class="toast" id="toast" role="status"></div>
 <dialog id="connection-dialog" class="connection-dialog" aria-labelledby="connection-title">
  <form id="connection-form">
@@ -145,6 +146,18 @@ $("#app").innerHTML = `
   <p class="connection-retention" id="profile-help">另存为具名配置时请重新填写 Key；不会复制默认连接的密钥。</p><div class="dialog-actions"><button type="button" class="secondary" id="connection-profile">另存为模型配置</button><button type="button" class="secondary" id="connection-test">${icon("plug-zap")}测试调用</button><button type="submit" class="primary" id="connection-save">保存连接</button></div>
  </form>
 </dialog>`;
+const visionPanel = document.createElement("section");
+visionPanel.id = "vision-panel";
+visionPanel.className = "vision-panel";
+visionPanel.hidden = true;
+visionPanel.setAttribute("aria-label", "RGB-D 视觉观测");
+visionPanel.innerHTML = `
+  <div class="vision-heading"><div><span class="eyebrow">PERCEPTION / RGB-D</span><h2>相机最近观测</h2></div><div class="vision-switch" aria-label="相机通道"><button type="button" data-vision-channel="rgb" aria-pressed="true" disabled>RGB</button><button type="button" data-vision-channel="depth" aria-pressed="false" disabled>深度</button></div></div>
+  <p class="vision-explanation">颜色检测已知物体，结合深度估计位置；夹爪与接触来自传感器。动作预演仍使用仿真安全筛选。</p>
+  <div class="vision-image-wrap"><div id="vision-image-container"></div><p id="vision-empty" role="status">选择「RGB-D 视觉」并重置实验后，显示实际相机画面。</p><span id="vision-image-label" hidden>最近感知帧</span></div>
+  <div class="vision-meta" id="vision-meta" hidden><div><span>观测来源</span><strong>RGB-D · 颜色检测</strong></div><div><span>感知耗时</span><strong id="vision-latency">—</strong></div><div><span>采集时刻</span><strong id="vision-time">—</strong></div><div><span>可见物体</span><strong id="vision-visibility">—</strong></div></div>
+  <p class="vision-status" id="vision-status" role="status"></p><button type="button" class="text-button" id="vision-retry" hidden>重试读取</button><p class="vision-note" id="vision-note">这里显示最近一次感知画面；场景页展示当前仿真。此模式支持已知颜色物体，尚不具备通用视觉识别能力。</p>`;
+$("#viewport").append(visionPanel);
 const comparisonContainer = document.createElement("main");
 comparisonContainer.id = "comparison-view";
 comparisonContainer.hidden = true;
@@ -379,6 +392,159 @@ async function api(path, body) {
   return response.json();
 }
 const sceneView = new RobotScene($("#viewport"), { onError: toast });
+$(".viewport-label p").firstChild.textContent = "仿真画面 / ";
+let visionChannel = "rgb",
+  visionRequestKey = "",
+  visionRequest = 0,
+  visionMetadata = null,
+  visionImageKey = "";
+
+function clearVisionImage(message) {
+  visionImageKey = "";
+  $("#vision-image-container").replaceChildren();
+  $("#vision-image-label").hidden = true;
+  $("#vision-empty").hidden = false;
+  $("#vision-empty").textContent = message;
+}
+
+function renderVisionImage() {
+  if (!visionMetadata?.capture_id || !state?.id) return;
+  const key = `${state.id}:${visionMetadata.capture_id}:${visionChannel}`;
+  if (key === visionImageKey) return;
+  clearVisionImage("读取已采集画面…");
+  visionImageKey = key;
+  const image = new Image();
+  image.id = "vision-image";
+  image.alt =
+    visionChannel === "rgb"
+      ? "MuJoCo 相机实际 RGB 画面"
+      : "MuJoCo 相机实际深度画面";
+  image.hidden = true;
+  image.onload = () => {
+    if (visionImageKey !== key) return;
+    image.hidden = false;
+    $("#vision-empty").hidden = true;
+    $("#vision-image-label").hidden = false;
+    $("#vision-image-label").textContent =
+      visionChannel === "rgb" ? "RGB · 最近感知帧" : "深度 · 最近感知帧";
+  };
+  image.onerror = () => {
+    if (visionImageKey !== key) return;
+    $("#vision-empty").textContent = "这张感知帧已更新或读取失败，请重试。";
+    $("#vision-retry").hidden = false;
+  };
+  const query = new URLSearchParams({
+    episode_id: state.id,
+    capture_id: visionMetadata.capture_id,
+  });
+  image.src = `/api/perception/${visionChannel}.png?${query}`;
+  $("#vision-image-container").replaceChildren(image);
+}
+
+function renderVisionMetadata(metadata) {
+  $("#vision-meta").hidden = false;
+  for (const button of document.querySelectorAll("[data-vision-channel]"))
+    button.disabled = false;
+  $("#vision-latency").textContent = Number.isFinite(metadata.latency_ms)
+    ? `${metadata.latency_ms.toFixed(1)} ms`
+    : "—";
+  $("#vision-time").textContent = Number.isFinite(metadata.sim_time)
+    ? `t = ${metadata.sim_time.toFixed(2)} s`
+    : "—";
+  $("#vision-time").title = metadata.captured_at || "";
+  const objects = Array.isArray(metadata.objects)
+    ? metadata.objects
+    : Object.entries(metadata.objects || {}).map(([id, value]) => ({
+        id,
+        ...value,
+      }));
+  const visible = objects.filter((object) => object.visible).length;
+  $("#vision-visibility").textContent = objects.length
+    ? `${visible} / ${objects.length}`
+    : "—";
+  const missing = objects
+    .filter((object) => !object.visible)
+    .map((object) => object.label || object.id);
+  $("#vision-status").textContent =
+    metadata.message ||
+    (missing.length
+      ? `遮挡或未检测到：${missing.join("、")}`
+      : objects.length
+        ? "当前已知物体可见"
+        : "等待检测结果");
+  $("#vision-status").classList.toggle(
+    "has-alert",
+    missing.length > 0 ||
+      ["partial", "unavailable", "error"].includes(metadata.status),
+  );
+  renderVisionImage();
+}
+
+function renderVision(s) {
+  const rgbd = s.observation_mode === "rgbd";
+  $("#observation-help").textContent = rgbd
+    ? "相机估计已知物体位置，夹爪与接触保留传感器读数。"
+    : "直接读取仿真中的物体位置。";
+  $("#observation-source").textContent = rgbd
+    ? "RGB-D 感知 + 接触传感器"
+    : "仿真真值 · 几何与接触";
+  if (visionPanel.hidden || comparisonVisible || extensionsVisible) return;
+  $("#vision-note").textContent =
+    `${replayMode ? "正在回放轨迹；这里仍是最近一次感知画面。" : "这里显示最近一次感知画面；场景页展示当前仿真。"}此模式支持已知颜色物体，尚不具备通用视觉识别能力。`;
+  const capture = s.perception?.capture_id;
+  if (!rgbd || !capture) {
+    visionRequest++;
+    visionRequestKey = "";
+    visionMetadata = null;
+    for (const button of document.querySelectorAll("[data-vision-channel]"))
+      button.disabled = true;
+    $("#vision-meta").hidden = true;
+    $("#vision-status").textContent = rgbd
+      ? s.perception?.message || "等待感知采集"
+      : "";
+    $("#vision-retry").hidden = true;
+    clearVisionImage(
+      rgbd
+        ? "尚无相机画面。感知就绪后将在这里显示。"
+        : "选择「RGB-D 视觉」并重置实验后，显示实际相机画面。",
+    );
+    return;
+  }
+  const key = `${s.id}:${capture}`;
+  if (key === visionRequestKey) return;
+  visionRequestKey = key;
+  visionMetadata = null;
+  $("#vision-meta").hidden = true;
+  $("#vision-retry").hidden = true;
+  $("#vision-status").textContent = "";
+  clearVisionImage("读取已采集画面…");
+  const request = ++visionRequest;
+  const query = new URLSearchParams({ episode_id: s.id, capture_id: capture });
+  api(`/api/perception?${query}`)
+    .then((metadata) => {
+      if (request !== visionRequest || state?.id !== s.id) return;
+      visionMetadata = metadata;
+      renderVisionMetadata(metadata);
+    })
+    .catch((error) => {
+      if (request !== visionRequest) return;
+      clearVisionImage("相机画面暂不可用");
+      $("#vision-status").textContent = error.message;
+      $("#vision-retry").hidden = false;
+    });
+}
+
+for (const button of document.querySelectorAll("[data-vision-channel]"))
+  button.onclick = () => {
+    visionChannel = button.dataset.visionChannel;
+    for (const other of document.querySelectorAll("[data-vision-channel]"))
+      other.setAttribute("aria-pressed", String(other === button));
+    renderVisionImage();
+  };
+$("#vision-retry").onclick = () => {
+  visionRequestKey = "";
+  if (state) renderVision(state);
+};
 let lastFrame;
 function renderFrame(frame) {
   if (!frame) return;
@@ -442,7 +608,9 @@ function renderDecision(s) {
     ? `历史第 ${history.cycle} 步 · 执行前观测`
     : replayMode
       ? "回放观测"
-      : "实时观测 · 位置与接触";
+      : s.observation_mode === "rgbd"
+        ? "最近 RGB-D 位置估计 · 接触传感器"
+        : "仿真真值 · 位置与接触";
   $("#input-positions").innerHTML = [
     ["末端", "tcp"],
     ["方块", "object"],
@@ -613,7 +781,7 @@ function updateControlAvailability() {
   $(".controls").setAttribute("aria-busy", String(pending));
   const locked = pending || ["running", "paused"].includes(state.status);
   for (const el of document.querySelectorAll(
-    "#model-connect,#provider,.task-option,#seed,#budget,#preview,#threshold,#speed",
+    "#model-connect,#provider,#observation-mode,.task-option,#seed,#budget,#preview,#threshold,#speed",
   ))
     el.disabled = locked;
   $("#threshold").disabled =
@@ -673,6 +841,7 @@ function renderState(s) {
     $("#provider").value = s.profile_id
       ? "profile:" + s.profile_id
       : s.provider;
+    $("#observation-mode").value = s.observation_mode || "privileged";
     $("#seed").value = s.seed;
     $("#budget").value = s.max_cycles;
     $("#preview").checked = s.preview;
@@ -712,6 +881,7 @@ function renderState(s) {
     }[runtime.status];
   }
   renderDecision(s);
+  renderVision(s);
   renderLogs(s);
   $("#run-budget").textContent =
     String(s.cycles).padStart(2, "0") + " / " + s.max_cycles + " 步";
@@ -779,6 +949,7 @@ function setup() {
     task: currentTask,
     scene_config: configuredScene,
     user_context: configuredContext,
+    observation_mode: $("#observation-mode").value,
     seed: Number($("#seed").value),
     ...selectionConfig($("#provider").value, profileValues),
     preview: $("#preview").checked,
@@ -864,6 +1035,10 @@ for (const el of document.querySelectorAll("[data-tab]"))
       .querySelectorAll("[data-tab]")
       .forEach((b) => b.classList.toggle("active", b === el));
     $("#raw-state").classList.toggle("visible", el.dataset.tab === "data");
+    visionPanel.hidden = el.dataset.tab !== "vision";
+    $("#viewport").classList.toggle("vision-active", !visionPanel.hidden);
+    $(".scene-tools").hidden = el.dataset.tab !== "scene";
+    if (state) renderVision(state);
   };
 function focusDecision() {
   (narrowLayout.matches
@@ -899,6 +1074,11 @@ $("#provider").onchange = () => {
         : "本地 · 候选概率";
   reset();
 };
+$("#observation-mode").onchange = async () => {
+  if (!(await reset())) {
+    $("#observation-mode").value = state?.observation_mode || "privileged";
+  }
+};
 function drawer(open) {
   $("#sidebar").classList.toggle("open", open);
   $("#scrim").classList.toggle("visible", open);
@@ -922,6 +1102,7 @@ async function showReplay(index) {
   $("#timeline-label").textContent = "RECORDED TRAJECTORY";
   $("#status-text").textContent = "轨迹回放";
   $("#success-stamp").classList.remove("visible");
+  renderVision(state);
 }
 $("#timeline").oninput = async () => {
   if (state.status === "running") await control("pause");
