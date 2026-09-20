@@ -31,6 +31,7 @@ class Session:
         self.last_frame = self.world.frame()
         self.current_candidates = []
         self.last_decision = None
+        self.last_intent = None
         self.message = None
         self.single_step = False
         self.started = None
@@ -99,6 +100,7 @@ class Session:
                     phases = eligible_phases(self.world)
                     self.stage = "deciding"
                     self.last_decision = None
+                    self.last_intent = None
                     self.current_candidates = []
                 intent = self.policy.choose(observation,
                     "Choose the next manipulation phase using measured contacts and object geometry. "
@@ -106,6 +108,8 @@ class Session:
                     {p: PHASES[p] for p in phases}, baseline_phase(self.world), self.history)
                 if not self._wait():
                     return
+                with self.lock:
+                    self.last_intent = intent
                 if intent["selected_probability"] is not None and intent["selected_probability"] < self.threshold:
                     self._uncertain(intent)
                     continue
@@ -204,7 +208,8 @@ class Session:
                     "cycles": self.cycles, "max_cycles": self.max_cycles, "provider": self.policy.provider,
                     "preview": self.preview, "threshold": self.threshold, "message": self.message,
                     "frame": self.last_frame, "history": list(self.history), "candidates": self.current_candidates,
-                    "last_decision": self.last_decision, "frame_count": len(self.frames),
+                    "last_decision": self.last_decision, "last_intent": self.last_intent,
+                    "frame_count": len(self.frames),
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
                     "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
                     "wall_seconds": round((self.finished or time.perf_counter()) - self.started, 2) if self.started else 0}
@@ -232,6 +237,7 @@ class Session:
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
                     "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
                     "model_latency_ms": list(self.policy.latencies), "last_decision": self.last_decision,
+                    "last_intent": self.last_intent,
                     "wall_seconds": self.snapshot()["wall_seconds"], "message": self.message,
                     "observation_source": "privileged simulator geometry and contacts"}
 

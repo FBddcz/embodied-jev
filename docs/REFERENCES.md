@@ -18,6 +18,12 @@ SemIf includes MiniCPM5-2B in its public model support/evaluations. It is theref
 
 The TypeSafe adapter follows the [official HTTP schema](https://docs.typesafe.ai/api). A selected-option probability and the API's `confidence` are different quantities; both are retained separately when returned, and only selected probability gates this prototype.
 
+## User-supplied MuJoCo demonstration
+
+[Dmytro Hrybov's September 18, 2026 post](https://x.com/dimentary/status/2101018760371171420) describes splitting each update into intent selection and motor selection after a single-stage approach struggled. His [follow-up](https://x.com/dimentary/status/2101018934095003720) says the first call selects grasp/carry/release intent, the second chooses XYZ movement and finger commands, and the bars display Jev's output probabilities. Observations are simplified geometry and contacts supplied as text, not images. The accessible post does not itself link a source repository; no claim is made that another listed repository is this exact demo.
+
+EmbodiedJev follows the same two-stage idea and displays phase and action probabilities separately. Its execution layer selects bounded, prewritten motion candidates rather than independent XYZ channels. Singleton menus skip inference and are marked as such. Local MiniCPM probabilities come from candidate-token logits; they are not TypeSafe Jev measurements or calibrated physical success probabilities.
+
 ## Jev and GPT-6 in the Public Comparison
 
 The [reviewed controller source](https://github.com/openroboto-ai/jev-robot-control/blob/7a4ed8b72c3c17d7aa790678ed9660df67c10dd3/incremental_policy.py) uses `OPENROUTER_API_KEY` for both branches:

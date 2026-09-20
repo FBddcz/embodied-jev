@@ -107,7 +107,7 @@ $("#app").innerHTML = `
   <div class="controls"><button class="primary" id="run">${icon("play")}<span id="run-label">运行实验</span></button><button class="icon-button" id="step" title="单步执行" aria-label="单步执行">${icon("step-forward")}</button><button class="icon-button stop" id="stop" title="停止实验" aria-label="停止实验">${icon("square")}</button><button class="icon-button" id="reset" title="重置实验" aria-label="重置实验">${icon("rotate-ccw")}</button><span class="run-budget" id="run-budget">00 / 30 ACTIONS</span></div>
  </main>
  <aside class="inspector">
-  <section class="inspector-section"><div class="section-topline"><h2>当前决策</h2><span class="eyebrow" id="stage">READY</span></div><div class="decision-title">${icon("git-branch")}<span id="decision-title">等待开始</span></div><div class="decision-meta"><span id="decision-provider">RULE BASELINE</span><span id="latency">— ms</span></div><div class="probabilities" id="probabilities"><div class="empty">尚无候选动作</div></div></section>
+  <section class="inspector-section"><div class="section-topline"><h2>当前决策</h2><span class="eyebrow" id="stage">READY</span></div><div class="decision-title">${icon("git-branch")}<span id="decision-title">等待开始</span></div><div class="decision-meta"><span id="decision-provider">RULE BASELINE</span><span id="latency">— ms</span></div><div id="intent-panel" hidden><div class="decision-meta"><span>01 · 操作阶段</span><span id="intent-latency"></span></div><div class="probabilities" id="intent-probabilities"></div><div class="decision-meta"><span>02 · 执行动作</span></div></div><div class="probabilities" id="probabilities"><div class="empty">尚无候选动作</div></div></section>
   <section class="inspector-section"><div class="section-topline"><h2>物理反馈</h2><span class="eyebrow">FEEDBACK</span></div><div class="sensors"><span class="name">夹爪状态</span><span class="sensor-value" id="gripper">OPEN</span><span class="name">双侧接触</span><div class="contacts"><span class="contact" id="contact-l">L</span><span class="contact" id="contact-r">R</span></div><span class="name">目标支撑接触</span><span class="sensor-value" id="support">NO</span><span class="name">稳定时长</span><span class="sensor-value" id="stable">0.00 s</span><span class="name">动作预演</span><span class="sensor-value" id="preview-state">ON</span></div></section>
   <div class="event-heading"><div class="section-topline"><h2>执行记录</h2><span class="eyebrow" id="event-count">0 EVENTS</span></div></div><ol class="events" id="events"><li class="empty">暂无执行记录</li></ol><div class="inspector-footer"><span id="model-calls">0 MODEL CALLS</span><span id="tokens">0 TOKENS</span></div>
  </aside></div><footer class="bottom-bar"><div class="bottom-left"><span id="connection">CONNECTING</span><span>PHYSICS 500 Hz</span><span>GEOMETRY + CONTACTS</span></div><span class="bottom-right" id="episode-id">EPISODE / —</span></footer>
@@ -469,9 +469,31 @@ function renderState(s) {
       String(s.frame_count).padStart(4, "0");
   }
   $("#replay-play").disabled = s.frame_count < 2 || s.status === "running";
-  const signature = JSON.stringify([s.candidates, s.last_decision]);
+  const signature = JSON.stringify([
+    s.candidates,
+    s.last_decision,
+    s.last_intent,
+  ]);
   if (signature !== candidateSignature) {
     candidateSignature = signature;
+    const intent = s.last_intent;
+    $("#intent-panel").hidden = !intent;
+    $("#intent-latency").textContent = intent?.model_call
+      ? intent.latency_ms.toFixed(0) + " ms"
+      : intent?.reason === "only_eligible_action"
+        ? "单一可行阶段 · 无模型调用"
+        : "规则选择";
+    $("#intent-probabilities").innerHTML = intent
+      ? (Object.entries(intent.probabilities || {}).length
+          ? Object.entries(intent.probabilities)
+          : [[intent.choice, null]]
+        )
+          .map(
+            ([choice, probability]) =>
+              `<div class="prob-row ${choice === intent.choice ? "selected" : ""}"><div class="prob-top"><span>${escape(phaseNames[choice] || choice)}</span><span>${probability === null ? "已选择" : (probability * 100).toFixed(1) + "%"}</span></div>${probability === null ? "" : `<div class="bar"><div class="bar-fill" style="width:${probability * 100}%"></div></div>`}</div>`,
+          )
+          .join("")
+      : "";
     const p = s.last_decision?.probabilities || {};
     $("#probabilities").innerHTML = s.candidates.length
       ? s.candidates
