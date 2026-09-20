@@ -1,0 +1,13 @@
+{
+  "format": "embodied-jev-preset-v1",
+  "name": "搬运练习 · 固定起点",
+  "task": "transfer",
+  "scene_config": {
+    "name": "搬运练习 · 固定起点",
+    "source_xy": [0.42, -0.17],
+    "target_xy": [0.44, 0.18]
+  },
+  "user_context": {
+    "experiment_note": "Compare choices at a fixed object and destination position."
+  }
+}

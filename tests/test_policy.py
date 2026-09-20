@@ -29,13 +29,17 @@ def test_http_request_contract_and_probability_semantics(monkeypatch, provider):
             "model": "test-resolved-model", "answers": {"action": {
                 "choice": "a", "probabilities": {"a": .8, "b": .2}, "confidence": .31}},
             "usage": {"input_tokens": 32}})
-    monkeypatch.setattr(httpx, "post", post)
+    monkeypatch.setattr(DecisionPolicy, "_post", staticmethod(post))
     policy = DecisionPolicy(provider)
     answer = policy.choose({"tcp": [.4, 0, .2]}, "Choose", {"a": "Move", "b": "Hold"}, "a", [])
     assert answer["selected_probability"] == .8
     assert answer["provider_confidence"] == .31
     assert policy.calls == 1 and policy.tokens == 32
     assert policy.model == "test-resolved-model"
+    assert policy.last_input == {"state": {"observation": {"tcp": [.4, 0, .2]}, "recent_outcomes": []},
+                                 "decision": {"type": "choice", "instructions": "Choose", "criteria": {"a": "Move", "b": "Hold"}}}
+    policy.choose({}, "Choose", {"lift": "Lift"}, "lift", [])
+    assert policy.last_input is None
 
 
 def test_singleton_does_not_load_or_call_model(monkeypatch):

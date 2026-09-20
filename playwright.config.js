@@ -22,6 +22,7 @@ export default defineConfig({
   },
   webServer: {
     command: `${process.env.EMBODIED_TEST_PYTHON || "python"} -m embodied_jev.cli serve --port 8099`,
+    env: { EMBODIED_JEV_PERSISTENCE: "memory" },
     url: "http://127.0.0.1:8099/api/config",
     reuseExistingServer: false,
     timeout: 30000,

@@ -8,6 +8,8 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
+from .scenarios import SCENE_DEFAULTS, validate_scene_config
+
 ASSETS = Path(__file__).parent / "assets" / "panda"
 HOME = np.array([0, -0.45, 0, -2.15, 0, 1.75, 0.7854])
 DOWN = np.diag([1., -1., -1.])
@@ -20,7 +22,8 @@ TASKS = {
 }
 
 
-def build_scene(task="transfer", seed=0):
+def build_scene(task="transfer", seed=0, scene_config=None):
+    scene_config = validate_scene_config(task, scene_config)
     root = ET.parse(ASSETS / "panda.xml").getroot()
     root.set("model", "EmbodiedJev - Xingzhi")
     root.find("compiler").set("meshdir", str(ASSETS / "assets"))
@@ -35,35 +38,52 @@ def build_scene(task="transfer", seed=0):
                   rgba=".81 .84 .85 1", friction="1 .01 .001")
     rng = np.random.default_rng(seed)
     source = np.array([.43, -.17, .021])
-    source[:2] += rng.uniform(-.025, .025, 2)
+    if scene_config["source_xy"] is None:
+        source[:2] += rng.uniform(-.025, .025, 2)
+    else:
+        source[:2] = scene_config["source_xy"]
     cube = ET.SubElement(world, "body", name="cube", pos=" ".join(map(str, source)))
     ET.SubElement(cube, "freejoint", name="cube_joint")
     ET.SubElement(cube, "geom", name="cube_geom", type="box", size=".02 .02 .02", mass=".06",
                   rgba=".88 .19 .19 1", friction="1.8 .02 .002", condim="6", solref=".006 1")
-    target = np.array([.43, .18, TASKS[task]["target_z"]])
+    target = np.array([*scene_config["target_xy"], TASKS[task]["target_z"]])
+    target_geometries = []
     if task == "stack":
-        ET.SubElement(world, "geom", name="support", type="box", pos=".43 .18 .02", size=".03 .03 .02",
-                      rgba=".10 .44 .72 1", friction="1.2 .01 .001")
+        target_geometries.append(ET.SubElement(world, "geom", name="support", type="box", pos=".43 .18 .02", size=".03 .03 .02",
+                      rgba=".10 .44 .72 1", friction="1.2 .01 .001"))
     else:
-        ET.SubElement(world, "geom", name="support", type="box", pos=".43 .18 .003", size=".07 .07 .003",
-                      rgba=".10 .44 .72 1", friction="1.2 .01 .001")
+        target_geometries.append(ET.SubElement(world, "geom", name="support", type="box", pos=".43 .18 .003", size=".07 .07 .003",
+                      rgba=".10 .44 .72 1", friction="1.2 .01 .001"))
         for x, y, sx, sy in [(.354, .18, .006, .082), (.506, .18, .006, .082),
                              (.43, .104, .07, .006), (.43, .256, .07, .006)]:
-            ET.SubElement(world, "geom", type="box", pos=f"{x} {y} .012", size=f"{sx} {sy} .012",
-                          rgba=".12 .47 .74 1")
+            target_geometries.append(ET.SubElement(world, "geom", type="box", pos=f"{x} {y} .012", size=f"{sx} {sy} .012",
+                          rgba=".12 .47 .74 1"))
+    offset = target[:2] - np.asarray(SCENE_DEFAULTS["target_xy"])
+    if np.any(offset):
+        for geom in target_geometries:
+            position = np.fromstring(geom.get("pos"), sep=" ")
+            position[:2] += offset
+            geom.set("pos", " ".join(map(str, position)))
     if task == "barrier":
-        ET.SubElement(world, "geom", name="barrier", type="box", pos=".43 0 .055", size=".115 .018 .055",
+        barrier = ET.SubElement(world, "geom", name="barrier", type="box", pos=".43 0 .055", size=".115 .018 .055",
                       rgba=".93 .66 .15 1")
+        if scene_config["barrier_height"] != SCENE_DEFAULTS["barrier_height"]:
+            half_height = scene_config["barrier_height"] / 2
+            barrier.set("pos", f".43 0 {half_height}")
+            barrier.set("size", f".115 .018 {half_height}")
     xml = ET.tostring(root, encoding="unicode")
     return xml, target, source
 
 
 class RobotWorld:
-    def __init__(self, task="transfer", seed=0):
+    def __init__(self, task="transfer", seed=0, scene_config=None):
         if task not in TASKS:
             raise ValueError("Unknown task")
         self.task, self.seed = task, seed
-        xml, self.target, self.source = build_scene(task, seed)
+        custom_scene = scene_config is not None
+        self.scene_config = validate_scene_config(task, scene_config)
+        self.scene_name = self.scene_config["name"]
+        xml, self.target, self.source = build_scene(task, seed, self.scene_config)
         self.scene_hash = hashlib.sha256(xml.replace(str(ASSETS), "ASSETS").encode()).hexdigest()
         self.model = mujoco.MjModel.from_xml_string(xml)
         self.data = mujoco.MjData(self.model)
@@ -98,6 +118,27 @@ class RobotWorld:
             self.tick()
         self.steps = 0
         self.start_time = float(self.data.time)
+        if custom_scene:
+            self._check_scene_reachability()
+
+    def _check_scene_reachability(self):
+        # Endpoint checks reject obviously infeasible presets. They do not certify
+        # a whole path: candidate rollouts and live contact checks still run.
+        if self.unsafe_contacts:
+            raise ValueError("自定义场景初始状态存在机械臂与台面或障碍接触")
+        cube = self.cube
+        targets = [cube + [0, 0, .14], cube + [0, 0, .001],
+                   np.r_[cube[:2], TRAVEL_Z], np.r_[self.target[:2], TRAVEL_Z],
+                   self.target + [0, 0, .003]]
+        for target in targets:
+            q, error = self.solve_ik(target)
+            if error > .004:
+                raise ValueError("自定义场景关键位姿不可达，请将源方块或目标移近工作区中心")
+            shadow = self.clone()
+            shadow.data.qpos[self.arm_q] = q
+            mujoco.mj_forward(shadow.model, shadow.data)
+            if shadow.contacts()[2]:
+                raise ValueError("自定义场景关键位姿与台面或障碍相交，请调整坐标或障碍高度")
 
     @property
     def position(self):
@@ -174,6 +215,9 @@ class RobotWorld:
         other = object.__new__(RobotWorld)
         other.__dict__ = self.__dict__.copy()
         other.data = copy.copy(self.data)
+        other.scene_config = copy.deepcopy(self.scene_config)
+        other.target = self.target.copy()
+        other.source = self.source.copy()
         return other
 
     def motion(self, target=None, gripper=None, seconds=.6, emit=True):
@@ -203,6 +247,7 @@ class RobotWorld:
     def observe(self):
         fingers, support, forbidden = self.contacts()
         return {"task": TASKS[self.task]["goal"], "source": "MuJoCo geometry and contacts", "units": "metres",
+                "scene_name": self.scene_name, "scene_config": copy.deepcopy(self.scene_config),
                 "tcp": self.position.round(5).tolist(), "object": self.cube.round(5).tolist(),
                 "relative_geometry": {
                     "tcp_object_xy_distance_m": round(float(np.linalg.norm(self.position[:2] - self.cube[:2])), 4),
@@ -242,4 +287,5 @@ class RobotWorld:
             meshes[str(i)] = {"vertices": self.model.mesh_vert[va:va + vn].tolist(),
                               "faces": self.model.mesh_face[fa:fa + fn].tolist()}
         return {"geometries": geometries, "meshes": meshes, "target": self.target.tolist(),
-                "task": self.task, "seed": self.seed, "scene_hash": self.scene_hash}
+                "task": self.task, "seed": self.seed, "scene_hash": self.scene_hash,
+                "scene_name": self.scene_name, "scene_config": copy.deepcopy(self.scene_config)}

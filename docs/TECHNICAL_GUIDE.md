@@ -1,44 +1,36 @@
-# EmbodiedJev · 行知
+# 技术说明
 
-**行而有据，知而能行。** A local embodied decision workbench with real MuJoCo physics, a Franka Panda, and a Three.js interface.
+行知用 MuJoCo 模拟 Franka Panda，根据结构化状态选择操作阶段和动作。浏览器负责显示与控制，Python 服务负责物理、模型请求和实验记录。安装命令见 [README](../README.md#-零机器人基础快速上手)，多模型实验见 [对比指南](COMPARISON.md)。
 
-![EmbodiedJev workbench](workbench-desktop.png)
+安装后，规则基线不需要 GPU、Key 或模型下载；构建后的页面也不依赖外部字体或 CDN。同一服务的多个浏览器标签页共享单实验和模型对比的状态。
 
-行知把结构化决策、候选动作预演、真实接触反馈和实验回放放在同一个工作台中。支持搬运入盘、方块堆叠、越障搬运三个任务。界面可切换规则基线、TypeSafe Jev、MiniCPM5-2B、OpenAI 兼容聊天 API 和结构化决策服务。
+<a id="models"></a>
 
-本项目是独立实验项目，与 TypeSafe、OpenBMB 和 SemIf 没有隶属关系。Jev 是 TypeSafe 的模型名称；MiniCPM 模式借鉴有限候选概率读出的方式，并不是 Jev 权重或其等价复现。
+## 模型接入与配置保存
 
-## Quick Start
+点击 **决策模型** 旁的插头图标，填写接口地址、模型 ID 和 Key。保存不调用模型；**测试调用**会发送一次小请求，**运行实验**会连续请求决策，云端费用由服务商计收。
 
-Requirements: Python 3.11+, Node.js 22.12+ (or 20.19+). The offline baseline needs no GPU, API key or model download. Dependency installation requires Internet access; the built baseline UI has no external font or CDN requests.
+通过 `embodied-jev serve` 启动时，Key 存入系统钥匙串，服务重启后会恢复已保存的连接。URL、模型 ID、配置名称等信息单独保存在仓库外：
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install -e '.[test]'
-npm ci
-npm run build
-embodied-jev serve --port 8090
-```
+| 系统 | 连接信息目录 |
+| --- | --- |
+| macOS | `~/Library/Application Support/EmbodiedJev` |
+| Windows | `%LOCALAPPDATA%/EmbodiedJev` |
+| Linux | `$XDG_CONFIG_HOME/embodied-jev`，未设置时使用 `~/.config/embodied-jev` |
 
-Open **http://127.0.0.1:8090**. Choose a task, then run, pause, single-step, stop or reset. Drag the scene to orbit. The timeline scrubs recorded physics poses; the download button exports observations, decisions and trajectories as JSON. The server is a single shared local experiment, so browser tabs control the same episode.
+系统钥匙串不可用或拒绝访问时，页面会显示“仅本次会话”；这时刷新页面仍保留配置，但重启服务后本次修改不会恢复。程序不会把 Key 改存到明文文件。密码保存后不回填，也不进入浏览器存储、场景预设、实验导出或日志。更换接口地址后，留空密码不会沿用旧地址的 Key。
 
-## Models
+也可在启动前设置环境变量，字段见 [`.env.example`](../.env.example)；程序不会自动读取 `.env`。成功恢复的已保存连接优先于同一接口类型的环境变量。单独运行 `benchmark` 时仍需环境变量，不会自动使用网页保存的连接。
 
-Click the plug icon beside **决策模型** to open **模型连接**. Choose an interface, enter its URL, model ID and API key, then save. Credentials stay in the current server process; they are not returned to the browser, saved to disk, exported or committed. Saving does not call a model. **测试调用** sends one small real model request and may incur provider charges. **运行实验** starts repeated decisions. Restarting clears connections entered through the form.
+若只想临时使用配置，可运行 `embodied-jev serve --memory-only`，或设置 `EMBODIED_JEV_PERSISTENCE=memory`。这会跳过系统存储，Key 随服务退出而清除。
 
-![Model connection](model-connection.png)
+保存、未验证、验证通过和失败会分开显示。修改配置会使上次验证失效；测试期间改了配置，旧测试结果会丢弃。连接测试和独立输入测试最多同时执行两个请求。模型错误会停止对应实验，保留失败记录。
 
-Environment variables are also supported. `.env.example` documents them; `.env` is not loaded automatically. Configure variables before starting the server. Unconfigured providers are disabled in the UI. Provider errors stop the episode; there is no automatic fallback.
+### OpenAI 兼容 API
 
-### Your OpenAI-Compatible API
+选择 **OpenAI 兼容 API**，填写平台给出的 Base URL、模型 ID 和 Key。地址通常以 `/v1` 结尾，程序补上 `/chat/completions`。支持兼容此协议的云端平台和本地服务，实际可用模型以所选服务为准。
 
-Choose **OpenAI 兼容 API**. Supply the platform's Base URL (usually ending in `/v1`), its exact model ID and your key. The adapter appends `/chat/completions`. It sends observations and candidate actions in `messages`, asks for `{"choice":"candidate_id"}`, parses JSON and rejects unknown actions. JSON mode can be disabled for providers that do not accept `response_format`; a valid JSON answer is still required.
-
-This path can use models served by OpenRouter, other compatible gateways, or a local vLLM/Ollama service, subject to each endpoint's actual protocol/model support. No live validation against those services is claimed. A key for one platform is not interchangeable with another platform's key.
-
-Chat models generate their choices; this adapter deliberately discards any self-reported probabilities and disables probability gating. They are not native Jev or the local MiniCPM candidate-logit adapter. To configure via environment instead:
+适配器把状态与候选放进 `messages`，要求返回 `{"choice":"candidate_id"}`，并检查选择是否属于当前候选。若平台不接受 `response_format`，可关闭 JSON 模式，但返回内容仍须是有效 JSON。聊天接口不提供原生候选概率，因此不使用模型自报概率，也不应用概率门槛。
 
 ```bash
 export EMBODIED_API_BASE=https://your-provider.example/v1
@@ -58,11 +50,9 @@ embodied-jev warmup
 embodied-jev serve --port 8090
 ```
 
-Then select **MiniCPM5-2B**. The first real decision downloads `openbmb/MiniCPM5-2B`, pinned to revision `12a3808a956f869c767195e9266b59c4d21d92e2`. Budget approximately 5 GB of disk for weights and additional RAM/VRAM for execution; CPU uses float32, CUDA/MPS float16. `auto` selects CUDA, then Apple MPS, then CPU. Loaded weights are reused across resets. The UI remains available while the model loads.
+选择 **MiniCPM5-2B** 后，服务会加载 `openbmb/MiniCPM5-2B`，固定权重版本为 `12a3808a956f869c767195e9266b59c4d21d92e2`。首次下载约 5 GB，运行还需额外内存。`auto` 依次尝试 CUDA、Apple MPS、CPU；MPS/CUDA 使用 FP16，CPU 使用 FP32。Apple Silicon 可设置 `EMBODIED_DEVICE=mps` 明确指定 GPU。
 
-`warmup` checks loading and performs a real two-candidate forward pass, reporting the model revision, device and latency. Its process then exits; the web server loads its own copy from the downloaded cache. On Apple Silicon, use `EMBODIED_DEVICE=mps` to require the Apple GPU instead of allowing a CPU fallback. Once the complete model is cached, `HF_HUB_OFFLINE=1` runs without model-download requests. The workbench shows loading, ready and error states next to the model selector.
-
-To record model-driven episodes, including uncertainty pauses and failures:
+`warmup` 加载模型并做一次真实的双候选决策，然后退出。网页服务会从下载缓存加载自己的模型实例；同一服务内重置实验会复用权重。页面显示加载、就绪和错误状态。缓存完整后可用 `HF_HUB_OFFLINE=1` 禁止模型下载请求。
 
 ```bash
 EMBODIED_MINICPM=1 EMBODIED_DEVICE=mps embodied-jev benchmark \
@@ -70,15 +60,13 @@ EMBODIED_MINICPM=1 EMBODIED_DEVICE=mps embodied-jev benchmark \
   --timeout 600 --output runs/benchmark-minicpm.json
 ```
 
-The command writes an aggregate report and one full episode JSON per task/seed. Reports include actual model calls, candidate probabilities, revision, device, latency and physical success. A low-probability decision ends a headless episode as `uncertain`; it does not wait indefinitely or change to the baseline. `--threshold 0` disables this gate for exploratory evaluation; candidate probabilities are not calibrated success estimates.
+评测保存汇总和每个任务/种子的完整记录，包括实际调用、权重版本、设备、延迟、概率与物理结果。低于门槛时，批量实验记为 `uncertain` 并结束该局；`--threshold 0` 可关闭门槛。
 
-The adapter uses the model's non-thinking chat template, reads next-token logits for candidate letters, then applies softmax only over those candidates. It validates the complete prompt/token boundary and limits context to 4096 tokens. It does not generate JSON, train weights, use a shared-prefix token truncation trick, or silently substitute another model.
+本地适配器使用非思考聊天模板，读取候选字母的下一 token logits，再只对这些候选做 softmax。它检查完整提示词的 token 边界，上下文上限为 4096 tokens。候选概率表示相对偏好，尚未校准为动作成功率；目前三个任务的真实推理仍未成功，见 [实测记录](VALIDATION.md)。量化权重已有 MLX/GGUF 版本，但本项目尚未接入这些后端。
 
-These probabilities are conditional on the offered candidates. The UI threshold compares the selected candidate's probability, **not physical success probability or the provider's separate confidence statistic**. This prototype has not established MiniCPM manipulation quality; see [validation](VALIDATION.md).
+### Claude 原生 Messages API
 
-### Claude Native Messages API
-
-Choose **Claude 原生 API** in the connection form. The default base is `https://api.anthropic.com/v1`; `/messages` is appended unless already present. The model defaults to `claude-fable-5-1`, but must be available to your account or gateway. Alternatively:
+选择 **Claude 原生 API**，默认地址是 `https://api.anthropic.com/v1`，程序补上 `/messages`。模型 ID 默认 `claude-fable-5-1`，需确认账号或平台已开放该模型。
 
 ```bash
 export EMBODIED_CLAUDE_BASE=https://api.anthropic.com/v1
@@ -88,9 +76,9 @@ export ANTHROPIC_API_KEY
 embodied-jev serve --port 8090
 ```
 
-Requests use `x-api-key`, `anthropic-version: 2023-06-01`, `max_tokens: 1024`, one user message with state and candidates, and a forced `select_action` tool with an enum of offered choices. No arbitrary tool code is executed: the returned choice selects an existing simulator candidate. The adapter requires exactly one complete matching tool call and validates its choice. Truncation, refusal, unknown options, malformed or multiple calls stop the episode. Input/output tokens, resolved model and latency are recorded; self-reported probabilities are not used. Credentials remain in memory and are never exported. No live Claude result is claimed without an actual configured call.
+请求使用 `x-api-key`、`anthropic-version: 2023-06-01` 和 `max_tokens: 1024`，通过 `select_action` 工具的枚举参数约束候选。返回值只能选择已有动作，不会执行模型生成的代码。截断、拒绝、未知候选、格式错误或多个工具调用都会终止该次决策；记录中保留模型名、用量与延迟。
 
-See [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages) and [model overview](https://platform.claude.com/docs/en/models/overview). Anthropic also offers an [OpenAI SDK compatibility layer](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk), but it has documented limitations, including ignored `response_format`; protocol compatibility does not make all parameters equivalent.
+参见 [Messages API](https://platform.claude.com/docs/en/api/messages) 和 [模型列表](https://platform.claude.com/docs/en/models/overview)。Anthropic 的 [OpenAI SDK 兼容层](https://platform.claude.com/docs/en/cli-sdks-libraries/libraries/openai-sdk) 有参数限制，例如忽略 `response_format`；使用中转服务时请按它实际提供的协议选择入口。
 
 ### TypeSafe Jev
 
@@ -101,51 +89,81 @@ export TYPESAFE_MODEL=jev-latest
 embodied-jev serve --port 8090
 ```
 
-Select **TypeSafe Jev**. Calls use `https://api.typesafe.ai/v1/systemone` and may incur provider charges. See the [official API](https://docs.typesafe.ai/api). No key is sent to the browser, saved in episode logs or included in this repository.
+选择 **TypeSafe Jev** 后，请求发送到 `https://api.typesafe.ai/v1/systemone`。需要获准访问的 TypeSafe Key；做对照实验时，可将 `jev-latest` 改成账号支持的固定版本。协议见 [官方 API 文档](https://docs.typesafe.ai/api)。
 
-### Existing Local Decision Endpoint
+### 结构化决策服务
 
 ```bash
 export EMBODIED_LOCAL_URL=http://127.0.0.1:8078/v1/systemone
 export EMBODIED_LOCAL_MODEL=minicpm-jev
-# Optional: EMBODIED_LOCAL_KEY
+# 需要鉴权时设置 EMBODIED_LOCAL_KEY
 embodied-jev serve --port 8090
 ```
 
-The service must accept `{model, state, questions: {action: {type: "choice", instructions, criteria}}}` and return `{model, answers: {action: {choice, probabilities}}, usage}`. Every offered action must appear exactly once in `probabilities`, values must be finite and normalized, and `choice` must be an argmax. Contract tests use a mocked HTTP service, not a claim of live provider validation.
+服务需接受 `{model, state, questions: {action: {type: "choice", instructions, criteria}}}`，返回 `{model, answers: {action: {choice, probabilities}}, usage}`。每个候选都必须有概率，数值有限且总和约为 1，所选项应具有最高概率。
 
-For OpenRouter's Jev route, choose **Jev / 结构化决策 API** in the connection dialog, use the full URL `https://openrouter.ai/api/alpha/decisions`, model `typesafe/jev-1.13` and an OpenRouter key with access to that experimental endpoint. Ordinary `/chat/completions` compatibility alone does not imply access to this decisions route. This configuration follows the [public robot-control adapter](https://github.com/openroboto-ai/jev-robot-control/blob/main/incremental_policy.py); endpoint/model access can change.
+[openroboto 的适配器](https://github.com/openroboto-ai/jev-robot-control/blob/7a4ed8b72c3c17d7aa790678ed9660df67c10dd3/incremental_policy.py) 还使用 OpenRouter 的实验性地址 `https://openrouter.ai/api/alpha/decisions`、模型 `typesafe/jev-1.13`。在行知中可通过 **Jev / 结构化决策 API** 填写这组完整地址和有访问权限的 OpenRouter Key。普通聊天接口权限不代表能访问该路由，本项目尚未实测这项服务。
 
-## What Runs
+## 一轮决策如何执行
 
-1. MuJoCo reports privileged TCP/object geometry and contact state.
-2. Geometric preconditions build a finite phase menu. A singleton menu skips inference and is recorded as a deterministic gate.
-3. Code proposes bounded target motions for the chosen phase: direct, gentle, hold.
-4. Optional scratch simulation rejects selected collision and grasp-loss conditions without modifying the live world.
-5. The provider chooses among admitted candidates. Low selected probability pauses for review; adjust the threshold and continue, or reset.
-6. Damped least-squares IK and joint actuators execute at 500 simulated Hz, with UI snapshots at approximately 25 Hz.
-7. Measured outcomes feed the next decision and are recorded for replay.
+1. MuJoCo 提供末端、物体、目标位置以及夹爪和接触状态。
+2. 代码按几何条件列出当前可行阶段。只有一个阶段时直接采用，并记录为无需模型调用。
+3. 模型选择阶段，代码生成带目标、夹爪命令和时长的候选动作。
+4. 若开启预演，在仿真副本中检查候选，排除部分碰撞和抓取丢失情况。
+5. 模型从剩余动作中选择；有原生概率的接口会检查所选项的概率门槛。
+6. 阻尼最小二乘 IK 和关节执行器完成动作，再观察实际结果。
 
-The grasp is actual bilateral finger contact with a dynamic free-joint cube. There is no object attachment, weld or teleport during execution. Success requires destination support contact, XY error below 25 mm, speed below 25 mm/s for at least 0.4 s with the gripper open, and TCP height at least 170 mm. Stack support is fixed to the table. The configured forbidden-contact monitor covers distal links/fingers against the table and barrier; it is not a complete robot collision or safety system.
+物理步长为 0.002 秒，即每仿真秒 500 步；画面约每仿真秒更新 25 次。这些频率与模型调用频率分开。输入保留紧凑几何信息和最近两次动作结果，阶段说明包含实际规划的位移和夹爪变化。完整输入、候选和执行前后状态都保存在历史中。
 
-This is a **state-based, phase-constrained manipulation prototype**, not camera perception, a VLA, unconstrained planning, LIBERO/ManiSkill integration, certified safety, or a real-robot controller. Direct/gentle motions share an endpoint and differ in duration. Task/phase structure is supplied by code and contributes substantially to task success.
+连续三次同阶段动作几乎没有移动，且接触与夹爪证据不变时，实验会以 `stalled` 停止。系统保留这个结果，不替模型选择下一步。
 
-## Validation and Development
+抓取依靠双侧手指与自由物体的实际接触。成功条件包括目标支撑接触、XY 误差小于 25 mm、速度低于 25 mm/s 并稳定至少 0.4 秒、夹爪打开，以及末端高度至少 170 mm。堆叠任务的支撑块固定在桌面上。碰撞监测目前覆盖部分末端连杆/手指与桌面、障碍的接触，尚不完整。
+
+这个实验台采用已知状态、固定末端姿态和预写动作。相机感知、自由任务规划、更多仿真环境与真机控制需要另外实现。快速推理的来源与局限见 [源码分析](FAST_INFERENCE.md)。
+
+### 修改候选动作
+
+`planning.py` 中的 `eligible_phases()` 筛选阶段，`candidates()` 生成目标坐标、夹爪指令和时长。预演再决定哪些候选可交给模型。
+
+| 修改内容 | 代码位置 |
+| --- | --- |
+| 阶段名称与中文显示 | `PHASES` 和前端阶段映射 |
+| 给模型的阶段解释 | `PHASE_GUIDANCE`，保留对应位移和夹爪信息 |
+| 目标、时长或新动作 | `candidates()`，同时检查预演、执行和接触反馈 |
+| 新阶段 | 阶段筛选、候选生成和前端映射都需更新 |
+
+“输入测试”可以编辑测试候选，但实验台的可执行动作仍由代码定义。选项可用中文；语言、顺序和候选集合变化都可能影响模型，需要记录版本并重测。`direct` 与 `gentle` 目前使用相同终点、不同执行时长。
+
+## 日志、暂停与并发
+
+每局保留最多 200 条运行事件，页面显示最近 12 条，导出包含保留的全部事件。需要文件日志时：
 
 ```bash
+embodied-jev serve --port 8090 --log-file runs/server.jsonl
+```
+
+JSONL 日志在 2 MB 时轮转，保留三份备份。日志只记录约定字段，不记录请求正文、Key 或原始服务商错误。轮询访问日志已关闭；页面空闲或隐藏时会降低轮询频率。
+
+控制请求携带实验 ID。旧标签页控制已被重置的实验会收到 HTTP 409；重复开始不会覆盖正在执行的单步。停止或重置后，即使旧模型请求才返回，也不会执行其动作。HTTP 请求本身可能仍要等到返回或超时。对比实验也有独立 ID 和相同的过期请求检查。
+
+## 扩展与开发
+
+**扩展**页可管理具名模型配置、场景预设和独立输入测试。预设也可用于 `benchmark --preset file.json`，详细用法见 [扩展指南](EXTENDING.md)。补充上下文与仿真观测分开保存，不替换位置、接触或成功条件。
+
+相关接口包括 `GET/POST /api/model-profiles`、`POST /api/presets/validate` 和 `POST /api/decision/probe`。实验通过 `profile_id` 选择连接，provider 必须匹配。每局使用创建时的连接副本；之后修改配置不会改变已运行实验的地址和 Key。
+
+```bash
+python -m pip install -e '.[test]'
 pytest -q
 embodied-jev benchmark --output runs/benchmark.json
-# UI tests start an isolated server on port 8099 (build first):
+# UI 测试使用独立的 8099 端口，先构建前端
+npm run build
 npx playwright install chromium
 npm run test:ui
-# Hot reload, with a backend already on 8090:
+# 后端已运行在 8090 时，启动前端热更新
 npm run dev
 ```
 
-The included [baseline results](benchmark-baseline.json) cover 3 tasks × seeds 0/1/2: 9/9 successes, eight actions each, zero monitored forbidden-contact steps. These are deterministic baseline smoke tests over small position perturbations, **not Jev/MiniCPM accuracy, a broad success-rate estimate, or a comparison against upstream results**.
+源码位于 `src/embodied_jev/` 和 `frontend/`，测试位于 `tests/` 和 `tests-ui/`。`npm run build` 将网页资源打包进 Python 包，构建 wheel 前也需执行。测试结果和已知失败见 [验证记录](VALIDATION.md)。
 
-The UI test covers desktop/mobile layout, nonblank canvas, motion, camera orbit, pause/resume, single step, replay, export and task reset. Tests and source live in `tests/`, `tests-ui/`, `src/embodied_jev/` and `frontend/`. `npm run build` bundles web assets into the Python package. Build the frontend before building a wheel.
-
-## References and License
-
-See [reference mapping](REFERENCES.md) for the specific ideas adopted and their limits. Original project code is MIT. Vendored Panda robot description/meshes retain their Apache-2.0 license and upstream provenance in [third-party notices](../THIRD_PARTY_NOTICES.md). Model weights are not redistributed; their own licenses apply. See [contributing](../CONTRIBUTING.md) for development and publication checks.
+参考来源见 [参考映射](REFERENCES.md)。原创代码采用 MIT；Panda 模型与网格保留 Apache-2.0 许可，详见 [第三方声明](../THIRD_PARTY_NOTICES.md)。模型权重单独下载，适用各自许可。

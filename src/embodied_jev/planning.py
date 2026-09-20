@@ -13,16 +13,16 @@ PHASES = {
 }
 
 PHASE_GUIDANCE = {
-    "approach": "Move above the object with the gripper open. Useful when TCP is not horizontally aligned with the object. If already aligned above it, repeating this does not descend or grasp.",
-    "descend": "Lower the OPEN gripper from above the object to its height. Useful when TCP is horizontally aligned with the object but still above it. This positions the fingers for grasping; it is not releasing an object.",
-    "grasp": "Close the fingers around the object after the open gripper reaches its height. Useful when TCP and object are aligned in XY and Z.",
-    "lift": "Raise a held object to travel height. Useful when grasp contacts exist and the object is too low for transport. Repeating at travel height does not move toward the destination.",
-    "carry": "Move the HELD object horizontally to the destination at travel height. Useful after lifting and before lowering. If already above the destination, carrying again does not place it.",
-    "lower": "Lower the held object onto the destination support. Useful when object XY matches destination but object Z is still higher. This keeps the fingers closed.",
-    "release": "Open the fingers after the object reaches destination height and support. Needed before withdrawing. Do not repeatedly lower an object that is already supported at the destination.",
-    "withdraw": "Raise the empty, OPEN gripper away from the placed object so completion can be verified.",
-    "recover": "Open the fingers after a failed grasp with no held object, allowing another approach/descend attempt.",
-    "finish": "Finish only after the measured physical success condition is true.",
+    "approach": "Move the open gripper to 0.14 m above the object, aligned in XY.",
+    "descend": "Move the open gripper down to the object's height, ready to grasp it.",
+    "grasp": "Close the fingers around the object at the current position.",
+    "lift": "Raise the held object to the travel height, keeping the same XY position.",
+    "carry": "Move the held object above the destination at travel height.",
+    "lower": "Lower the held object onto the destination, keeping the fingers closed.",
+    "release": "Open the fingers to release the object onto its destination support.",
+    "withdraw": "Raise the empty open gripper away from the placed object.",
+    "recover": "Open the empty fingers after an unsuccessful grasp.",
+    "finish": "Finish the task after physical success has been verified.",
 }
 
 
@@ -54,6 +54,22 @@ def baseline_phase(world):
     if "release" in eligible and abs(world.cube[2] - world.target[2]) < .012:
         return "release"
     return eligible[0]
+
+
+def phase_options(world, phases):
+    """Describe planned effects without recommending or dropping any offered phase."""
+    options = {}
+    for phase in phases:
+        option = candidates(world, phase, preview=False)[0]
+        delta = np.asarray(option.target) - world.position
+        moves = []
+        for axis, value in zip(("X", "Y", "Z"), delta):
+            if abs(value) >= .002:
+                moves.append(f"{axis} {value:+.3f} m")
+        motion = ", ".join(moves) if moves else "no TCP displacement"
+        fingers = option.gripper or "unchanged"
+        options[phase] = f"{PHASE_GUIDANCE[phase]} Planned change: {motion}; fingers {fingers}."
+    return options
 
 
 @dataclass

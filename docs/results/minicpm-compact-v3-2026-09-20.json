@@ -1,0 +1,1038 @@
+{
+  "policy_version": "compact-evidence-v3",
+  "model_runtime": {
+    "status": "ready",
+    "device": "mps",
+    "dtype": "torch.float16",
+    "error": null,
+    "model": "openbmb/MiniCPM5-2B",
+    "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+    "readout": "candidate_token_softmax"
+  },
+  "warmup": {
+    "choice": "ready",
+    "probabilities": {
+      "ready": 0.997285008430481,
+      "hold": 0.0027149850502610207
+    },
+    "latency_ms": 24778.233582997927,
+    "provider": "minicpm",
+    "model": "openbmb/MiniCPM5-2B",
+    "model_call": true,
+    "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+    "device": "mps",
+    "readout": "candidate_token_softmax",
+    "selected_probability": 0.997285008430481,
+    "provider_confidence": null
+  },
+  "probes": [
+    {
+      "step": 1,
+      "reference_phase": "descend",
+      "order": [
+        "descend",
+        "approach"
+      ],
+      "decision": {
+        "choice": "approach",
+        "probabilities": {
+          "descend": 0.060975175350904465,
+          "approach": 0.939024806022644
+        },
+        "latency_ms": 1180.1128329825588,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.939024806022644,
+        "provider_confidence": null
+      },
+      "input_tokens": 392,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.43624,
+              -0.18014,
+              0.16063
+            ],
+            "object": [
+              0.43685,
+              -0.18151,
+              0.01988
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "open",
+            "object_held": false,
+            "finger_contacts": [],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0015,
+              "tcp_above_object_m": 0.1408,
+              "object_destination_xy_distance_m": 0.3616,
+              "object_above_destination_m": -0.0061,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": false,
+              "object_aligned_with_destination_xy": false,
+              "object_at_destination_height": true
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "approach",
+              "option": "direct",
+              "tcp_displacement_m": 0.1293,
+              "object_displacement_m": 0.0,
+              "object_held_after": false,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "descend": "Move the open gripper down to the object's height, ready to grasp it.",
+            "approach": "Move the open gripper to 0.14 m above the object, aligned in XY."
+          }
+        }
+      }
+    },
+    {
+      "step": 1,
+      "reference_phase": "descend",
+      "order": [
+        "approach",
+        "descend"
+      ],
+      "decision": {
+        "choice": "approach",
+        "probabilities": {
+          "approach": 0.5428633093833923,
+          "descend": 0.45713669061660767
+        },
+        "latency_ms": 1080.306334013585,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.5428633093833923,
+        "provider_confidence": null
+      },
+      "input_tokens": 392,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.43624,
+              -0.18014,
+              0.16063
+            ],
+            "object": [
+              0.43685,
+              -0.18151,
+              0.01988
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "open",
+            "object_held": false,
+            "finger_contacts": [],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0015,
+              "tcp_above_object_m": 0.1408,
+              "object_destination_xy_distance_m": 0.3616,
+              "object_above_destination_m": -0.0061,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": false,
+              "object_aligned_with_destination_xy": false,
+              "object_at_destination_height": true
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "approach",
+              "option": "direct",
+              "tcp_displacement_m": 0.1293,
+              "object_displacement_m": 0.0,
+              "object_held_after": false,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "approach": "Move the open gripper to 0.14 m above the object, aligned in XY.",
+            "descend": "Move the open gripper down to the object's height, ready to grasp it."
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "reference_phase": "grasp",
+      "order": [
+        "grasp",
+        "approach"
+      ],
+      "decision": {
+        "choice": "approach",
+        "probabilities": {
+          "grasp": 0.103748619556427,
+          "approach": 0.896251380443573
+        },
+        "latency_ms": 1154.8834169807378,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.896251380443573,
+        "provider_confidence": null
+      },
+      "input_tokens": 427,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.43695,
+              -0.18136,
+              0.02235
+            ],
+            "object": [
+              0.43685,
+              -0.18151,
+              0.01988
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "open",
+            "object_held": false,
+            "finger_contacts": [],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0002,
+              "tcp_above_object_m": 0.0025,
+              "object_destination_xy_distance_m": 0.3616,
+              "object_above_destination_m": -0.0061,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": false,
+              "object_at_destination_height": true
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "approach",
+              "option": "direct",
+              "tcp_displacement_m": 0.1293,
+              "object_displacement_m": 0.0,
+              "object_held_after": false,
+              "success_after": false
+            },
+            {
+              "phase": "descend",
+              "option": "direct",
+              "tcp_displacement_m": 0.1383,
+              "object_displacement_m": 0.0,
+              "object_held_after": false,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "grasp": "Close the fingers around the object at the current position.",
+            "approach": "Move the open gripper to 0.14 m above the object, aligned in XY."
+          }
+        }
+      }
+    },
+    {
+      "step": 2,
+      "reference_phase": "grasp",
+      "order": [
+        "approach",
+        "grasp"
+      ],
+      "decision": {
+        "choice": "approach",
+        "probabilities": {
+          "approach": 0.7520126104354858,
+          "grasp": 0.24798740446567535
+        },
+        "latency_ms": 1068.1066660035867,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.7520126104354858,
+        "provider_confidence": null
+      },
+      "input_tokens": 427,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.43695,
+              -0.18136,
+              0.02235
+            ],
+            "object": [
+              0.43685,
+              -0.18151,
+              0.01988
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "open",
+            "object_held": false,
+            "finger_contacts": [],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0002,
+              "tcp_above_object_m": 0.0025,
+              "object_destination_xy_distance_m": 0.3616,
+              "object_above_destination_m": -0.0061,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": false,
+              "object_at_destination_height": true
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "approach",
+              "option": "direct",
+              "tcp_displacement_m": 0.1293,
+              "object_displacement_m": 0.0,
+              "object_held_after": false,
+              "success_after": false
+            },
+            {
+              "phase": "descend",
+              "option": "direct",
+              "tcp_displacement_m": 0.1383,
+              "object_displacement_m": 0.0,
+              "object_held_after": false,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "approach": "Move the open gripper to 0.14 m above the object, aligned in XY.",
+            "grasp": "Close the fingers around the object at the current position."
+          }
+        }
+      }
+    },
+    {
+      "step": 4,
+      "reference_phase": "carry",
+      "order": [
+        "carry",
+        "lift"
+      ],
+      "decision": {
+        "choice": "carry",
+        "probabilities": {
+          "carry": 0.5078118443489075,
+          "lift": 0.49218809604644775
+        },
+        "latency_ms": 1262.921000015922,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.5078118443489075,
+        "provider_confidence": null
+      },
+      "input_tokens": 428,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.43688,
+              -0.18127,
+              0.21969
+            ],
+            "object": [
+              0.4378,
+              -0.18127,
+              0.21758
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "closed",
+            "object_held": true,
+            "finger_contacts": [
+              "left",
+              "right"
+            ],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0009,
+              "tcp_above_object_m": 0.0021,
+              "object_destination_xy_distance_m": 0.3614,
+              "object_above_destination_m": 0.1916,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": false,
+              "object_at_destination_height": false
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "grasp",
+              "option": "direct",
+              "tcp_displacement_m": 0.0001,
+              "object_displacement_m": 0.0005,
+              "object_held_after": true,
+              "success_after": false
+            },
+            {
+              "phase": "lift",
+              "option": "direct",
+              "tcp_displacement_m": 0.1974,
+              "object_displacement_m": 0.1972,
+              "object_held_after": true,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "carry": "Move the held object above the destination at travel height.",
+            "lift": "Raise the held object to the travel height, keeping the same XY position."
+          }
+        }
+      }
+    },
+    {
+      "step": 4,
+      "reference_phase": "carry",
+      "order": [
+        "lift",
+        "carry"
+      ],
+      "decision": {
+        "choice": "lift",
+        "probabilities": {
+          "lift": 0.9230391979217529,
+          "carry": 0.07696082442998886
+        },
+        "latency_ms": 1076.8805829866324,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.9230391979217529,
+        "provider_confidence": null
+      },
+      "input_tokens": 428,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.43688,
+              -0.18127,
+              0.21969
+            ],
+            "object": [
+              0.4378,
+              -0.18127,
+              0.21758
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "closed",
+            "object_held": true,
+            "finger_contacts": [
+              "left",
+              "right"
+            ],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0009,
+              "tcp_above_object_m": 0.0021,
+              "object_destination_xy_distance_m": 0.3614,
+              "object_above_destination_m": 0.1916,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": false,
+              "object_at_destination_height": false
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "grasp",
+              "option": "direct",
+              "tcp_displacement_m": 0.0001,
+              "object_displacement_m": 0.0005,
+              "object_held_after": true,
+              "success_after": false
+            },
+            {
+              "phase": "lift",
+              "option": "direct",
+              "tcp_displacement_m": 0.1974,
+              "object_displacement_m": 0.1972,
+              "object_held_after": true,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "lift": "Raise the held object to the travel height, keeping the same XY position.",
+            "carry": "Move the held object above the destination at travel height."
+          }
+        }
+      }
+    },
+    {
+      "step": 5,
+      "reference_phase": "lower",
+      "order": [
+        "lower",
+        "carry"
+      ],
+      "decision": {
+        "choice": "carry",
+        "probabilities": {
+          "lower": 0.09947021305561066,
+          "carry": 0.9005298018455505
+        },
+        "latency_ms": 1255.3004159999546,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.9005298018455505,
+        "provider_confidence": null
+      },
+      "input_tokens": 424,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.4291,
+              0.17987,
+              0.21993
+            ],
+            "object": [
+              0.43259,
+              0.17988,
+              0.21593
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "closed",
+            "object_held": true,
+            "finger_contacts": [
+              "left",
+              "right"
+            ],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0035,
+              "tcp_above_object_m": 0.004,
+              "object_destination_xy_distance_m": 0.0026,
+              "object_above_destination_m": 0.1899,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": true,
+              "object_at_destination_height": false
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "lift",
+              "option": "direct",
+              "tcp_displacement_m": 0.1974,
+              "object_displacement_m": 0.1972,
+              "object_held_after": true,
+              "success_after": false
+            },
+            {
+              "phase": "carry",
+              "option": "direct",
+              "tcp_displacement_m": 0.3612,
+              "object_displacement_m": 0.3612,
+              "object_held_after": true,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "lower": "Lower the held object onto the destination, keeping the fingers closed.",
+            "carry": "Move the held object above the destination at travel height."
+          }
+        }
+      }
+    },
+    {
+      "step": 5,
+      "reference_phase": "lower",
+      "order": [
+        "carry",
+        "lower"
+      ],
+      "decision": {
+        "choice": "lower",
+        "probabilities": {
+          "carry": 0.4455294907093048,
+          "lower": 0.5544704794883728
+        },
+        "latency_ms": 1135.5143330001738,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.5544704794883728,
+        "provider_confidence": null
+      },
+      "input_tokens": 424,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.4291,
+              0.17987,
+              0.21993
+            ],
+            "object": [
+              0.43259,
+              0.17988,
+              0.21593
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "closed",
+            "object_held": true,
+            "finger_contacts": [
+              "left",
+              "right"
+            ],
+            "destination_support_contact": false,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.0035,
+              "tcp_above_object_m": 0.004,
+              "object_destination_xy_distance_m": 0.0026,
+              "object_above_destination_m": 0.1899,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": true,
+              "object_at_destination_height": false
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "lift",
+              "option": "direct",
+              "tcp_displacement_m": 0.1974,
+              "object_displacement_m": 0.1972,
+              "object_held_after": true,
+              "success_after": false
+            },
+            {
+              "phase": "carry",
+              "option": "direct",
+              "tcp_displacement_m": 0.3612,
+              "object_displacement_m": 0.3612,
+              "object_held_after": true,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "carry": "Move the held object above the destination at travel height.",
+            "lower": "Lower the held object onto the destination, keeping the fingers closed."
+          }
+        }
+      }
+    },
+    {
+      "step": 6,
+      "reference_phase": "release",
+      "order": [
+        "lower",
+        "release"
+      ],
+      "decision": {
+        "choice": "release",
+        "probabilities": {
+          "lower": 0.03676946088671684,
+          "release": 0.963230550289154
+        },
+        "latency_ms": 1188.324749993626,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.963230550289154,
+        "provider_confidence": null
+      },
+      "input_tokens": 425,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.42647,
+              0.18001,
+              0.03226
+            ],
+            "object": [
+              0.43044,
+              0.18001,
+              0.02668
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "closed",
+            "object_held": true,
+            "finger_contacts": [
+              "left",
+              "right"
+            ],
+            "destination_support_contact": true,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.004,
+              "tcp_above_object_m": 0.0056,
+              "object_destination_xy_distance_m": 0.0004,
+              "object_above_destination_m": 0.0007,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": true,
+              "object_at_destination_height": true
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "carry",
+              "option": "direct",
+              "tcp_displacement_m": 0.3612,
+              "object_displacement_m": 0.3612,
+              "object_held_after": true,
+              "success_after": false
+            },
+            {
+              "phase": "lower",
+              "option": "direct",
+              "tcp_displacement_m": 0.1877,
+              "object_displacement_m": 0.1893,
+              "object_held_after": true,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "lower": "Lower the held object onto the destination, keeping the fingers closed.",
+            "release": "Open the fingers to release the object onto its destination support."
+          }
+        }
+      }
+    },
+    {
+      "step": 6,
+      "reference_phase": "release",
+      "order": [
+        "release",
+        "lower"
+      ],
+      "decision": {
+        "choice": "release",
+        "probabilities": {
+          "release": 0.9814534187316895,
+          "lower": 0.018546562641859055
+        },
+        "latency_ms": 1089.9229579954408,
+        "provider": "minicpm",
+        "model": "openbmb/MiniCPM5-2B",
+        "model_call": true,
+        "revision": "12a3808a956f869c767195e9266b59c4d21d92e2",
+        "device": "mps",
+        "readout": "candidate_token_softmax",
+        "selected_probability": 0.9814534187316895,
+        "provider_confidence": null
+      },
+      "input_tokens": 425,
+      "input": {
+        "state": {
+          "observation": {
+            "goal": "把红色方块放进蓝色托盘，松开夹爪并向上撤离。",
+            "units": "metres",
+            "tcp": [
+              0.42647,
+              0.18001,
+              0.03226
+            ],
+            "object": [
+              0.43044,
+              0.18001,
+              0.02668
+            ],
+            "destination": [
+              0.43,
+              0.18,
+              0.026
+            ],
+            "gripper": "closed",
+            "object_held": true,
+            "finger_contacts": [
+              "left",
+              "right"
+            ],
+            "destination_support_contact": true,
+            "geometry": {
+              "tcp_object_xy_distance_m": 0.004,
+              "tcp_above_object_m": 0.0056,
+              "object_destination_xy_distance_m": 0.0004,
+              "object_above_destination_m": 0.0007,
+              "travel_tcp_height_m": 0.22
+            },
+            "relations": {
+              "tcp_aligned_with_object_xy": true,
+              "tcp_at_object_height": true,
+              "object_aligned_with_destination_xy": true,
+              "object_at_destination_height": true
+            },
+            "forbidden_contact": false,
+            "success": false
+          },
+          "recent_outcomes": [
+            {
+              "phase": "carry",
+              "option": "direct",
+              "tcp_displacement_m": 0.3612,
+              "object_displacement_m": 0.3612,
+              "object_held_after": true,
+              "success_after": false
+            },
+            {
+              "phase": "lower",
+              "option": "direct",
+              "tcp_displacement_m": 0.1877,
+              "object_displacement_m": 0.1893,
+              "object_held_after": true,
+              "success_after": false
+            }
+          ]
+        },
+        "decision": {
+          "type": "choice",
+          "instructions": "Choose the next phase that makes progress toward the goal, given the measured geometry and contacts. Avoid repeating a motion that has already reached its target.",
+          "criteria": {
+            "release": "Open the fingers to release the object onto its destination support.",
+            "lower": "Lower the held object onto the destination, keeping the fingers closed."
+          }
+        }
+      }
+    }
+  ],
+  "note": "States generated by the rule baseline; probes are model choices on fixed states, not successful model-controlled episodes.",
+  "episodes": [
+    {
+      "task": "transfer",
+      "seed": 0,
+      "status": "stalled",
+      "success": false,
+      "model_calls": 7,
+      "input_tokens": 3748,
+      "model_latency_ms": [
+        1838.2851669739466,
+        1009.8067499930039,
+        1579.893832997186,
+        1182.3186249821447,
+        1739.6360420098063,
+        1177.9932079953142,
+        1714.1967920179013
+      ],
+      "wall_seconds": 10.62,
+      "policy_version": "compact-evidence-v3",
+      "cycles": 4,
+      "max_lift_m": 0.0,
+      "forbidden_contact_steps": 0,
+      "episode_file": "minicpm-compact-v3-transfer-seed0.json.gz"
+    },
+    {
+      "task": "stack",
+      "seed": 0,
+      "status": "stalled",
+      "success": false,
+      "model_calls": 7,
+      "input_tokens": 3762,
+      "model_latency_ms": [
+        2452.980916015804,
+        2153.0648750194814,
+        1843.3941670227796,
+        1008.5425419965759,
+        1423.3660830068402,
+        1660.5500000005122,
+        1403.7103749869857
+      ],
+      "wall_seconds": 12.46,
+      "policy_version": "compact-evidence-v3",
+      "cycles": 4,
+      "max_lift_m": 0.0,
+      "forbidden_contact_steps": 0,
+      "episode_file": "minicpm-compact-v3-stack-seed0.json.gz"
+    },
+    {
+      "task": "barrier",
+      "seed": 0,
+      "status": "stalled",
+      "success": false,
+      "model_calls": 7,
+      "input_tokens": 3769,
+      "model_latency_ms": [
+        1595.6836660043336,
+        976.1313339986373,
+        1333.7801250163466,
+        1047.749165998539,
+        1384.4618749863002,
+        927.286833000835,
+        1379.893000004813
+      ],
+      "wall_seconds": 8.96,
+      "policy_version": "compact-evidence-v3",
+      "cycles": 4,
+      "max_lift_m": 0.0,
+      "forbidden_contact_steps": 0,
+      "episode_file": "minicpm-compact-v3-barrier-seed0.json.gz"
+    }
+  ],
+  "elapsed_seconds": 70.4263648330234,
+  "recorded_date": "2026-09-20",
+  "hardware": "Apple M2, 16 GB unified memory",
+  "code_context": "Development diagnostic before the comparison UI release; policy_version and exact model inputs are recorded. Not a controlled speed benchmark."
+}

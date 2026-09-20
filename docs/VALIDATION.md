@@ -1,45 +1,66 @@
-# Validation Scope
+# 验证记录
 
-## Deterministic Physics Baseline
+## 规则基线与功能测试
 
-Recorded on 2026-09-20, macOS arm64, Python 3.11.15, MuJoCo 3.13.0. Reproduce with:
+记录于 2026-09-20，环境为 macOS arm64、Python 3.11.15、MuJoCo 3.13.0。复现命令：
 
 ```bash
 embodied-jev benchmark --seeds 0 1 2 --tasks transfer stack barrier --output runs/benchmark.json
 ```
 
-`benchmark-baseline.json` records all nine episodes, including failures if any. This run: 9/9 passed, eight executed actions per episode, zero monitored forbidden-contact steps. Seeds perturb the source position by at most 25 mm per horizontal axis. Cross-platform floating-point behavior may differ.
+[基线报告](benchmark-baseline.json)包含九局完整结果：**9/9 成功，每局执行 8 个动作，监测到的禁止接触步数为 0**。种子让物体起点在每个水平轴上最多扰动 25 mm，跨平台浮点行为可能略有差异。规则基线不调用模型，也不输出模型概率。
 
-Tests also check preview isolation, out-of-bounds target rejection, grasp/support evidence, JSON exports, pose replay, provider contract validation and cancellation during delayed inference. The UI suite captures desktop/mobile screenshots, checks canvas pixels and scene movement, and exercises controls.
+本轮界面、模型对比、扩展和配置保存功能完成后，本地 **254 项 Python 测试通过**，上述九局基线重跑结果相同。测试覆盖预演隔离、越界目标、抓取与支撑证据、导出、姿态回放、延迟推理中的取消，以及 API 的认证失败、限流、超时和格式错误。API 测试使用模拟响应，失败请求也计入调用次数和延迟。
 
-## Models
+对比功能测试包含真实规则基线的依次/并行运行、过期 ID、最多两路并发、停止和历史决策对齐。本机 Chrome 的 **16 项 UI 测试全部通过**，覆盖桌面/手机布局、场景运动、控制操作、配置刷新保留与模块加载失败后的恢复。
 
-The baseline makes zero model calls and emits no model probabilities. TypeSafe, Claude native, chat and local HTTP adapters are checked with mocked responses. No live TypeSafe or Claude call has been validated without credentials. MiniCPM5-2B **has been run with the full real weights** on an Apple M2 with 16 GB unified memory, using MPS and FP16 (Torch 2.6.0 / Transformers 4.57.6). Its measured task failures are recorded below.
+[自定义场景示例](../examples/transfer-preset.json)改变了起点和目标位置，也完成了一次 8 动作基线实验，禁止接触为 0。场景测试检查托盘围边平移、障碍高度、固定/随机起点、哈希稳定性和副本隔离；三类默认场景在 seeds 0/1/2/7 下的 XML 与修改前逐字一致。模型配置与输入测试使用合成 Key，覆盖接口隔离、密钥轮换、错误/导出脱敏，以及实验输入中的凭据拦截。
 
-### MiniCPM5-2B real inference: current limitations
+其中 18 项配置存储测试使用模拟钥匙串，检查重启恢复、保存失败回滚、多个服务交错保存和读取期间的密钥轮换。测试不访问真实凭据；本机仅确认 macOS 钥匙串后端可识别，实际保存仍取决于系统授权。
 
-The pinned revision is `12a3808a956f869c767195e9266b59c4d21d92e2`. The 5,033,557,096-byte safetensors file was verified against SHA256 `14fb8e7f0a18d53d1f239773758bf581cee7e456a4523a54622c3a245b64402c`. No rule fallback was used.
+## MiniCPM5-2B 真实推理
 
-| Development run | Tasks / seed | Threshold | Result | Calls / executed actions per episode |
+MiniCPM 已在 **Apple M2 / 16 GB** 上使用完整权重运行，后端为 MPS + FP16，Torch 2.6.0、Transformers 4.57.6。固定权重修订为 `12a3808a956f869c767195e9266b59c4d21d92e2`；5,033,557,096 字节的 safetensors 文件校验值为 SHA256 `14fb8e7f0a18d53d1f239773758bf581cee7e456a4523a54622c3a245b64402c`。以下运行没有切换到规则基线。
+
+| 开发版本 | 任务 / 种子 | 门槛 | 结果 | 每局调用数 / 执行动作数 |
 | --- | --- | --- | --- | --- |
-| Initial full-state prompt | transfer, stack, barrier / 0 | 0.55 | 0/3; all stopped as `uncertain` before moving | 1 / 0 |
-| Initial full-state prompt | transfer, stack, barrier / 0 | 0 | 0/3; repeated approach until budget exhausted | 59 / 30 |
-| `phase-conditions-v2` | transfer / 0 | 0 | 0/1; still repeated approach | 59 / 30 |
+| 初始完整状态提示 | transfer、stack、barrier / 0 | 0.55 | 0/3；均在移动前进入 `uncertain` | 1 / 0 |
+| 初始完整状态提示 | transfer、stack、barrier / 0 | 0 | 0/3；反复接近，预算耗尽 | 59 / 30 |
+| `phase-conditions-v2` | transfer / 0 | 0 | 0/1；仍反复接近 | 59 / 30 |
+| `compact-evidence-v3` | transfer、stack、barrier / 0 | 0 | 0/3；原地重复后以 `stalled` 停止 | 7 / 4 |
+| `compact-effects-v4` | transfer、stack、barrier / 0 | 0 | 0/3；transfer/stack 停滞，barrier 用完 12 动作预算 | 7 / 4、7 / 4、23 / 12 |
 
-Loading plus one warmup decision took 18.75–29.35 seconds across these processes. With threshold 0, initial full-state episodes took 132.18, 142.77 and 154.61 seconds; the v2 transfer episode took 202.64 seconds. Individual decisions across these threshold-0 runs took approximately 1.13–5.57 seconds, including variable background load. These are developer-machine measurements, not a controlled speed comparison.
+初始实验各进程的加载与一次预热共 **18.75–29.35 秒**。门槛为 0 的三个完整状态实验分别耗时 132.18、142.77、154.61 秒，v2 的 transfer 为 202.64 秒；这些实验的单次决策约 1.13–5.57 秒。后台负载有变化，属于开发机记录，尚不是受控速度对比。
 
-All runs had zero measured lift and zero monitored forbidden contacts. Avoiding contact while failing to progress is **not** successful manipulation. MPS current tensor allocation was about 5.03 GB; reported driver allocation was 5.63–6.54 GB. RSS and MPS counters overlap on unified memory and must not be added as total RAM.
+各局实测抬升均为 0，禁止接触也为 0：机械臂没有碰撞，但没有完成抓取。MPS 当前张量分配约 5.03 GB，驱动分配约 5.63–6.54 GB；统一内存下 RSS 与 MPS 统计重叠，不能相加作为总内存。
 
-The [machine-readable report](results/minicpm-fp16-2026-09-20.json) includes all episode results, latency samples, warmups and memory counters, with links to compressed full episode JSON files alongside it. Initial runs predated prompt-version recording, so their exact code commit was not recorded; they are diagnostic evidence, not fully controlled benchmark submissions. The current CLI records `policy_version` for subsequent runs.
+[原始汇总](results/minicpm-fp16-2026-09-20.json)保留各局结果、延迟、预热、内存统计和完整轨迹压缩文件路径。初始运行尚未记录提示版本和准确代码提交，适合诊断，无法视为严格冻结的基准。之后的 CLI 已记录 `policy_version`。
 
-A short follow-up probe showed that simpler wording could change the post-approach choice from approach to descend. That one-state probe has not established full-task success. Work remains on the evidence representation and decision prompt; MiniCPM is integrated, but is not yet a reliable controller for these three tasks.
+### 紧凑输入实验
 
-The short phase menus, fixed orientation, supplied destination and prewritten motion primitives simplify planning significantly. Passing this baseline does not demonstrate general robot intelligence or sim-to-real transfer. Probability gating has not been calibrated on manipulation episodes. Disabling previews disables candidate rollout checks but keeps workspace checks and the live contact stop.
+v3 将重复完整历史改为几何事实和最近两次动作结果；v4 进一步加入各阶段实际规划的 XYZ 位移和夹爪命令，保留原有候选阶段。
 
-Additional local verification includes connection-key redaction, no network call on saving credentials, mocked provider requests, headless uncertainty/timeout handling, and sparse vocabulary projection against full logits on a tiny randomly initialized Llama. This checks the calculation, not MiniCPM model quality. The pinned real MiniCPM5-2B tokenizer passed complete-prefix checks for empty history, nested empty lists and numeric object coordinates: A/B/C mapped to token IDs 54/55/56 in all three cases. Reproduce with `python scripts/check_minicpm_tokenizer.py` after installing `.[minicpm]`; tokenizer files require a small download, weights are not loaded.
+三个任务按 transfer、stack、barrier 排序，v3 用时为 **10.62 / 12.46 / 8.96 秒**，v4 为 **13.12 / 15.50 / 54.12 秒**。v4 冷加载和就绪检查共 25.49 秒，单次闭环调用约 1.11–4.12 秒。动作和后台负载不同，而且部分实验因停滞提前结束，这些用时不能直接换算为加速比。
 
-The initial GitHub browser run timed out while checking camera pixel changes. After switching the workbench to render on scene, camera and pose changes, reducing the shadow-map size and allowing 15 seconds for visual assertions, [CI run 35488205230](https://github.com/FBddcz/embodied-jev/actions/runs/35488205230) passed. The pixel-change assertions remain enabled. This establishes the passing result, not a proven single root cause for the earlier failure.
+六局紧凑输入实验仍未抬起物体，禁止接触为 0。每个版本还在规则基线生成的物理状态上做了 10 次诊断选择，并测试候选反序；部分选择随顺序改变。目前 MiniCPM 已接通，但还不能可靠控制这三个任务。
 
-## Replay
+[v3 报告](results/minicpm-compact-v3-2026-09-20.json)和 [v4 报告](results/minicpm-compact-v4-2026-09-20.json)包含准确输入、延迟和六局完整记录路径。运行时开发代码尚未提交，具体配置以报告中的提示版本、输入和权重修订为准，尤其以 v3 报告实际记录的 `policy_version` 为准。复测当前实现：
 
-The timeline re-renders recorded joint/object configurations. It is geometric replay of an episode, not re-execution from saved solver state and not an independent dynamics verification. The export contains observations and decisions for analysis; it does not contain weights, credentials or raw camera frames.
+```bash
+EMBODIED_MINICPM=1 EMBODIED_DEVICE=mps python scripts/probe_minicpm.py \
+  --max-cycles 12 --timeout 120 --output runs/minicpm-probes.json
+```
+
+## API、概率与评测范围
+
+TypeSafe Jev、Claude、聊天和结构化 HTTP 适配器目前通过模拟响应测试，尚无真实 GPT、Claude 或 Jev 排名。模型对比页面已测试两路/三路规则基线和模拟模型响应；同步回放按仿真时间对齐，不能用于判断 API 延迟。
+
+固定姿态、已知目标、短阶段菜单和预写动作大幅简化了规划。这里测的是受约束系统中的选择能力，结果不能推广到任意机器人任务或真机。候选概率尚未经过操作任务校准；关闭预演也仍保留工作空间检查和执行中的接触停止。
+
+额外检查包括保存配置不发网络请求、Key 脱敏、无界面运行的 `uncertain`/超时处理，以及在随机初始化小 Llama 上比较稀疏词表投影与完整 logits。最后一项只验证计算方式。固定版本的真实 MiniCPM tokenizer 已检查空历史、嵌套空列表和数值坐标三种输入，A/B/C 均映射到 token IDs 54/55/56。可运行 `python scripts/check_minicpm_tokenizer.py` 复现；需安装 `.[minicpm]`，只下载 tokenizer，不加载权重。
+
+此前 GitHub UI 测试曾在相机像素变化检查中超时。将渲染改为按场景/相机/姿态变化触发、减小阴影贴图并把视觉断言等待延长到 15 秒后，[CI 35488205230](https://github.com/FBddcz/embodied-jev/actions/runs/35488205230)通过，像素变化断言仍保留。该记录证明修订后的测试通过，不能据此确定此前超时的唯一原因。
+
+## 回放
+
+时间轴重新显示记录的关节和物体姿态，不重新运行原始求解器，因此不构成独立的动力学验证。导出包含状态、决策和轨迹，不包含模型权重、凭据或原始相机帧。
