@@ -54,6 +54,9 @@ export async function createComparison(container, { api, toast }) {
     snapshot = { id: null, status: "empty", lanes: [] };
   let active = false,
     busy = false,
+    initialized = false,
+    sceneLoading = false,
+    loadedSceneId,
     refreshing = false,
     timer,
     pendingRefresh = Promise.resolve();
@@ -82,7 +85,7 @@ export async function createComparison(container, { api, toast }) {
       <label class="comparison-checkbox"><input id="cmp-preview" type="checkbox" checked> 动作预演</label>
     </div><p>门槛仅用于返回原生候选概率的接口。任务、起点、预算一致，模型仍可能走出不同轨迹。</p></details>
     <p id="cmp-preset-label" class="comparison-hint" hidden></p><p class="comparison-hint">API 地址和 Key 继承默认连接或「扩展 → 模型配置」。这里可覆盖模型 ID；填写名称不代表账号已获使用权限。未配置 API 时可先用两个规则基线体验。</p></details>
-    <div class="comparison-toolbar"><button class="primary" id="cmp-start">开始对比</button><button class="secondary" id="cmp-pause" disabled>暂停</button><button class="secondary" id="cmp-stop" disabled>停止</button><button class="secondary" id="cmp-export" disabled>导出记录</button></div>
+    <div class="comparison-toolbar"><button class="primary" id="cmp-start" disabled>开始对比</button><button class="secondary" id="cmp-pause" disabled>暂停</button><button class="secondary" id="cmp-stop" disabled>停止</button><button class="secondary" id="cmp-export" disabled>导出记录</button></div>
     <p id="cmp-message" class="comparison-message" role="status"></p>
     <div class="comparison-replay" id="cmp-replay" hidden><div><strong id="cmp-time-mode">实时 · 各路独立推进</strong><span id="cmp-time-range"></span></div><div class="comparison-replay-controls"><button class="secondary" id="cmp-replay-play">播放回放</button><input id="cmp-timeline" type="range" min="0" max="0" step="any" value="0" aria-label="对比统一仿真时间轴"><output id="cmp-time">0.00 s</output><button class="text-button" id="cmp-live">返回实时</button></div></div>
     <div class="comparison-cards" id="cmp-cards"><div class="comparison-empty">选择模型后开始对比，真实场景和决策会显示在这里。</div></div>
@@ -139,21 +142,25 @@ export async function createComparison(container, { api, toast }) {
     ]);
   }
 
+  function scenePending() {
+    return !initialized || sceneLoading || loadedSceneId !== snapshot.id;
+  }
   function updateControls() {
     const running = snapshot.status === "running",
-      paused = snapshot.status === "paused";
-    $("#cmp-start").disabled = busy || running || paused;
+      paused = snapshot.status === "paused",
+      locked = busy || scenePending();
+    $("#cmp-start").disabled = locked || running || paused;
     $("#cmp-start").textContent = snapshot.id ? "重新运行" : "开始对比";
-    $("#cmp-pause").disabled = busy || !(running || paused);
+    $("#cmp-pause").disabled = locked || !(running || paused);
     $("#cmp-pause").textContent = paused ? "继续" : "暂停";
-    $("#cmp-stop").disabled = busy || !(running || paused);
-    $("#cmp-export").disabled = !snapshot.id || busy;
-    $("#cmp-replay-play").disabled = !snapshot.replay?.max_time || busy;
-    $("#cmp-timeline").disabled = !snapshot.replay?.max_time || busy;
+    $("#cmp-stop").disabled = locked || !(running || paused);
+    $("#cmp-export").disabled = !snapshot.id || locked;
+    $("#cmp-replay-play").disabled = !snapshot.replay?.max_time || locked;
+    $("#cmp-timeline").disabled = !snapshot.replay?.max_time || locked;
     for (const input of container.querySelectorAll(
       "#cmp-setup input,#cmp-setup select",
     ))
-      input.disabled = busy || running || paused;
+      input.disabled = locked || running || paused;
     container.querySelectorAll(".lane-provider").forEach((select, index) => {
       if (
         ["baseline", "minicpm"].includes(
@@ -162,8 +169,9 @@ export async function createComparison(container, { api, toast }) {
       )
         $(`#cmp-model-${index}`).disabled = true;
     });
-    $(".comparison-toolbar").setAttribute("aria-busy", String(busy));
+    $(".comparison-toolbar").setAttribute("aria-busy", String(locked));
   }
+  updateControls();
 
   function stopReplay() {
     replayPlaying = false;
@@ -286,9 +294,12 @@ export async function createComparison(container, { api, toast }) {
   }
 
   async function render(next) {
-    const changed = next.id !== snapshot.id;
+    const changed = next.id !== snapshot.id || loadedSceneId !== next.id;
     snapshot = next;
     if (changed) {
+      sceneLoading = true;
+      $("#cmp-status").textContent = "加载场景…";
+      updateControls();
       stopReplay();
       replayMode = false;
       replayRequest++;
@@ -324,6 +335,7 @@ export async function createComparison(container, { api, toast }) {
             : lane.requested_model || "";
         });
         $("#cmp-setup").open = false;
+        updateControls();
       }
       $("#cmp-cards").innerHTML =
         next.lanes
@@ -334,30 +346,36 @@ export async function createComparison(container, { api, toast }) {
           .join("") ||
         '<div class="comparison-empty">选择模型后开始对比，真实场景和决策会显示在这里。</div>';
       $("#cmp-cards").style.setProperty("--lane-count", next.lanes.length || 2);
-      if (next.id)
-        await Promise.all(
-          next.lanes.map(async (lane) => {
-            const element = container.querySelector(
-              `[data-lane="${lane.id}"] .comparison-scene`,
-            );
-            const scene = new RobotScene(element, {
-              label: `${lane.id} 机械臂三维场景`,
-              pixelRatio: 1.25,
-              onError: toast,
-            });
-            scenes.set(lane.id, scene);
-            scene.load(
-              await api(
-                `/api/comparison/scene/${lane.id}?comparison_id=${encodeURIComponent(next.id)}`,
-              ),
-            );
-            element.querySelector('[data-camera="home"]').onclick = () =>
-              scene.cameraHome();
-            element.querySelector('[data-camera="top"]').onclick = () =>
-              scene.cameraTop();
-          }),
-        );
+      try {
+        if (next.id)
+          await Promise.all(
+            next.lanes.map(async (lane) => {
+              const element = container.querySelector(
+                `[data-lane="${lane.id}"] .comparison-scene`,
+              );
+              const scene = new RobotScene(element, {
+                label: `${lane.id} 机械臂三维场景`,
+                pixelRatio: 1.25,
+                onError: toast,
+              });
+              scenes.set(lane.id, scene);
+              scene.load(
+                await api(
+                  `/api/comparison/scene/${lane.id}?comparison_id=${encodeURIComponent(next.id)}`,
+                ),
+              );
+              element.querySelector('[data-camera="home"]').onclick = () =>
+                scene.cameraHome();
+              element.querySelector('[data-camera="top"]').onclick = () =>
+                scene.cameraTop();
+            }),
+          );
+        loadedSceneId = next.id;
+      } finally {
+        sceneLoading = false;
+      }
     }
+    initialized = true;
     $("#cmp-status").textContent = statuses[next.status] || next.status;
     $("#cmp-replay").hidden = !next.id;
     $("#cmp-time-range").textContent =
@@ -408,7 +426,7 @@ export async function createComparison(container, { api, toast }) {
     );
   }
   async function control(action) {
-    if (busy || !snapshot.id) return;
+    if (busy || scenePending() || !snapshot.id) return;
     const comparisonId = snapshot.id;
     busy = true;
     updateControls();
@@ -429,7 +447,7 @@ export async function createComparison(container, { api, toast }) {
     }
   }
   $("#cmp-start").onclick = async () => {
-    if (busy) return;
+    if (busy || scenePending()) return;
     const expectedId = snapshot.id;
     if (
       ![...container.querySelectorAll("#cmp-setup input")].every((input) =>

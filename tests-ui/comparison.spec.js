@@ -203,12 +203,22 @@ test("three real lanes cap parallel work at two, reject duplicate start and stop
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 960 });
-  await openComparison(page);
-  if ((await page.locator("#cmp-setup").getAttribute("open")) === null)
-    await page.locator("#cmp-setup > summary").click();
-  await page.locator("#cmp-count").selectOption("3");
-  await page.locator("#cmp-mode").selectOption("parallel");
-  let creates = 0;
+  let previous = await (await page.request.get("/api/comparison")).json();
+  if (!previous.id)
+    previous = await (
+      await page.request.post("/api/comparison", {
+        data: {
+          expected_comparison_id: null,
+          lanes: [{ provider: "baseline" }, { provider: "baseline" }],
+        },
+      })
+    ).json();
+  let releaseScenes;
+  const sceneGate = new Promise((resolve) => {
+    releaseScenes = resolve;
+  });
+  let waitingScenes = 0,
+    creates = 0;
   page.on("request", (request) => {
     if (
       request.method() === "POST" &&
@@ -216,6 +226,41 @@ test("three real lanes cap parallel work at two, reject duplicate start and stop
     )
       creates++;
   });
+  await page.route("**/api/comparison/scene/**", async (route) => {
+    if (
+      new URL(route.request().url()).searchParams.get("comparison_id") ===
+      previous.id
+    ) {
+      waitingScenes++;
+      await sceneGate;
+    }
+    await route.continue();
+  });
+  await page.goto("/");
+  await expect(page.locator("#loading")).toHaveClass(/hidden/);
+  await page.locator("#comparison-open").click();
+  try {
+    await expect.poll(() => waitingScenes).toBe(previous.lanes.length);
+    await expect(page.locator("#cmp-status")).toHaveText("加载场景…");
+    await expect(page.locator("#cmp-start")).toBeDisabled();
+    await expect(page.locator("#cmp-count")).toBeDisabled();
+    await expect(page.locator("#cmp-mode")).toBeDisabled();
+    await expect(page.locator("#cmp-provider-0")).toBeDisabled();
+    await page
+      .locator("#cmp-start")
+      .evaluate((button) =>
+        button.dispatchEvent(new MouseEvent("click", { bubbles: true })),
+      );
+    expect(creates).toBe(0);
+  } finally {
+    releaseScenes();
+  }
+  await expect(page.locator("#cmp-start")).toBeEnabled();
+  await page.unroute("**/api/comparison/scene/**");
+  if ((await page.locator("#cmp-setup").getAttribute("open")) === null)
+    await page.locator("#cmp-setup > summary").click();
+  await page.locator("#cmp-count").selectOption("3");
+  await page.locator("#cmp-mode").selectOption("parallel");
   await page.locator("#cmp-start").click();
   await page
     .locator("#cmp-start")

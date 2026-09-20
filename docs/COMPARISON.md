@@ -1,6 +1,6 @@
 # 模型对比
 
-在相同任务、起点和动作预算下，观察 MiniCPM、Jev、GPT、Claude 等模型如何选择。当前已支持这些接口；云端模型需要自行配置权限，真实对比成绩还待补充。
+在相同任务、起点和动作预算下，观察 MiniCPM、Jev、GPT、Claude 等模型如何选择。当前已公开 [GPT-6 Astra 的九局真实 API 实验](GPT6_EXPERIMENT.md)；Jev、Claude 等模型的同设置对照还待补充。云端模型需要自行配置权限。
 
 ## 在网页里并排运行
 
