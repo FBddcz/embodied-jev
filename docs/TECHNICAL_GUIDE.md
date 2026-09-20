@@ -97,7 +97,7 @@ See [Anthropic Messages API](https://platform.claude.com/docs/en/api/messages) a
 ```bash
 read -s TYPESAFE_API_KEY
 export TYPESAFE_API_KEY
-export TYPESAFE_MODEL=jev-1.13.0
+export TYPESAFE_MODEL=jev-latest
 embodied-jev serve --port 8090
 ```
 

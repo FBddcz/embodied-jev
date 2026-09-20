@@ -120,6 +120,8 @@ $("#app").innerHTML = `
   <label class="field-label" for="api-model">模型 ID</label><input id="api-model" required placeholder="平台提供的模型名称" autocomplete="off">
   <label class="field-label" for="api-key">API Key <span id="key-state">未配置</span></label><input id="api-key" type="password" placeholder="API Key" autocomplete="off" spellcheck="false">
   <label class="json-mode" id="json-mode-row"><input id="api-json" type="checkbox" checked>JSON 模式</label>
+  <p class="connection-retention" id="provider-help"></p>
+  <p class="connection-retention" id="typesafe-links" hidden><a href="https://console.typesafe.ai" target="_blank" rel="noopener noreferrer">申请 TypeSafe API Key ↗</a> · <a href="https://docs.typesafe.ai/api" target="_blank" rel="noopener noreferrer">官方接口说明 ↗</a></p>
   <p class="connection-retention">密钥仅保存在本次服务进程中，重启后失效。</p>
   <div id="connection-result" class="connection-result" role="status"></div>
   <div class="dialog-actions"><button type="button" class="secondary" id="connection-test">${icon("plug-zap")}测试调用</button><button type="submit" class="primary" id="connection-save">保存连接</button></div>
@@ -757,6 +759,14 @@ function fillConnection() {
   $("#key-state").textContent = saved.key_configured ? "已配置" : "未配置";
   $("#api-json").checked = saved.json_mode !== false;
   $("#json-mode-row").hidden = provider !== "chat";
+  $("#typesafe-links").hidden = provider !== "jev";
+  $("#provider-help").textContent = {
+    jev: "官方 Jev：地址已预填并锁定，使用 TypeSafe Key。jev-latest 跟随官方更新；对比实验可固定为有权限使用的版本，如 jev-1.13.0。",
+    claude:
+      "Claude 原生 Messages API，使用 Anthropic Key。测试时会显示服务返回的模型名称。",
+    chat: "填写平台提供的 Base URL 和模型 ID。普通聊天兼容接口不能替代 Jev 专用决策接口。",
+    local: "填写完整的结构化决策接口地址；服务需要返回候选动作及其概率。",
+  }[provider];
   $("#connection-result").textContent = "";
 }
 $("#model-connect").onclick = async () => {

@@ -158,6 +158,42 @@ test("model connection form works on desktop and mobile without exposing keys", 
   await page.locator("#connection-close").click();
 });
 
+test("official Jev preset links to key signup and preserves the resolved model", async ({
+  page,
+}) => {
+  await openScene(page);
+  await page.locator("#model-connect").click();
+  await page.locator("#api-provider").selectOption("jev");
+  await expect(page.locator("#api-url")).toHaveValue(
+    "https://api.typesafe.ai/v1/systemone",
+  );
+  await expect(page.locator("#api-url")).toHaveAttribute("readonly", "");
+  await expect(page.locator("#api-model")).toHaveValue("jev-latest");
+  await expect(page.locator("#typesafe-links")).toBeVisible();
+  await expect(page.locator("#typesafe-links a").first()).toHaveAttribute(
+    "href",
+    "https://console.typesafe.ai",
+  );
+  await expect(page.locator("#json-mode-row")).toBeHidden();
+  // Stub only this test call; saving still exercises the local backend.
+  await page.route("**/api/connections/jev/test", (route) =>
+    route.fulfill({
+      json: { ok: true, model: "jev-1.13.0", latency_ms: 123 },
+    }),
+  );
+  await page.locator("#api-key").fill("test-typesafe-secret");
+  await page.locator("#connection-test").click();
+  await expect(page.locator("#connection-result")).toContainText("jev-1.13.0");
+  await expect(page.locator("#api-key")).toHaveValue("");
+  await expect(page.locator("#provider")).toHaveValue("jev");
+  await expect(page.locator("#threshold")).toBeEnabled();
+  const state = await page.request.get("/api/state");
+  expect((await state.json()).cycles).toBe(0);
+  await page.locator("#api-provider").selectOption("chat");
+  await expect(page.locator("#typesafe-links")).toBeHidden();
+  await page.locator("#connection-close").click();
+});
+
 test("Claude native configuration is separate and does not expose credentials", async ({
   page,
 }) => {

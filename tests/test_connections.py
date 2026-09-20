@@ -4,7 +4,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from embodied_jev.policies import DecisionPolicy
+from embodied_jev.policies import DecisionPolicy, environment_connection
 from embodied_jev.server import create_app
 
 
@@ -56,6 +56,49 @@ def test_bad_connection_and_foreign_origin_rejected():
             assert client.post("/api/connections", json={"provider": "chat", "url": url, "model": "test"}).status_code == 422
         assert client.post("/api/connections", json={"provider": "chat", "url": "https://example.invalid", "model": "test"},
                            headers={"Origin": "https://other.invalid"}).status_code == 403
+
+
+def test_official_jev_preset_and_resolved_model(monkeypatch):
+    monkeypatch.delenv("TYPESAFE_MODEL", raising=False)
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    calls = []
+    def post(url, **kwargs):
+        calls.append(url)
+        assert url == "https://api.typesafe.ai/v1/systemone"
+        assert kwargs["headers"] == {"Authorization": "Bearer typesafe-test-secret"}
+        assert kwargs["follow_redirects"] is False
+        payload = kwargs["json"]
+        assert payload["model"] == "jev-latest"
+        assert payload["questions"]["action"]["type"] == "choice"
+        keys = list(payload["questions"]["action"]["criteria"])
+        return httpx.Response(200, request=httpx.Request("POST", url), json={
+            "model": "jev-1.13.0", "answers": {"action": {
+                "choice": keys[0], "probabilities": {keys[0]: .8, keys[1]: .2}, "confidence": .4}},
+            "usage": {"input_tokens": 20, "output_tokens": 2}})
+    monkeypatch.setattr(httpx, "post", post)
+    with TestClient(create_app()) as client:
+        preset = client.get("/api/connections").json()["jev"]
+        assert preset["model"] == "jev-latest"
+        assert not preset["key_configured"]
+        payload = {"provider": "jev", "url": preset["url"], "model": preset["model"]}
+        assert client.post("/api/connections", json=payload).status_code == 422
+        payload["api_key"] = "typesafe-test-secret"
+        assert client.post("/api/connections", json={**payload, "url": "https://other.invalid"}).status_code == 422
+        assert client.post("/api/connections", json=payload).status_code == 200
+        assert calls == []
+        result = client.post("/api/connections/jev/test", json={}).json()
+        assert result["ok"] and result["model"] == "jev-1.13.0"
+        assert len(calls) == 1
+        assert client.get("/api/state").json()["cycles"] == 0
+        for path in ("/api/connections", "/api/config", "/api/state", "/api/export"):
+            assert "typesafe-test-secret" not in client.get(path).text
+    settings = {**environment_connection("jev"), "key": "typesafe-test-secret"}
+    policy = DecisionPolicy("jev", settings)
+    answer = policy.choose({}, "Choose", {"move": "Move", "hold": "Hold"}, "move", [])
+    assert answer["model"] == "jev-1.13.0"
+    assert answer["selected_probability"] == .8
+    assert answer["provider_confidence"] == .4
+    assert policy.tokens == 20 and policy.output_tokens == 2
 
 
 def test_claude_native_contract_and_key_redaction(monkeypatch):

@@ -31,6 +31,11 @@ embodied-jev benchmark --provider chat --threshold 0 \
 embodied-jev benchmark --provider claude --threshold 0 \
   --tasks transfer stack barrier --seeds 0 1 2 --max-cycles 30 \
   --output runs/claude.json
+
+# Official TypeSafe Jev: set TYPESAFE_API_KEY and pin an available model version
+TYPESAFE_MODEL=jev-1.13.0 embodied-jev benchmark --provider jev --threshold 0 \
+  --tasks transfer stack barrier --seeds 0 1 2 --max-cycles 30 \
+  --output runs/jev.json
 ```
 
 每个实验会产生汇总文件和完整 episode 文件。桌面表单中的 Key 只保存在网页服务进程里；单独启动 CLI 评测需要环境变量。云端批量实验会产生费用，目前没有自动费用上限。

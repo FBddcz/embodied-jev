@@ -49,7 +49,7 @@ def environment_connection(provider):
                 "key": os.getenv("ANTHROPIC_API_KEY", ""),
                 "model": os.getenv("EMBODIED_CLAUDE_MODEL", "claude-fable-5-1")}
     if provider == "jev":
-        return {"url": "https://api.typesafe.ai/v1/systemone", "key": os.getenv("TYPESAFE_API_KEY", ""), "model": os.getenv("TYPESAFE_MODEL", "jev-1.13.0")}
+        return {"url": "https://api.typesafe.ai/v1/systemone", "key": os.getenv("TYPESAFE_API_KEY", ""), "model": os.getenv("TYPESAFE_MODEL", "jev-latest")}
     if provider == "chat":
         base = os.getenv("EMBODIED_API_BASE", "").rstrip("/")
         return {"url": base + "/chat/completions" if base else "", "key": os.getenv("EMBODIED_API_KEY", ""), "model": os.getenv("EMBODIED_API_MODEL", ""), "json_mode": True}
@@ -126,6 +126,7 @@ class DecisionPolicy:
             answer = body["answers"]["action"]
             self.model = body.get("model", model)
             self.tokens += int(body.get("usage", {}).get("input_tokens", 0))
+            self.output_tokens += int(body.get("usage", {}).get("output_tokens", 0))
         self.calls += 1
         choice, probabilities = validate_answer(answer, options)
         latency = (time.perf_counter() - start) * 1000
