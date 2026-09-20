@@ -9,6 +9,9 @@
   "fps": 20,
   "duration_seconds": 43.4,
   "original_wall_seconds": 235.41,
+  "gif_speed": 5.0,
+  "gif_nominal_duration_seconds": 8.68,
+  "decision_panel": "Recorded candidate order, selected action and API latency. Only provider-returned probabilities are shown; absent probabilities are explicitly labelled.",
   "model_calls_during_export": 0,
   "physics_steps_during_export": 0,
   "playback": "Recorded qpos only; no interpolation; 1.2 seconds per decision; model waits omitted.",
@@ -21,16 +24,16 @@
   ],
   "outputs": {
     "vision-transfer.mp4": {
-      "sha256": "9f87ed2b09cc8113b32bd8c46efd759ad474ee820cdb8b0066ab344904a9da47",
-      "bytes": 1560415
+      "sha256": "5cd95d98bf2260bfc93949a1efc5c1589fdbfff8040e8deae01bafac0c5705a2",
+      "bytes": 2029507
     },
     "vision-transfer.gif": {
-      "sha256": "02b1e8d9892b7f67c7919f3819c392cd643637f1cd28478e1ac22f6c655d5568",
-      "bytes": 4607783
+      "sha256": "887f1c6e57ebee2de5b9a311e15d4b95ca437ec1db37c2507ec551aebb33d1c8",
+      "bytes": 4383307
     },
     "vision-transfer.png": {
-      "sha256": "1539960c90099c2f3900c35a1c7583eb6aedaec70e7e4a74ab0d92f48a912a6f",
-      "bytes": 289606
+      "sha256": "11cc3824952a6cdcfedf0f099f30b1800d3bf08304eb751d9443ed1b0aded89b",
+      "bytes": 321251
     }
   }
 }
