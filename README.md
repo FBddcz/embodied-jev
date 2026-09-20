@@ -54,10 +54,23 @@ embodied-jev serve --port 8090
 python -m pip install -e '.[minicpm]'
 export EMBODIED_MINICPM=1
 export EMBODIED_DEVICE=auto
+embodied-jev warmup
 embodied-jev serve --port 8090
 ```
 
 Then select **MiniCPM5-2B**. The first real decision downloads `openbmb/MiniCPM5-2B`, pinned to revision `12a3808a956f869c767195e9266b59c4d21d92e2`. Budget approximately 5 GB of disk for weights and additional RAM/VRAM for execution; CPU uses float32, CUDA/MPS float16. `auto` selects CUDA, then Apple MPS, then CPU. Loaded weights are reused across resets. The UI remains available while the model loads.
+
+`warmup` checks loading and performs a real two-candidate forward pass, reporting the model revision, device and latency. Its process then exits; the web server loads its own copy from the downloaded cache. On Apple Silicon, use `EMBODIED_DEVICE=mps` to require the Apple GPU instead of allowing a CPU fallback. Once the complete model is cached, `HF_HUB_OFFLINE=1` runs without model-download requests. The workbench shows loading, ready and error states next to the model selector.
+
+To record model-driven episodes, including uncertainty pauses and failures:
+
+```bash
+EMBODIED_MINICPM=1 EMBODIED_DEVICE=mps embodied-jev benchmark \
+  --provider minicpm --seeds 0 1 2 --threshold 0.55 \
+  --timeout 600 --output runs/benchmark-minicpm.json
+```
+
+The command writes an aggregate report and one full episode JSON per task/seed. Reports include actual model calls, candidate probabilities, revision, device, latency and physical success. A low-probability decision ends a headless episode as `uncertain`; it does not wait indefinitely or change to the baseline. `--threshold 0` disables this gate for exploratory evaluation; candidate probabilities are not calibrated success estimates.
 
 The adapter uses the model's non-thinking chat template, reads next-token logits for candidate letters, then applies softmax only over those candidates. It validates the complete prompt/token boundary and limits context to 4096 tokens. It does not generate JSON, train weights, use a shared-prefix token truncation trick, or silently substitute another model.
 

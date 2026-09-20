@@ -7,7 +7,7 @@ import uuid
 
 from .physics import RobotWorld
 from .planning import PHASES, baseline_phase, candidates, eligible_phases
-from .policies import DecisionPolicy
+from .policies import DecisionPolicy, minicpm_status
 
 
 class Session:
@@ -206,6 +206,7 @@ class Session:
                     "frame": self.last_frame, "history": list(self.history), "candidates": self.current_candidates,
                     "last_decision": self.last_decision, "frame_count": len(self.frames),
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
+                    "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
                     "wall_seconds": round((self.finished or time.perf_counter()) - self.started, 2) if self.started else 0}
 
     def replay_frame(self, index):
@@ -229,15 +230,28 @@ class Session:
                     "model": self.policy.model, "threshold": self.threshold, "max_cycles": self.max_cycles,
                     "history": list(self.history), "frames": list(self.frames),
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
+                    "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
+                    "model_latency_ms": list(self.policy.latencies), "last_decision": self.last_decision,
+                    "wall_seconds": self.snapshot()["wall_seconds"], "message": self.message,
                     "observation_source": "privileged simulator geometry and contacts"}
 
 
-def run_headless(task="transfer", seed=0, preview=True, max_cycles=30):
-    session = Session(task=task, seed=seed, preview=preview, max_cycles=max_cycles, speed=0)
+def run_headless(task="transfer", seed=0, preview=True, max_cycles=30,
+                 provider="baseline", threshold=.55, timeout=600):
+    session = Session(task=task, seed=seed, preview=preview, max_cycles=max_cycles,
+                      speed=0, provider=provider, threshold=threshold)
     session.start()
-    session.worker.join(120)
-    if session.worker.is_alive():
-        session.stop()
-        session.worker.join(30)
-        raise TimeoutError("Episode exceeded 120 seconds")
+    deadline = time.monotonic() + timeout
+    while session.worker.is_alive():
+        session.worker.join(.05)
+        with session.lock:
+            if session.status == "uncertain" or time.monotonic() >= deadline:
+                # Preserve uncertainty as an evaluation outcome; no automatic retry or fallback.
+                session.cancel.set()
+                session.wake.set()
+                if session.status != "uncertain":
+                    session.status, session.message = "timeout", f"Episode exceeded {timeout} seconds"
+                session.finished = time.perf_counter()
+                break
+    session.worker.join(1)
     return session

@@ -211,7 +211,7 @@ scene.add(hemisphere);
 const light = new THREE.DirectionalLight(0xffffff, 2.2);
 light.position.set(-0.8, -1.1, 2.5);
 light.castShadow = true;
-light.shadow.mapSize.set(2048, 2048);
+light.shadow.mapSize.set(1024, 1024);
 light.shadow.camera.left = -1.2;
 light.shadow.camera.right = 1.2;
 light.shadow.camera.top = 1.2;
@@ -235,6 +235,11 @@ const geomObjects = new Map();
 let lastFrame;
 function renderFrame(frame) {
   if (!frame) return;
+  if (
+    lastFrame?.time === frame.time &&
+    JSON.stringify(lastFrame.qpos) === JSON.stringify(frame.qpos)
+  )
+    return;
   lastFrame = frame;
   for (const [id, mesh] of geomObjects) {
     const p = frame.positions[id],
@@ -274,6 +279,7 @@ function renderFrame(frame) {
   $("#stable").textContent = o.stable_seconds.toFixed(2) + " s";
   $("#scene-time").textContent = "t = " + o.sim_seconds.toFixed(2) + " s";
   $("#raw-state").textContent = JSON.stringify(o, null, 2);
+  requestRender();
 }
 async function loadScene() {
   $("#loading").classList.remove("hidden");
@@ -284,6 +290,7 @@ async function loadScene() {
     robotGroup.remove(child);
   }
   geomObjects.clear();
+  lastFrame = null;
   for (const g of data.geometries) {
     let geometry;
     if (g.type === 7) {
@@ -330,20 +337,31 @@ async function loadScene() {
   }
   $("#scene-task").textContent = data.task.toUpperCase();
   $("#loading").classList.add("hidden");
+  requestRender();
 }
 const observer = new ResizeObserver(() => {
   const el = $("#viewport");
   renderer.setSize(el.clientWidth, el.clientHeight, false);
   camera.aspect = el.clientWidth / el.clientHeight;
   camera.updateProjectionMatrix();
+  requestRender();
 });
 observer.observe($("#viewport"));
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
+let renderRequested = false;
+function requestRender() {
+  if (renderRequested) return;
+  renderRequested = true;
+  requestAnimationFrame(() => {
+    renderRequested = false;
+    controls.update();
+    renderer.render(scene, camera);
+  });
 }
-animate();
+controls.addEventListener("change", requestRender);
+renderer.domElement.addEventListener("webglcontextlost", () =>
+  toast("三维渲染上下文已丢失，请刷新页面"),
+);
+requestRender();
 
 function renderState(s) {
   state = s;
@@ -391,6 +409,20 @@ function renderState(s) {
   );
   $("#stage").textContent = stageNames[s.stage] || s.stage;
   $("#decision-title").textContent = s.phase ? phaseNames[s.phase] : "等待开始";
+  if (s.provider === "minicpm" && s.model_runtime) {
+    const runtime = s.model_runtime;
+    const device = (runtime.device || "AUTO").toUpperCase();
+    $("#provider-note").textContent = {
+      not_loaded: "本地 · 首次决策加载权重",
+      loading: `正在加载权重 · ${device}`,
+      ready: `本地就绪 · ${device} · 候选概率`,
+      error: `加载失败 · ${runtime.error || "请检查服务日志"}`,
+    }[runtime.status];
+    if (runtime.status === "loading") {
+      $("#decision-title").textContent = "正在加载 MiniCPM5-2B";
+      $("#stage").textContent = "LOADING";
+    }
+  }
   $("#decision-provider").textContent =
     s.provider === "baseline"
       ? "RULE BASELINE"

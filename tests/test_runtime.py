@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-from embodied_jev.runtime import Session
+from embodied_jev.runtime import Session, run_headless
 
 
 def wait_until(predicate, timeout=10):
@@ -72,3 +72,28 @@ def test_uncertain_gate_and_threshold_resume():
         assert session.cycles == 1
     finally:
         session.stop()
+
+
+def test_headless_records_uncertainty_without_waiting_for_timeout(monkeypatch):
+    from embodied_jev.policies import DecisionPolicy
+    def uncertain(self, *args):
+        return {"choice": "approach", "selected_probability": .4, "model_call": True}
+    monkeypatch.setattr(DecisionPolicy, "choose", uncertain)
+    session = run_headless(preview=False, threshold=.55, timeout=10)
+    assert session.status == "uncertain"
+    assert session.cycles == 0
+    assert not session.worker.is_alive()
+    assert session.export()["last_decision"]["selected_probability"] == .4
+
+
+def test_headless_timeout_does_not_execute_a_delayed_answer(monkeypatch):
+    from embodied_jev.policies import DecisionPolicy
+    original = DecisionPolicy.choose
+    def delayed(self, *args):
+        time.sleep(.2)
+        return original(self, *args)
+    monkeypatch.setattr(DecisionPolicy, "choose", delayed)
+    session = run_headless(preview=False, timeout=.05)
+    assert session.status == "timeout"
+    assert session.cycles == 0
+    assert not session.worker.is_alive()

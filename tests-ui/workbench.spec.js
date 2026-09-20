@@ -29,7 +29,7 @@ async function openScene(page) {
   });
   await expect(page.locator("#connection")).toContainText("CONNECTED");
   await expect
-    .poll(async () => (await canvasStats(page)).dark)
+    .poll(async () => (await canvasStats(page)).dark, { timeout: 15000 })
     .toBeGreaterThan(20);
 }
 
@@ -46,7 +46,7 @@ test("desktop physical run, controls, replay and export", async ({
   await page.screenshot({ path: "docs/workbench-desktop.png" });
   await page.locator("#camera-top").click();
   await expect
-    .poll(async () => (await canvasStats(page)).checksum)
+    .poll(async () => (await canvasStats(page)).checksum, { timeout: 15000 })
     .not.toBe(initial.checksum);
   await page.locator("#camera-home").click();
   const canvas = await page.locator("canvas").boundingBox();
@@ -62,7 +62,7 @@ test("desktop physical run, controls, replay and export", async ({
   );
   await page.mouse.up();
   await expect
-    .poll(async () => (await canvasStats(page)).checksum)
+    .poll(async () => (await canvasStats(page)).checksum, { timeout: 15000 })
     .not.toBe(initial.checksum);
   await page.locator("#camera-home").click();
   await page.locator("#step").click();

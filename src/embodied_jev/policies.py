@@ -12,20 +12,34 @@ import httpx
 MODEL = "openbmb/MiniCPM5-2B"
 REVISION = "12a3808a956f869c767195e9266b59c4d21d92e2"
 MODEL_LOCK = threading.Lock()
+MODEL_STATUS = {"status": "not_loaded", "device": None, "dtype": None, "error": None}
+
+
+def minicpm_status():
+    return {**MODEL_STATUS, "model": MODEL, "revision": REVISION,
+            "readout": "candidate_token_softmax"}
 
 
 @lru_cache(maxsize=1)
 def load_minicpm(device):
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    MODEL_STATUS.update(status="loading", error=None)
+    try:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    if device == "auto":
-        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-    dtype = torch.float32 if device == "cpu" else torch.float16
-    tokenizer = AutoTokenizer.from_pretrained(MODEL, revision=REVISION)
-    model = AutoModelForCausalLM.from_pretrained(MODEL, revision=REVISION,
-        torch_dtype=dtype, trust_remote_code=False, use_safetensors=True, low_cpu_mem_usage=True).to(device).eval()
-    return tokenizer, model
+        if device == "auto":
+            device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        dtype = torch.float32 if device == "cpu" else torch.float16
+        MODEL_STATUS.update(device=device, dtype=str(dtype))
+        tokenizer = AutoTokenizer.from_pretrained(MODEL, revision=REVISION)
+        model = AutoModelForCausalLM.from_pretrained(MODEL, revision=REVISION,
+            torch_dtype=dtype, trust_remote_code=False, use_safetensors=True,
+            low_cpu_mem_usage=True).to(device).eval()
+        MODEL_STATUS.update(status="ready")
+        return tokenizer, model
+    except Exception as exc:
+        MODEL_STATUS.update(status="error", error=type(exc).__name__)
+        raise
 
 
 def environment_connection(provider):
@@ -74,6 +88,7 @@ class DecisionPolicy:
         self.provider = provider
         self.calls = 0
         self.tokens = 0
+        self.latencies = []
         self.connection = dict(connection or environment_connection(provider))
         self.model = MODEL if provider == "minicpm" else provider if provider == "baseline" else self.connection["model"]
 
@@ -104,8 +119,12 @@ class DecisionPolicy:
             self.tokens += int(body.get("usage", {}).get("input_tokens", 0))
         self.calls += 1
         choice, probabilities = validate_answer(answer, options)
-        return {"choice": choice, "probabilities": probabilities, "latency_ms": (time.perf_counter() - start) * 1000,
+        latency = (time.perf_counter() - start) * 1000
+        self.latencies.append(latency)
+        return {"choice": choice, "probabilities": probabilities, "latency_ms": latency,
                 "provider": self.provider, "model": self.model, "model_call": True,
+                **({"revision": REVISION, "device": minicpm_status()["device"],
+                    "readout": "candidate_token_softmax"} if self.provider == "minicpm" else {}),
                 "selected_probability": probabilities[choice], "provider_confidence": answer.get("confidence")}
 
     def _chat_choice(self, state, spec, started):
@@ -126,6 +145,7 @@ class DecisionPolicy:
             raise ValueError("Chat model did not return an offered action")
         self.model = body.get("model", self.connection["model"])
         self.tokens += int(body.get("usage", {}).get("prompt_tokens", 0))
+        self.latencies.append((time.perf_counter() - started) * 1000)
         return {"choice": answer["choice"], "probabilities": {}, "selected_probability": None,
                 "provider_confidence": None, "latency_ms": (time.perf_counter() - started) * 1000,
                 "provider": "chat", "model": self.model, "model_call": True, "readout": "generated_json"}
