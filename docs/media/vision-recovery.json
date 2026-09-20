@@ -1,0 +1,52 @@
+{
+  "episode_id": "27dfbc5fa782",
+  "episode_file": "planning-vision-gpt6-v2-live-target-shift-run1.json.gz",
+  "episode_file_sha256": "30e7996bbde8ea3ec2ae7f5ac331f146ec34e382b08961ee16d86541595df074",
+  "camera_archive": "planning-vision-gpt6-v2-live-target-shift-run1-cameras.zip",
+  "camera_archive_sha256": "a9511905150857203ec85f938aaa95f94a952f2ed480342a5da8712a5f33ec2f",
+  "input_images_verified": 86,
+  "frames": 1172,
+  "fps": 20,
+  "duration_seconds": 58.6,
+  "original_wall_seconds": 342.21,
+  "model_calls_during_export": 0,
+  "physics_steps_during_export": 0,
+  "playback": "Recorded qpos only; no interpolation; 1.2 seconds per decision; model waits omitted.",
+  "camera_panels": "Exact archived decision-input PNGs, resized for display; final panel shows final observation.",
+  "moments": [
+    {
+      "cycle": 13,
+      "event": "grasp_contact"
+    },
+    {
+      "cycle": 19,
+      "event": "contact_lost"
+    },
+    {
+      "cycle": 20,
+      "event": "target_shift",
+      "delta_xy": [
+        0.06,
+        0.0
+      ]
+    },
+    {
+      "cycle": 25,
+      "event": "grasp_contact"
+    }
+  ],
+  "outputs": {
+    "vision-recovery.mp4": {
+      "sha256": "ef8657a85ada33fa2976ba7d5ed5f3fdca53f0dcd9397d53974db929eb71e17f",
+      "bytes": 2112625
+    },
+    "vision-recovery.gif": {
+      "sha256": "2381b514515d79cacfddcfd3c7411fc0f41f08d809dd3f4de4afc40ed8f46045",
+      "bytes": 5990625
+    },
+    "vision-recovery.png": {
+      "sha256": "3133cd1f1d7133dfe65b9d7188d477b4afd444e3537e5a2555d073c5d42ce807",
+      "bytes": 295138
+    }
+  }
+}

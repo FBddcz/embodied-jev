@@ -1,0 +1,36 @@
+{
+  "episode_id": "4bd78b7a8005",
+  "episode_file": "planning-vision-gpt6-v2-cameras-transfer.json.gz",
+  "episode_file_sha256": "cf601e168ca1309a3ab7caee8ac1c9d8e27bbb3511bb25c6e733a75ab83a1c71",
+  "camera_archive": "planning-vision-gpt6-v2-cameras-transfer-cameras.zip",
+  "camera_archive_sha256": "9ce111bc6bb32107bf1c63bc169a749ce4656d71bab92e44078c6f476057109d",
+  "input_images_verified": 64,
+  "frames": 868,
+  "fps": 20,
+  "duration_seconds": 43.4,
+  "original_wall_seconds": 235.41,
+  "model_calls_during_export": 0,
+  "physics_steps_during_export": 0,
+  "playback": "Recorded qpos only; no interpolation; 1.2 seconds per decision; model waits omitted.",
+  "camera_panels": "Exact archived decision-input PNGs, resized for display; final panel shows final observation.",
+  "moments": [
+    {
+      "cycle": 11,
+      "event": "grasp_contact"
+    }
+  ],
+  "outputs": {
+    "vision-transfer.mp4": {
+      "sha256": "9f87ed2b09cc8113b32bd8c46efd759ad474ee820cdb8b0066ab344904a9da47",
+      "bytes": 1560415
+    },
+    "vision-transfer.gif": {
+      "sha256": "02b1e8d9892b7f67c7919f3819c392cd643637f1cd28478e1ac22f6c655d5568",
+      "bytes": 4607783
+    },
+    "vision-transfer.png": {
+      "sha256": "1539960c90099c2f3900c35a1c7583eb6aedaec70e7e4a74ab0d92f48a912a6f",
+      "bytes": 289606
+    }
+  }
+}

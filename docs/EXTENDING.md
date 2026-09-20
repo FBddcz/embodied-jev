@@ -21,7 +21,7 @@ Key 不回填到密码框，也不进入预设或实验导出。更换接口地�
 - `source_xy`：方块起点，单位米；显式填写时固定位置。留空使用原来的种子随机扰动。
 - `target_xy`：目标位置；托盘或支撑块及其围边一起移动。
 - `barrier_height`：仅用于越障模板，范围 0.02–0.16 米；其他模板不使用此字段。
-- `user_context`：额外 JSON 上下文，供模型参考；位置、接触和物理成功条件仍来自仿真。
+- `user_context`：额外 JSON 上下文，供模型参考，不替换传感器反馈或物理成功条件。物体与目标信息由所选观察模式提供；直接视觉实验不要在这里额外填写真值坐标。
 
 例如 [transfer-preset.json](../examples/transfer-preset.json)：
 
@@ -79,8 +79,8 @@ API 测试会发送输入并可能产生费用。Key 请填写在模型配置的
 | 同协议的新模型 | 页面具名模型配置 | 地址、模型 ID、鉴权、真实调用验证 |
 | 不同协议的模型 | `policies.py` | 请求、候选校验、返回格式、耗时与用量 |
 | 新场景参数 | `scenarios.py`、`physics.py` | 配置验证、XML 对象、场景哈希、回放几何 |
-| 新任务类型 | `physics.py`、`planning.py` | 任务定义、对象与接触、阶段、动作、成功条件 |
-| 新候选动作 | `planning.py` | 目标与夹爪指令、预演、执行、中文显示 |
+| 新任务类型 | `physics.py`、`planning.py`、`incremental.py` | 对象、接触与成功条件；技能模式的阶段和目标；逐步模式的任务说明 |
+| 新候选动作 | `planning.py` 或 `incremental.py`，以及 `runtime.py` | 技能目标或固定短步、夹爪指令、安全检查、执行与中文显示 |
 | 新观察输入 | `perception.py`、`runtime.py`、`evidence.py`、`incremental.py` | 图像/状态适配、标定、跟踪与来源；直接图像不得混入物体真值 |
 | 逐步动作 | `incremental.py`、`runtime.py` | 固定 XYZ/夹爪菜单、选择后的安全检查、实际转移历史；不要混入预设阶段 |
 | 新机器人 | `physics.py` 和资产目录 | 关节/执行器、IK、夹爪接触、碰撞和可达范围 |

@@ -2,11 +2,11 @@
 
 # 🤖 EmbodiedJev · 行知
 
-### 把具身 AI 实验，搬到你的浏览器里。
+### 把模型接到机械臂上，看它如何观察、选择和修正动作。
 
-**📦 开箱体验三大仿真任务 · 🧠 本地小模型 / 云端 API · 🆚 多模型同场对比**
+**🦾 MuJoCo 物理仿真 · 👁️ 双相机视觉 · 🧭 逐步动作规划 · 🆚 多模型对比**
 
-无需机械臂，无需先训练模型。跟着步骤启动，在自己的电脑上体验「观察 → 决策 → 执行 → 反馈」。
+不需要机器人硬件。用浏览器运行实验，查看模型看到了什么、选了哪一步，以及执行后发生了什么。
 
 [![Checks](https://github.com/FBddcz/embodied-jev/actions/workflows/ci.yml/badge.svg)](https://github.com/FBddcz/embodied-jev/actions)
 [![Stars](https://img.shields.io/github/stars/FBddcz/embodied-jev?style=flat&color=f4b942)](https://github.com/FBddcz/embodied-jev/stargazers)
@@ -14,56 +14,83 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![MuJoCo](https://img.shields.io/badge/Physics-MuJoCo-08a88a)](https://mujoco.org/)
 
-[🚀 快速上手](#-零机器人基础快速上手) · [🧠 接入模型](#-给机械臂接上模型) · [📊 实测结果](docs/VALIDATION.md) · [🤝 一起维护](#-一起把行知做得更好)
-
-![行知具身决策工作台](docs/workbench-desktop.png)
+[🎬 看演示](#-先看两个真实回合) · [🚀 快速上手](#-零机器人基础快速上手) · [🧠 接入模型](#-给机械臂接上模型) · [📊 实验结果](docs/VALIDATION.md)
 
 **行而有据，知而能行。**
 
-如果这个项目帮你迈出了具身 AI 的第一步，欢迎点一颗 **⭐ Star**，让更多人一起玩、一起改！
-
 </div>
 
-## ✨ 打开行知，你能做什么？
+## 🎬 先看两个真实回合
 
-- 📦 **先玩起来，再接模型**：内置规则基线，无需 API Key、GPU 或模型权重，即可运行三个任务。首次安装依赖需要联网。
-- 🦾 **真实物理交互**：MuJoCo + Franka Panda，夹爪接触、抓取、搬运和放置都有物理反馈。
-- 🧠 **模型入口放在界面里**：可接 TypeSafe Jev、Claude 原生 API、OpenAI 兼容 API，以及本地 MiniCPM5-2B。
-- 👀 **决策过程看得见**：分开展示“做什么”和“怎么做”，查看阶段选择、动作概率、调用次数与延迟。
-- 🧭 **逐步规划也能试**：模型逐轮选择 XYZ 方向、步长和夹爪动作，执行后重新观测；可用原始图像输入并加入中途扰动。
-- 📷 **相机自由组合**：仅外部、仅腕部、双相机或无相机；启用的视角按动作边界更新，腕部相机随手移动。
-- 🆚 **同一任务，不同模型**：可选 2–3 路独立实验，统一任务和种子，真实运行后按仿真时间对齐回放。
-- 🧩 **按自己的想法扩展**：多套具名模型接口、任务/场景预设、JSON 导入导出与独立输入测试，方便二次开发。
-- 🧪 **执行前先预演**：在仿真副本里检查候选动作，拦截已配置的碰撞和抓取丢失情况。
-- ⏯️ **实验随手控制**：运行、暂停、单步、停止、重置、轨迹回放、JSON 导出，一站完成。
-- 💻 **本地工作台**：浏览器交互，桌面与手机尺寸均有适配；数据由本机服务处理，调用云端模型时发送任务状态，直接图像模式还发送已启用相机的 RGB。
+下面两段来自已保存的 **GPT-6 Astra＋双相机原始图像**实验。模型没有拿到方块和托盘的坐标，每次看图后选择一个 XYZ 短步或夹爪动作。
 
-## 🎯 三个任务，感受完整闭环
+左侧是按记录姿态重绘的动作回放，右侧是模型本步收到的外部、腕部相机原图。回放省略了等待 API 的停顿，并延长了动作展示时间，**不能用播放速度衡量模型推理速度**。
 
-| 任务 | 你会看到什么 |
-| --- | --- |
-| 📥 搬运入盘 | 抓住红色方块，搬到蓝色托盘，松爪并撤离 |
-| 🧱 方块堆叠 | 将红色方块放在固定蓝色方块上，检查支撑与稳定状态 |
-| 🚧 越障搬运 | 抬高物体、越过障碍，再放到目标位置 |
+### 📦 看图抓取，搬进托盘
 
-抓取依靠双侧夹爪接触，成功由物理状态判定。页面中的“验证通过”对应实际仿真检查。
+模型逐步靠近方块、抓取、搬运、松爪和撤离，**32 步完成**。原始实验用时约 **235 秒**。
+
+![双相机视觉搬运：动作回放与模型原始输入](docs/media/vision-transfer.gif)
+
+[▶ 高清 MP4](docs/media/vision-transfer.mp4) · [实验说明与原始记录](docs/PLANNING_RESULTS.md)
+
+### 🔄 托盘移动后，还能继续吗？
+
+这一局在第 20 步后，测试程序把托盘沿 X 方向移动 **6 cm**。此前还出现了一次双指接触丢失，模型随后张爪、重新对齐并抓取，再向新的托盘位置调整，**43 步完成**。原始实验用时约 **342 秒**。
+
+![托盘扰动与重新抓取：43 步真实视觉回合](docs/media/vision-recovery.gif)
+
+[▶ 高清 MP4](docs/media/vision-recovery.mp4) · [托盘为什么会移动？](docs/PLANNING.md#托盘为什么会自己移动)
+
+> 💡 托盘移动是主动开启的**扰动测试**，默认关闭。重新抓取由模型选择动作完成。两段演示都来自同一个搬运场景，说明这两个回合跑通了；更多场景下是否稳定，还需要继续验证。首次失败和 API 超时也保留在[完整记录](docs/PLANNING_RESULTS.md)中。
+
+## ✨ 这个工作台能做什么？
+
+- 🦾 **运行三个物理任务**：搬运入盘、方块堆叠、越障搬运。抓取依靠夹爪接触，完成与否由仿真状态判断。
+- 🧭 **切换控制方式**：让模型选择预设技能，或让它逐步决定 XYZ 位移和夹爪操作。
+- 📷 **自由组合相机**：仅外部、仅腕部、双相机或无相机。相机按动作边界采样，腕部机位随手移动。
+- 👀 **查看决策依据**：观察模型收到的状态和图像、公开的动作说明、实际执行结果与调用用量。
+- 🆚 **并排比较模型**：2–3 路独立实验使用相同任务设置，支持暂停、单步、回放和导出。
+- 🧩 **调整场景与接口**：保存多套连接，修改物体起点、目标位置和障碍高度，也可接入自己的决策服务。
+
+<details>
+<summary>展开工作台与模型对比界面</summary>
+
+![行知工作台](docs/workbench-desktop.png)
+
+![模型对比界面，图中为规则基线示例](docs/comparison-desktop.png)
+
+</details>
+
+## 📊 已经验证了什么？
+
+不同输入和控制方式分开看，避免把“选择现成技能”与“根据图像决定短步”混为同一成绩。
+
+| 输入与控制方式 | 模型 / 策略 | 已有结果 |
+| --- | --- | --- |
+| 原始双相机图像＋逐步 XYZ | GPT-6 Astra | 正常搬运 32 步完成；含托盘扰动和重新抓取的回合 43 步完成 |
+| 仿真状态＋预设技能 | GPT-6 Astra | 三个任务 × 三个种子，9/9 完成；每局 8 动作、13 次调用 |
+| RGB-D 检测坐标＋预设技能 | GPT-6 Astra | 单独一局搬运完成；8 动作、13 次调用 |
+| RGB-D 检测坐标＋预设技能 | 规则基线 | 双相机下三个任务各一次完成，零模型调用 |
+| 仿真状态＋预设技能 | MiniCPM5-2B FP16 | 已跑过真实推理；最近一组为 0/3，尚不能可靠完成任务 |
+
+下面的图对应 **GPT 的预设技能实验：三个任务，各三个种子**，不包含上面的两段视觉规划演示。
+
+![GPT-6 Astra 预设技能实验：完成情况与调用耗时](docs/results/gpt6-astra-2026-09-20.png)
+
+[实验结果总览](docs/VALIDATION.md) · [逐步视觉规划](docs/PLANNING_RESULTS.md) · [预设技能九局实验](docs/GPT6_EXPERIMENT.md)
+
+这些都是固定仿真场景中的小样本。项目目前没有证明对未知物体、任意任务或真实机器人的泛化能力，也没有据此得出优于规则策略或 VLA 的结论。
 
 ## 🚀 零机器人基础，快速上手
 
-**准备好 Python 3.11+、Node.js 22.12+ 和 Git。** 不需要机器人硬件，也不要求懂 MuJoCo。
+准备 **Python 3.11+、Node.js 22.12+ 和 Git**。首次安装需要联网；运行规则基线不需要 Key、GPU 或模型权重。
 
-### 1️⃣ 下载项目
+### 1️⃣ 下载并安装
 
 ```bash
 git clone https://github.com/FBddcz/embodied-jev.git
 cd embodied-jev
-```
-
-### 2️⃣ 安装并启动
-
-macOS / Linux：
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
@@ -73,9 +100,11 @@ embodied-jev serve --port 8090
 ```
 
 <details>
-<summary>🪟 Windows PowerShell 命令</summary>
+<summary>🪟 Windows PowerShell</summary>
 
 ```powershell
+git clone https://github.com/FBddcz/embodied-jev.git
+cd embodied-jev
 py -3.11 -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -e .
@@ -84,83 +113,42 @@ npm run build
 embodied-jev serve --port 8090
 ```
 
-Windows 提供上述启动方式；当前已验证的环境为 macOS 与 Linux CI。
+当前已验证 macOS 与 Linux CI；Windows 可按上述方式尝试。
 
 </details>
 
-### 3️⃣ 打开页面，运行第一个实验
+### 2️⃣ 跑第一局
 
-访问 **[http://127.0.0.1:8090](http://127.0.0.1:8090)** → 选择任务 → 保持“规则基线” → 点击 **运行实验**。🎉
+打开 **[http://127.0.0.1:8090](http://127.0.0.1:8090)**，选择任务，保持“规则基线”，点击 **运行实验**。
 
-拖动场景调整视角，单步查看动作，运行结束后拖动时间轴回放。右上角可导出实验 JSON。
+可以拖动场景、单步执行、暂停，或在结束后拖动时间轴回放。默认策略是手写规则，模型调用数为 **0**；接入并选择模型后才会请求模型。
 
-> 💡 默认演示由规则策略决策，模型调用数为 **0**。接入并选择模型后，才会进行模型决策。浏览器标签页共享本机的单实验与对比实验；两种视图各自保留状态。
+### 3️⃣ 试试直接视觉规划
 
-## 🆚 一屏对比：同一任务，不同决策
+先接好支持图像的模型，再选择：
 
-打开顶部 **模型对比**，选择 2–3 个模型，统一任务、种子和动作预算，再开始实验。没有 Key？可以先用两路规则基线体验完整操作。
+**逐步 XYZ · 闭环规划 → 直接图像 · 多模态模型 → 双相机 → 运行实验**
 
-![模型对比界面：双规则基线示例](docs/comparison-desktop.png)
-
-*图中为双规则基线的界面示例，非云端模型对比成绩。*
-
-- 🎛️ **自己选模型**：MiniCPM、Jev、GPT、Claude 等已配置入口；同一 API 也能填写不同模型 ID。
-- 🍎 **依次 / 并行可选**：默认依次运行；并行最多两路，本地 MiniCPM 推理仍共用模型锁。
-- 👀 **实时看差异**：每路独立机械臂场景、阶段、动作和运行状态，模型各自推进。
-- ⏯️ **对齐看轨迹**：暂停或结束后，沿同一仿真时间回放；实际耗时保留模型等待，不能拿回放速度当推理速度。
-- 📁 **记录带走**：导出各路配置、决策和轨迹。未接通的模型不生成模拟成绩，未知费用也不会显示为 0 美元。
-
-接入方法和比较边界见 **[模型对比指南](docs/COMPARISON.md)**。完整轨迹回放来自这次运行，服务重启后需重新实验；目前还没有导入历史文件的入口。
+打开“视觉”页签能看到模型使用的相机帧。想复现第二段演示，可在“执行设置”中启用“移动目标”，设为第 20 步后、X 位移 0.06 m。普通演示保持“不施加扰动”。详细步骤见[逐步规划指南](docs/PLANNING.md)。
 
 ## 🧠 给机械臂接上模型
 
-| 方式 | 适合谁 | 需要准备 |
+点击 **决策模型**旁的插头图标，选择接口类型，填写地址、模型 ID 和 Key，然后保存并测试调用。
+
+| 入口 | 能做什么 | 需要准备 |
 | --- | --- | --- |
-| 🎮 规则基线 | 想先体验仿真和界面 | 安装项目即可 |
-| 🍎 MiniCPM5-2B 本地 | 想研究小模型的决策能力 | 下载权重、安装本地推理依赖 |
-| ⚡ TypeSafe Jev | 已有 TypeSafe 账号 | 官方 API Key |
-| 🌐 OpenAI 兼容 API | 已有云端平台或本地服务 | Base URL、模型 ID、API Key |
-| 🟠 Claude 原生 API | 想直接调用 Anthropic 模型 | Anthropic API Key、模型 ID |
-| 🔌 结构化决策 API | 已有返回候选概率的服务 | 接口地址与协议适配 |
+| 🌐 OpenAI 兼容 API | 状态输入；所选模型支持图像时可做直接视觉规划 | Base URL、模型 ID、Key |
+| 🟠 Claude 原生 API | 状态输入与直接图像输入 | Anthropic 接口或兼容服务的地址、模型 ID、Key |
+| ⚡ TypeSafe Jev | 有限候选决策 | 已获访问权限的 TypeSafe Key |
+| 🍎 MiniCPM5-2B | 本地状态输入决策 | 本地权重与推理依赖，当前适配器不接图像 |
+| 🔌 结构化决策 API | 自己实现的候选决策服务 | 服务地址与协议适配 |
 
-### 🌐 已有 API？在界面里填就行
+Key 默认保存在系统钥匙串；仓库、浏览器存储和导出中都不含 Key。保存配置不会发送模型请求，测试和运行会产生真实调用。使用云端模型时，会发送对应的任务输入；直接视觉模式还会发送所选相机的 RGB。
 
-点击 **决策模型** 旁边的插头图标 → 选择接口类型 → 填入 **Base URL、模型 ID、API Key** → 保存 → 测试调用。
+Jev 当前需要申请访问，可从 [TypeSafe 官网](https://typesafe.ai)进入申请，获准后在[控制台](https://console.typesafe.ai)创建 Key。模型 ID 以账号实际可用的版本为准。
 
-![模型连接界面](docs/model-connection.png)
-
-- OpenAI 兼容接口通常填写以 `/v1` 结尾的 Base URL，程序补上 `/chat/completions`。
-- 模型 ID 以你的服务商实际提供的名称为准。聊天兼容不代表支持 Jev 专用决策接口。
-- Key 由系统钥匙串保存，连接信息放在仓库外的应用目录；刷新页面和重启服务后可恢复。系统存储不可用时，页面会显示“仅本次会话”，不会改存明文 Key。
-- 保存配置不发请求；**测试调用**和模型实验会产生真实调用，费用按服务商规则计算。
-- **已保存 ≠ 已验证**：页面分开展示连接状态；改动配置后需要重新测试。OpenAI 示例只填入地址和模型名，不会自动发请求。
-
-🔐 服务默认只监听 `127.0.0.1`。Key 不进入浏览器存储、预设、导出或日志；保存后密码框清空，更换接口地址不会自动沿用旧 Key。存储位置和恢复方式见 [模型接入指南](docs/TECHNICAL_GUIDE.md#models)。
-
-普通聊天 API 只返回动作选择，界面不会把模型自报的“信心”当作真实概率。具体协议和环境变量见 [模型接入指南](docs/TECHNICAL_GUIDE.md#models)。
-
-### ⚡ 官方 Jev：获准访问后，填 Key 就能连接
-
-TypeSafe 当前采用邀请制。先到 [TypeSafe 官网](https://typesafe.ai) 点击 **Join Waitlist**，填写邮箱申请访问；收到邀请后，用获批邮箱登录 [官方控制台](https://console.typesafe.ai) 创建 API Key。已有访问权限的用户可直接进入控制台。然后回到行知的模型连接窗口：
-
-1. 选择 **TypeSafe Jev**，官方地址已自动填好。
-2. 模型默认 **`jev-latest`**；做固定版本对比时可改为账号有权限的版本，例如 `jev-1.13.0`。
-3. 粘贴 TypeSafe Key，点击 **测试调用**。通过后会显示服务实际返回的模型版本和延迟。
-4. 关闭窗口、选择任务，点击 **单步** 或 **运行实验**，开始用官方 Jev 决策。
-
-官方接口是 `https://api.typesafe.ai/v1/systemone`，使用候选决策协议并返回概率；OpenAI 或 Anthropic 的 Key 不能直接用于这个入口。`jev-latest` 会随官方更新，实验导出会记录实际返回的模型名。详见 [官方 API 文档](https://docs.typesafe.ai/api)。
-
-### 🟠 Claude 也能接，后续对比更方便
-
-在模型连接中选 **Claude 原生 API**，Base URL 使用 `https://api.anthropic.com/v1`，填写你的 Anthropic Key 和有权限调用的模型 ID，例如 `claude-fable-5-1`。程序调用原生 Messages API，让模型从同一组动作中选择，返回结果仍会做合法性检查。
-
-如果你的中转平台已经将 Claude 封装成 OpenAI 兼容接口，继续选择 **OpenAI 兼容 API** 即可。两种入口分别保存配置。Claude Code 是编程工具，实验调用的是具体模型 API；工具订阅不等同于 API 余额。
-
-准备做 GPT / Claude / MiniCPM 对比？见 [公平对比与复现说明](docs/COMPARISON.md)。本轮已补充 GPT-6 Astra 的真实 API 实验，Jev / Claude 的同设置对照还待完成。
-
-### 🍎 本地 MiniCPM5-2B：不依赖付费 API
-
-先完成快速启动中的环境安装，然后运行：
+<details>
+<summary>🍎 运行本地 MiniCPM5-2B</summary>
 
 ```bash
 python -m pip install -e '.[minicpm]'
@@ -170,111 +158,43 @@ embodied-jev warmup
 embodied-jev serve --port 8090
 ```
 
-在界面选择 **MiniCPM5-2B**。首次加载会下载约 **5 GB** 权重；运行还需额外内存。Apple Silicon 可用 `EMBODIED_DEVICE=mps` 明确指定 Apple GPU。当前适配器在 MPS/CUDA 使用 FP16，在 CPU 使用 FP32。
+首次下载约 5 GB 权重，运行还需额外内存。Apple Silicon 可用 MPS；当前后端在 MPS/CUDA 使用 FP16，在 CPU 使用 FP32。MLX/GGUF 量化后端尚未接入。
 
-`warmup` 用一次真实决策检查模型加载。服务启动后会从缓存加载自己的模型实例；页面显示加载、就绪与错误状态。缓存完整后，可设置 `HF_HUB_OFFLINE=1` 离线运行。
+</details>
 
-**想要更轻？** 官方另有 [MLX 4-bit（约 1.42 GB）](https://huggingface.co/openbmb/MiniCPM5-2B-MLX)、[GGUF Q4（约 1.56 GB）和 Q8（约 2.68 GB）](https://huggingface.co/openbmb/MiniCPM5-2B-GGUF)。这些是权重大小；当前工作台接的是 Transformers FP16 路线，量化后端尚待集成。
+[模型连接与环境变量](docs/TECHNICAL_GUIDE.md#models) · [多模型对比](docs/COMPARISON.md)
 
-## 🔄 它是怎么工作的？
+## 🔄 模型和程序各负责什么？
 
-**观察 → 决策 → 执行 → 再观察**，控制方式可以选择：
+**预设技能模式**中，模型选择抓取、搬运、松爪等技能，技能内部的动作目标由程序生成。
 
-- 🧩 **预设技能**：先选择阶段，再选择程序生成的技能动作；仅有一个可行阶段时，界面标注无需模型调用。此前八步任务实验使用此模式。
-- 🧭 **逐步 XYZ 规划**：每轮由模型从 ±X/Y/Z 的 40、10、2 mm 短步，以及开爪、闭爪、保持中选择。程序不指定抓取与搬运顺序，也不从物体坐标生成航点；代码负责 IK、关节控制、安全检查和结果判定。
+**逐步 XYZ 模式**中，模型每轮选择方向、步长或夹爪动作，再根据执行结果继续选择。程序负责把这些指令转成关节运动、检查已配置的碰撞条件，以及判定任务是否完成。模型失败后不会自动换成规则策略。
 
-默认输入是 MuJoCo 提供的**结构化状态**。也可选择本地 RGB-D 检测估计，或在逐步规划中选择**直接图像**：把已启用相机的原始 RGB 和机器人本体反馈交给支持图像的模型，不提供物体与目标坐标。每轮记录动作目的、可见依据、实际位移和下一帧，候选概率仍不等于动作成功率。
+观察也有三种选择：仿真直接给出的坐标、本地 RGB-D 检测得到的坐标、直接送给模型的相机图像。外部相机和腕部相机按步骤更新，当前没有连续视频控制。
 
-👁️ **相机画面会更新！** 外部相机观察桌面，腕部相机随手移动。可选其中一种、两种或关闭全部；直接视觉至少需要一种。画面在决策与动作边界采集，属于逐步采样，当前没有连续视频控制。视觉页可查看画面，下载观测 ZIP 核对模型输入 → **[逐步规划说明](docs/PLANNING.md)** · **[视觉模式说明](docs/VISION.md)**。
+[相机与观察方式](docs/VISION.md) · [动作接口与扰动设置](docs/PLANNING.md) · [快速推理原理](docs/FAST_INFERENCE.md)
 
-⚡ **Jev 为什么能快速选择？** 同一状态下合并独立问题、直接输出有限候选概率，可以减少重复输入和文字生成。行知也压缩了几何状态与近期反馈，并复用 HTTP 连接；本地 MiniCPM 直接读取候选 logits。不同路线的速度不能直接等同，详见 [快速推理原理与开源参考](docs/FAST_INFERENCE.md)。
+## 🛠️ 继续使用和开发
 
-## 📊 有结果，也有边界
+| 想做什么 | 看这里 |
+| --- | --- |
+| 比较不同模型 | [模型对比](docs/COMPARISON.md) |
+| 修改场景、接模型或增加任务 | [扩展指南](docs/EXTENDING.md) |
+| 查接口、控制流程与运行配置 | [技术说明](docs/TECHNICAL_GUIDE.md) |
+| 从实验记录导出视频 | [演示与视频导出](docs/DEMOS.md) |
+| 查结果和失败记录 | [实验结果总览](docs/VALIDATION.md) |
+| 提交代码、文档或实验 | [贡献指南](CONTRIBUTING.md) |
 
-内置规则基线已完成 **3 个任务 × 3 个种子 = 9/9 次成功**，每次 8 个动作，监测到的禁止接触步数为 0。这个结果属于规则基线，不能代替 MiniCPM 或 Jev 的模型成绩。
-
-🌐 **GPT-6 Astra 已完成真实 API 闭环：9/9 成功！** 三个任务各跑种子 0、1、2，每局 8 个动作、13 次模型调用。单次决策平均 **2.81 秒**，每局平均 **42.50 秒**，导出记录帧未见禁止接触。这里的动作由模型选择，运行中没有切回规则基线。完整设置、用量和原始轨迹见 **[GPT-6 实验记录](docs/GPT6_EXPERIMENT.md)**。
-
-![GPT-6 Astra 真实 API 实验结果](docs/results/gpt6-astra-2026-09-20.png)
-
-🍎 **MiniCPM 已在 M2 / 16 GB 上用 FP16 真正跑过推理**。最新紧凑状态与候选位移提示在三个任务的 seed 0 上仍是 **0/3 成功**：两项因连续无进展自动停止，一项达到 12 步预算，尚未完成抓取。我们公开失败、耗时和完整轨迹，决策策略还需优化。
-
-以上都使用直接仿真状态，属于固定任务的小样本实验，不是视觉模式成绩。规则与 GPT 都完成了相同八阶段路径，尚未证明模型优于规则策略。GPT 的模型名由所选 API 返回，两批模型实验的样本数与执行节奏也不同，暂不作严格速度排名。TypeSafe Jev / Claude 当前仍只有模拟响应测试，真实结果待补充。
-
-想复现实验、查看模型状态与验证范围？进入 **[完整验证记录](docs/VALIDATION.md)**。
-
-🧭 **逐步图像规划已有真实回合。** 双相机＋GPT 以 **32 步**完成搬运；另一局中途将托盘平移 6 cm，模型在接触丢失后重新抓取并调整动作，以 **43 步**完成。首次撤离高度不足的失败及两次 API 超时也完整保留。这是同一开发场景的小样本，尚不能推广为稳定泛化能力 → **[动作与相机证据](docs/PLANNING_RESULTS.md)**。这些结果不与预设技能的 9/9 成绩合并。
-
-👁️ **RGB-D 视觉链路也已跑通 3 个开发场景！** 规则基线各跑 seed 0，模型调用为 0；另外单独保存了一局 **视觉估计＋GPT-6** 搬运成功记录，8 个动作、13 次 API 调用。视觉负责定位，模型选择预设动作，尚不是自主轨迹规划。真实画面、调试记录和各组结果见 **[视觉验证](docs/VISION.md#本次验证)**。
-
-```bash
-# 规则基线
-embodied-jev benchmark --output runs/baseline.json
-
-# MiniCPM 本地模型：先配置并下载模型
-EMBODIED_MINICPM=1 embodied-jev benchmark --provider minicpm \
-  --seeds 0 1 2 --threshold 0.55 --output runs/minicpm.json
-```
-
-报告会记录成功与失败、调用次数、延迟、阈值和轨迹。默认低概率会暂停，批量评测中记录为 `uncertain`；没有自动切回规则基线。
-
-## 🛠️ 想继续折腾？
-
-顶部 **扩展** 可以保存多套模型连接、调整物体/目标/障碍参数、导入导出任务预设，也能用自己填写的状态与候选单独测试模型。自定义场景会真正进入 MuJoCo；输入测试只返回选择，不控制机器人。
-
-页面预设基于现有三类任务。全新任务、机器人、动作或成功条件需要代码适配，入口和示例见 **[扩展与二次开发指南](docs/EXTENDING.md)**。欢迎把你的 API、任务模板和场景预设接进来！🛠️
-
-- 📘 [技术说明与高级配置](docs/TECHNICAL_GUIDE.md)
-- ⚡ [Jev 快速推理与开源实现](docs/FAST_INFERENCE.md)
-- 🧪 [验证范围与结果](docs/VALIDATION.md)
-- 🔍 [参考项目与设计来源](docs/REFERENCES.md)
-- 🤝 [开发与贡献指南](CONTRIBUTING.md)
-
-```bash
-python -m pip install -e '.[test]'
-pytest -q
-npx playwright install chromium
-npm run test:ui
-```
-
-## 🗺️ 接下来，一起解锁
-
-- [x] MuJoCo + Panda 三大任务、接触反馈与动作预演
-- [x] 可视化控制、阶段/动作决策显示、回放与导出
-- [x] TypeSafe / 结构化决策 / OpenAI 兼容 / Claude 原生 API 接口
-- [x] MiniCPM5-2B 本地推理适配与评测入口
-- [x] 2–3 路模型对比、真实运行、同步仿真时间回放
-- [x] 具名模型配置、场景预设与独立自定义输入测试
-- [x] 逐步 XYZ 规划、原始图像输入与中途扰动评测
-- [x] 外部 / 腕部 / 双相机 / 无相机配置与观测帧导出
-- [ ] Apple Silicon 的 MLX 量化后端
-- [x] GPT-6 Astra 真实 API 实验：三个任务 × 三个种子
-- [ ] 补齐 Jev / Claude 等模型的同设置对照
-- [ ] 更多物体、场景与失败恢复策略
-- [ ] 更丰富的观察方式和仿真环境
-
-以上未勾选项是路线图，欢迎一起实现。🚀
-
-## 🤝 一起把行知做得更好
-
-**喜欢这个方向？欢迎 ⭐ Star、🍴 Fork，也欢迎留下第一条 Issue 或 PR！**
-
-你可以帮忙补充新手文档、复现失败案例、接入模型、优化界面，或者设计新的仿真任务。第一次贡献也非常欢迎，不必等到“全部学会”才开始。
-
-[🐛 报告问题 / 提建议](https://github.com/FBddcz/embodied-jev/issues) · [🛠️ 提交 PR](https://github.com/FBddcz/embodied-jev/pulls) · [📖 贡献指南](CONTRIBUTING.md)
-
-提交实验结果时，请附上模型、任务、种子和配置；成功与失败都值得记录。让每一个改进都能被别人复现。
+接下来希望补齐更多场景、Jev/Claude 的同设置实验，以及 Apple Silicon 的量化推理。欢迎通过 [Issue](https://github.com/FBddcz/embodied-jev/issues) 提问题，也欢迎 [PR](https://github.com/FBddcz/embodied-jev/pulls)。分享实验时，请带上模型、任务与设置，并保留失败回合。
 
 ## ⭐ Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=FBddcz/embodied-jev&type=Date)](https://star-history.com/#FBddcz/embodied-jev&Date)
 
-每一颗 Star，都是对这个小项目的一份鼓励。欢迎共同维护，让具身决策实验更容易开始、更容易理解。💙
+如果行知对你有帮助，欢迎点一颗 Star，也欢迎一起把它做得更好。💙
 
 ## 🙏 致谢与许可
 
-灵感来自 Jev 机器人实验、SemIf、MuJoCo Menagerie 等开源探索，详见 [参考映射](docs/REFERENCES.md)。感谢所有分享代码、实验和失败经验的开发者。
+感谢 Jev 机器人实验、SemIf、MuJoCo Menagerie 等开源项目，设计来源见[参考映射](docs/REFERENCES.md)。项目原创代码采用 **MIT**；Panda 资产保留 **Apache-2.0** 许可，见[第三方声明](THIRD_PARTY_NOTICES.md)。模型权重不随仓库分发。
 
-项目原创代码采用 **MIT**；Panda 资产保留上游 **Apache-2.0** 许可，见 [第三方声明](THIRD_PARTY_NOTICES.md)。模型权重不随仓库分发，其许可单独适用。
-
-行知是独立实验项目，与 TypeSafe、OpenBMB、SemIf 没有隶属关系。Jev 是 TypeSafe 的模型；本地 MiniCPM 模式借鉴有限候选决策思路，使用的是 MiniCPM 权重。
+行知是独立实验项目，与 TypeSafe、OpenBMB、SemIf 没有隶属关系。
