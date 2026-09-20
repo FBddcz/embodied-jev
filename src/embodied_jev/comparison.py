@@ -61,14 +61,17 @@ class Comparison:
 
     def __init__(self, lanes, *, task="transfer", seed=0, preview=True, threshold=.55,
                  max_cycles=30, speed=1.5, mode="sequential", scene_config=None, user_context=None, secrets=(),
-                 observation_mode="privileged"):
+                 observation_mode="privileged", control_mode="skills", intervention=None, shuffle_candidates=False,
+                 camera_views=None):
         if mode not in {"sequential", "parallel"} or not 2 <= len(lanes) <= 3:
             raise ValueError("比较模式或模型数量无效。")
         self.id = uuid.uuid4().hex[:12]
         self.mode = mode
         self.max_parallel = 1 if mode == "sequential" else 2
         self.config = {"task": task, "seed": seed, "preview": preview, "threshold": threshold,
-                       "observation_mode": observation_mode,
+                       "observation_mode": observation_mode, "camera_views": deepcopy(camera_views),
+                       "control_mode": control_mode, "intervention": deepcopy(intervention),
+                       "shuffle_candidates": shuffle_candidates,
                        "max_cycles": max_cycles, "speed": speed,
                        "scene_config": deepcopy(scene_config), "user_context": deepcopy(user_context)}
         self.lock = threading.RLock()
@@ -213,9 +216,12 @@ class Comparison:
                       "model": lane["session"].policy.model, "status": lane["status"], "session": lane["session"].snapshot()}
                      for lane in self.lanes]
             ends = [self._bounds(lane["session"])[1] for lane in self.lanes]
-            notes = ["各路使用独立仿真；阶段选择完成后才进行动作选择。"]
+            notes = ["各路使用独立仿真；逐步规划每轮选择一个短步并重新观测。" if self.config["control_mode"] == "incremental"
+                     else "各路使用独立仿真；阶段选择完成后才进行动作选择。"]
             if self.config["observation_mode"] == "rgbd":
-                notes.append("RGB-D 估计用于阶段与目标生成；接触反馈、预演安全过滤和最终评分仍来自仿真。")
+                notes.append("RGB-D 估计位置用于决策输入；接触反馈、预演安全过滤和最终评分仍来自仿真。")
+            elif self.config["observation_mode"] == "vision":
+                notes.append("已启用相机的原始 RGB 直接进入模型；不提供物体或目标坐标。")
             if any(lane["provider"] == "minicpm" for lane in self.lanes):
                 notes.append("本地 MiniCPM 共享权重与推理锁；并行模式下 MiniCPM 推理仍串行执行。")
             if self.mode == "parallel":

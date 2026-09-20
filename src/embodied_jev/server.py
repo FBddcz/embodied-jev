@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, m
 
 from .physics import TASKS
 from .policies import DecisionPolicy, configurations, environment_connection
-from .runtime import Session
+from .runtime import Session, validate_intervention
 from .comparison import Comparison, resolve_lanes, resolve_model
 from .connection_store import memory_storage
 
@@ -41,9 +41,13 @@ def _bounded_json(value, limit=8192):
 class ScenarioInput(BaseModel):
     scene_config: dict | None = None
     user_context: dict | None = None
+    camera_views: list[Literal["external", "wrist"]] | None = None
+    intervention: dict | None = None
+    shuffle_candidates: bool = False
 
     @model_validator(mode="after")
     def validate_scenario(self):
+        self.intervention = validate_intervention(self.intervention)
         _bounded_json(self.scene_config)
         _bounded_json(self.user_context)
         if self.user_context is not None:
@@ -60,10 +64,11 @@ class Setup(ScenarioInput):
     task: Literal["transfer", "stack", "barrier"] = "transfer"
     seed: int = Field(default=0, ge=0, le=99999)
     provider: Literal["baseline", "jev", "minicpm", "local", "chat", "claude"] = "baseline"
-    observation_mode: Literal["privileged", "rgbd"] = "privileged"
+    observation_mode: Literal["privileged", "rgbd", "vision"] = "privileged"
+    control_mode: Literal["skills", "incremental"] = "skills"
     preview: bool = True
     threshold: float = Field(default=.55, ge=0, le=1)
-    max_cycles: int = Field(default=30, ge=1, le=100)
+    max_cycles: int = Field(default=30, ge=1, le=200)
     speed: float = Field(default=1.5, ge=.25, le=4)
     expected_episode_id: str | None = Field(default=None, min_length=1, max_length=64)
     profile_id: str | None = Field(default=None, min_length=1, max_length=64)
@@ -92,10 +97,11 @@ class ComparisonSetup(ScenarioInput):
     lanes: list[ComparisonLane] = Field(min_length=2, max_length=3)
     task: Literal["transfer", "stack", "barrier"] = "transfer"
     seed: int = Field(default=0, ge=0, le=99999)
-    observation_mode: Literal["privileged", "rgbd"] = "privileged"
+    observation_mode: Literal["privileged", "rgbd", "vision"] = "privileged"
+    control_mode: Literal["skills", "incremental"] = "skills"
     preview: bool = True
     threshold: float = Field(default=.55, ge=0, le=1)
-    max_cycles: int = Field(default=30, ge=1, le=100)
+    max_cycles: int = Field(default=30, ge=1, le=200)
     speed: float = Field(default=1.5, ge=.25, le=4)
     mode: Literal["sequential", "parallel"] = "sequential"
     expected_comparison_id: str | None = Field(default=None, min_length=1, max_length=64)
@@ -531,12 +537,14 @@ def create_app(store=None):
     def state():
         return public_result(current_session().snapshot())
 
-    def cached_perception(episode_id, capture_id=None):
+    def cached_perception(episode_id, capture_id=None, view=None):
         session = current_session()
         check_episode(episode_id, session)
+        if view is not None and hasattr(session, "camera_views") and view not in session.camera_views:
+            raise HTTPException(404, "该实验未启用所选相机视角")
         snapshot = session.camera_snapshot()
         if not snapshot:
-            raise HTTPException(404, "当前实验没有相机观测，请选择 RGB-D 视觉模式。")
+            raise HTTPException(404, "当前实验没有相机观测，请先启用相机。")
         if capture_id is not None and str(snapshot["metadata"]["capture_id"]) != capture_id:
             raise HTTPException(409, "相机帧已更新，请读取最新观测。")
         return snapshot
@@ -549,9 +557,16 @@ def create_app(store=None):
     @app.get("/api/perception/{image_name}.png")
     def perception_image(image_name: Literal["rgb", "depth"],
                          episode_id: str = Query(min_length=1, max_length=64),
-                         capture_id: str | None = Query(default=None, max_length=64)):
-        snapshot = cached_perception(episode_id, capture_id)
-        data = snapshot["rgb"] if image_name == "rgb" else snapshot.get("depth_display", snapshot["depth"])
+                         capture_id: str | None = Query(default=None, max_length=64),
+                         view: Literal["external", "wrist"] = "external"):
+        snapshot = cached_perception(episode_id, capture_id, view)
+        views = snapshot.get("views")
+        # Legacy single-camera caches predate the views map. An explicit map is
+        # authoritative: never substitute its top-level image for a missing view.
+        selected = snapshot if views is None and view == "external" else (views or {}).get(view)
+        if selected is None:
+            raise HTTPException(404, "该感知帧没有所选相机视角")
+        data = selected["rgb"] if image_name == "rgb" else selected.get("depth_display", selected["depth"])
         return Response(data, media_type="image/png", headers={"Cache-Control": "no-store"})
 
     @app.post("/api/reset")
@@ -603,6 +618,14 @@ def create_app(store=None):
     def export():
         session = current_session()
         return JSONResponse(public_result(session.export()), headers={"Content-Disposition": f'attachment; filename="embodied-jev-{session.id}.json"'})
+
+    @app.get("/api/export/cameras.zip")
+    def export_cameras(episode_id: str = Query(min_length=1, max_length=64)):
+        session = current_session()
+        check_episode(episode_id, session)
+        return Response(session.camera_archive(), media_type="application/zip",
+                        headers={"Content-Disposition": f'attachment; filename="{session.id}-cameras.zip"',
+                                 "Cache-Control": "no-store"})
 
     @app.get("/api/comparison")
     def comparison_state():

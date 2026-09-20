@@ -81,7 +81,8 @@ API 测试会发送输入并可能产生费用。Key 请填写在模型配置的
 | 新场景参数 | `scenarios.py`、`physics.py` | 配置验证、XML 对象、场景哈希、回放几何 |
 | 新任务类型 | `physics.py`、`planning.py` | 任务定义、对象与接触、阶段、动作、成功条件 |
 | 新候选动作 | `planning.py` | 目标与夹爪指令、预演、执行、中文显示 |
-| 新观察输入 | `perception.py`、`runtime.py`、`evidence.py` | 图像/状态适配、标定、跟踪、来源；阶段与目标共用同一估计 |
+| 新观察输入 | `perception.py`、`runtime.py`、`evidence.py`、`incremental.py` | 图像/状态适配、标定、跟踪与来源；直接图像不得混入物体真值 |
+| 逐步动作 | `incremental.py`、`runtime.py` | 固定 XYZ/夹爪菜单、选择后的安全检查、实际转移历史；不要混入预设阶段 |
 | 新机器人 | `physics.py` 和资产目录 | 关节/执行器、IK、夹爪接触、碰撞和可达范围 |
 | 新界面 | `frontend/` | 配置表单、响应式显示、真实 API、浏览器测试 |
 

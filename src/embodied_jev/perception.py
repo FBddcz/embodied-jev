@@ -149,8 +149,12 @@ class VisualObserver:
     The render worker owns its OpenGL context and receives a copy of MjData. The
     physics world itself is never accessed from that thread.
     """
-    def __init__(self, world, *, width=640, height=480):
+    def __init__(self, world, *, width=640, height=480, geometry=True, camera_views=None):
         self.world = world
+        self.geometry = geometry
+        self.camera_views = (["external", "wrist"] if getattr(world.model, "ncam", 0) else ["external"]) if camera_views is None else list(camera_views)
+        if not self.camera_views or any(view not in {"external", "wrist"} for view in self.camera_views):
+            raise ValueError("相机观测需要至少一种有效视角")
         self.width, self.height = width, height
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="jev-rgbd")
         self._renderer = None
@@ -170,7 +174,7 @@ class VisualObserver:
         self._max_lift = 0.
         self._capture_id = 0
 
-    def _render(self, data):
+    def _render(self, data, view="external"):
         if self._renderer is None:
             self._renderer = mujoco.Renderer(self._model, height=self.height, width=self.width)
         camera = mujoco.MjvCamera()
@@ -180,7 +184,7 @@ class VisualObserver:
         camera.distance, camera.azimuth, camera.elevation = 1., 180., -65.
         renderer = self._renderer
         renderer.disable_depth_rendering()
-        renderer.update_scene(data, camera)
+        renderer.update_scene(data, camera if view == "external" else "wrist_camera")
         rgb = renderer.render().copy()
         renderer.enable_depth_rendering()
         depth = renderer.render().copy()
@@ -195,6 +199,23 @@ class VisualObserver:
             (left.up.astype(float) + right.up.astype(float)) / 2,
             fy, fy, (self.width - 1) / 2, (self.height - 1) / 2)
         return RGBDFrame(rgb, depth, calibration)
+
+    def invalidate(self):
+        """An explicit external intervention can change a frame at the same sim time."""
+        with self._observe_lock:
+            self._last_time = None
+            self._last_observation = None
+            self._seen.clear()
+            self._held_offset = None
+            self._last_held = False
+
+    @staticmethod
+    def _encoded_frame(frame):
+        valid = np.isfinite(frame.depth) & (frame.depth > 0) & (frame.depth < 65.535)
+        depth_mm = np.where(valid, np.clip(frame.depth * 1000, 0, 65535), 0).astype(np.uint16)
+        display = np.where(valid, np.clip((1.25 - frame.depth), 0, 1) * 255, 0).astype(np.uint8)
+        return {"rgb": encode_png(frame.rgb), "depth": encode_png(depth_mm),
+                "depth_display": encode_png(display), "calibration": frame.calibration.serialise()}
 
     def _tracked_objects(self, detections, tcp, held, sim_time):
         rows, estimates = [], {}
@@ -247,50 +268,78 @@ class VisualObserver:
                 return copy.deepcopy(self._last_observation)
             started = time.perf_counter()
             try:
-                frame = self._executor.submit(self._render, copy.copy(self.world.data)).result(timeout=30)
+                data = copy.copy(self.world.data)
+                frames = {view: (self._executor.submit(self._render, data).result(timeout=30)
+                                 if view == "external" else
+                                 self._executor.submit(self._render, data, view).result(timeout=30))
+                          for view in self.camera_views}
+                frame = next(iter(frames.values()))
             except Exception as exc:
                 # Backend exceptions may contain local graphics-driver details;
                 # the UI gets a useful, fixed message without leaking them.
                 raise PerceptionUnavailable("RGB-D 相机无法渲染；请检查本地 OpenGL 或无界面渲染环境") from exc
-            detections = estimate_scene(frame, self.world.task)
+            detections = {}
+            if self.geometry:
+                # External detections take precedence; another enabled view may
+                # fill occluded objects. Disabled views are never rendered/read.
+                for view_frame in frames.values():
+                    for name, detection in estimate_scene(view_frame, self.world.task).items():
+                        detections.setdefault(name, detection)
             tcp = np.asarray(self.world.position, dtype=float)
             fingers, support, forbidden = self.world.contacts()
             held = len(fingers) == 2 and self.world.closed
-            rows, estimates = self._tracked_objects(detections, tcp, held, sim_time)
-            required = ("object", "destination", "barrier") if self.world.task == "barrier" else ("object", "destination")
+            rows, estimates = self._tracked_objects(detections, tcp, held, sim_time) if self.geometry else ([], {})
+            required = (("object", "destination", "barrier") if self.world.task == "barrier" else ("object", "destination")) if self.geometry else ()
             missing = [name for name in required if name not in estimates]
             self._capture_id += 1
             metadata = {
-                "capture_id": self._capture_id, "source": "rgbd",
+                "capture_id": self._capture_id, "source": "rgbd" if self.geometry else "vision",
                 "status": "unavailable" if missing else "partial" if any(row["tracked"] for row in rows) else "ready",
                 "captured_at": datetime.now(timezone.utc).isoformat(), "sim_time": round(sim_time, 4),
                 "latency_ms": round((time.perf_counter() - started) * 1000, 2),
                 "objects": rows, "width": self.width, "height": self.height,
                 "calibration": frame.calibration.serialise(),
-                "camera_view": "fixed oblique overhead, elevation -65 degrees",
+                "camera_view": " + ".join(self.camera_views),
+                "camera_views": list(self.camera_views),
+                "primary_view": self.camera_views[0],
+                "capture_schedule": "fresh synchronized views at decision/action boundaries; not a continuous video stream",
                 "depth_units": "millimetres", "depth_invalid_value": 0,
                 "depth_display_range_m": [.25, 1.25],
-                "detector": "known-colour RGB masks + calibrated metric depth",
-                "cube_size_prior_m": CUBE_SIZE_M,
+                "detector": "known-colour RGB masks + calibrated metric depth" if self.geometry else "none; raw RGB to model",
                 "proprioception": "simulated TCP, gripper command and finger/support contacts",
                 "tracking_limits_sim_seconds": {"unheld_object": OBJECT_MEMORY_SECONDS,
                     "held_object": HELD_MEMORY_SECONDS, "destination": DESTINATION_MEMORY_SECONDS},
                 "tracking_assumption": "static unheld objects; no slip while two finger contacts persist",
             }
+            if self.geometry:
+                metadata["cube_size_prior_m"] = CUBE_SIZE_M
+            else:
+                metadata["message"] = "已启用视角的 RGB 图像可用于模型输入；不含物体或目标坐标。"
+            metadata["views"] = {view: {"calibration": view_frame.calibration.serialise(),
+                                       "mount": "fixed" if view == "external" else "robot hand"}
+                                 for view, view_frame in frames.items()}
             if missing:
                 metadata["message"] = "看不到必需的方块、目标或障碍，且没有有效视觉定位；已停止，未使用仿真真值补齐。"
             elif any(row["tracked"] for row in rows):
                 metadata["message"] = "部分物体被遮挡，正在限时使用上次视觉定位与夹爪反馈。"
-            valid = np.isfinite(frame.depth) & (frame.depth > 0) & (frame.depth < 65.535)
-            depth_mm = np.where(valid, np.clip(frame.depth * 1000, 0, 65535), 0).astype(np.uint16)
-            display = np.where(valid, np.clip((1.25 - frame.depth) / 1., 0, 1) * 255, 0).astype(np.uint8)
-            snapshot = {"rgb": encode_png(frame.rgb), "depth": encode_png(depth_mm),
-                        "depth_display": encode_png(display), "metadata": metadata}
+            encoded = {view: self._encoded_frame(view_frame) for view, view_frame in frames.items()}
+            snapshot = {**encoded[self.camera_views[0]], "metadata": metadata, "views": encoded}
             metadata["latency_ms"] = round((time.perf_counter() - started) * 1000, 2)
             with self._cache_lock:
                 self._snapshot = snapshot
             if missing:
                 raise PerceptionUnavailable(metadata["message"])
+            if not self.geometry:
+                observation = {"task": TASKS[self.world.task]["goal"],
+                    "source": " + ".join(self.camera_views) + " RGB pixels + simulated proprioception",
+                    "units": "metres", "tcp": tcp.round(5).tolist(),
+                    "gripper": "closed" if self.world.closed else "open", "finger_contacts": sorted(fingers),
+                    "held": held, "grasp_secured": self.world.contact_seconds >= .16,
+                    "support_contact": support, "forbidden_contact": forbidden,
+                    "sim_seconds": round(sim_time, 3), "perception": copy.deepcopy(metadata)}
+                self._last_time, self._last_tcp, self._last_held = sim_time, tcp.copy(), held
+                self._last_observation = copy.deepcopy(observation)
+                return observation
             cube, target = estimates["object"], estimates["destination"]
             travel_height = max(TRAVEL_Z, float(estimates["barrier"][2]) + .06) if "barrier" in estimates else TRAVEL_Z
             if travel_height > .42:
@@ -349,3 +398,9 @@ class VisualObserver:
                 self._executor.submit(close_renderer).result(timeout=30)
             finally:
                 self._executor.shutdown(wait=True, cancel_futures=True)
+
+
+class ImageObserver(VisualObserver):
+    """Pixel observations with no colour detection or supplied object coordinates."""
+    def __init__(self, world, **kwargs):
+        super().__init__(world, geometry=False, **kwargs)

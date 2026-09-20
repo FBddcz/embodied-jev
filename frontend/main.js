@@ -51,6 +51,7 @@ const phaseNames = {
   withdraw: "向上撤离",
   recover: "张开重试",
   finish: "完成",
+  incremental: "逐步 XYZ 决策",
 };
 const stateNames = {
   idle: "待命",
@@ -71,6 +72,26 @@ const stageNames = {
   observing: "读取反馈",
   verified: "已验证",
 };
+const cameraSelections = {
+  none: [],
+  external: ["external"],
+  wrist: ["wrist"],
+  both: ["external", "wrist"],
+};
+function enabledCameras(snapshot) {
+  if (snapshot.camera_views?.length) return snapshot.camera_views;
+  if (["vision", "rgbd"].includes(snapshot.observation_mode))
+    return snapshot.perception?.camera_views?.length
+      ? snapshot.perception.camera_views
+      : cameraSelections.both;
+  return [];
+}
+function cameraSelection(views) {
+  return views.length === 2 ? "both" : views[0] || "none";
+}
+function cameraNames(views) {
+  return views.map((view) => (view === "wrist" ? "腕部" : "外部")).join("与");
+}
 let config,
   profileValues = [],
   configuredScene = {},
@@ -104,15 +125,18 @@ $("#app").innerHTML = `
    <p class="task-goal" id="task-goal"></p></section>
   <div class="divider"></div>
   <section><div class="section-topline"><h2>决策模型</h2><button class="icon-button connection-button" id="model-connect" title="模型连接" aria-label="模型连接">${icon("plug-zap")}</button></div><div class="select-wrap"><select id="provider" aria-label="决策模型"></select>${icon("chevron-down")}</div><div class="provider-status"><span class="dot"></span><span id="provider-note">离线 · 确定性策略</span></div></section>
-  <section class="observation-setting"><label class="field-label" for="observation-mode">观测来源</label><div class="select-wrap"><select id="observation-mode" aria-describedby="observation-help"><option value="privileged">仿真真值 · 默认</option><option value="rgbd">RGB-D 视觉 · 实验</option></select>${icon("chevron-down")}</div><p id="observation-help">直接读取仿真中的物体位置。</p></section>
+  <section class="observation-setting"><label class="field-label" for="control-mode">动作决策方式</label><div class="select-wrap"><select id="control-mode" aria-describedby="control-help"><option value="skills">预设技能选择</option><option value="incremental">逐步 XYZ · 闭环规划</option></select>${icon("chevron-down")}</div><p id="control-help">选择预设技能，技能内部轨迹由程序执行。</p></section>
+  <section class="observation-setting"><label class="field-label" for="observation-mode">观测来源</label><div class="select-wrap"><select id="observation-mode" aria-describedby="observation-help"><option value="privileged">仿真真值 · 默认</option><option value="rgbd">RGB-D 视觉 · 实验</option><option value="vision">直接图像 · 多模态模型</option></select>${icon("chevron-down")}</div><p id="observation-help">直接读取仿真中的物体位置。</p></section>
+  <section class="observation-setting"><label class="field-label" for="camera-mode">启用相机</label><div class="select-wrap"><select id="camera-mode" aria-describedby="camera-help"><option value="none">无相机</option><option value="external">仅外部相机</option><option value="wrist">仅腕部相机</option><option value="both">双相机</option></select>${icon("chevron-down")}</div><p id="camera-help">无相机 · 模型使用仿真真值，非视觉输入。</p></section>
   <div class="divider"></div>
   <section class="input-section" id="input-section"><div class="section-topline"><h2>输入状态</h2><span class="eyebrow">m</span></div><p class="input-context" id="input-context">实时观测</p><table class="input-table"><thead><tr><th>位置</th><th>X</th><th>Y</th><th>Z</th></tr></thead><tbody id="input-positions"></tbody></table><div class="input-contacts" id="input-contacts">等待观测</div></section>
   <details class="advanced-settings" id="advanced-settings"><summary>执行设置 <span>预演 / 速度 / 预算</span></summary><section>
    <div class="settings-row"><label for="seed">随机种子</label><input class="number-input" id="seed" type="number" min="0" max="99999" value="0"></div>
-   <div class="settings-row"><label for="budget">动作预算</label><input class="number-input" id="budget" type="number" min="1" max="100" value="30"></div>
+   <div class="settings-row"><label for="budget">动作预算</label><input class="number-input" id="budget" type="number" min="1" max="200" value="30"></div>
    <div class="settings-row"><span>动作预演</span><label class="switch"><input id="preview" type="checkbox" checked aria-label="动作预演"><span></span></label></div>
    <div class="settings-row"><label for="threshold">决策门槛</label><span class="range-label" id="threshold-value">0.55</span></div><input class="range" id="threshold" type="range" min="0" max="1" step="0.05" value="0.55"><div class="range-ticks"><span>0.00</span><span>1.00</span></div>
    <div class="settings-row"><label for="speed">执行速度</label><span class="range-label" id="speed-value">1.5×</span></div><input class="range" id="speed" type="range" min="0.5" max="4" step="0.5" value="1.5"><div class="range-ticks"><span>0.5×</span><span>4×</span></div>
+   <div class="evaluation-settings"><label class="field-label" for="intervention-kind">外部评测扰动</label><div class="select-wrap"><select id="intervention-kind" aria-describedby="intervention-help"><option value="none">不施加扰动</option><option value="object_shift">移动方块</option><option value="target_shift">移动目标</option></select>${icon("chevron-down")}</div><p id="intervention-help">在指定动作后注入外部位移，用于观察后续调整。它不是模型动作；设置在重置或开始实验时应用。</p><div id="intervention-fields" hidden><div class="settings-row"><label for="intervention-cycle">第几步后</label><input class="number-input" id="intervention-cycle" type="number" min="1" max="199" step="1" value="5" required></div><div class="settings-row"><label for="intervention-x">X 位移 / m</label><input class="number-input" id="intervention-x" type="number" min="-0.06" max="0.06" step="0.01" value="0.04" required></div><div class="settings-row"><label for="intervention-y">Y 位移 / m</label><input class="number-input" id="intervention-y" type="number" min="-0.06" max="0.06" step="0.01" value="0" required></div></div><p id="intervention-status" role="status" hidden></p><label class="evaluation-checkbox"><input id="shuffle-candidates" type="checkbox">打乱候选顺序</label><p>逐步 XYZ 模式按种子重排动作菜单，用于检查选择是否依赖排列位置。</p></div>
   </section></details><div class="sidebar-bottom"><span>FRANKA PANDA</span><span>7 自由度 · 双指夹爪</span></div>
  </aside>
  <main class="workspace">
@@ -150,13 +174,14 @@ const visionPanel = document.createElement("section");
 visionPanel.id = "vision-panel";
 visionPanel.className = "vision-panel";
 visionPanel.hidden = true;
-visionPanel.setAttribute("aria-label", "RGB-D 视觉观测");
+visionPanel.setAttribute("aria-label", "相机视觉观测");
 visionPanel.innerHTML = `
-  <div class="vision-heading"><div><span class="eyebrow">PERCEPTION / RGB-D</span><h2>相机最近观测</h2></div><div class="vision-switch" aria-label="相机通道"><button type="button" data-vision-channel="rgb" aria-pressed="true" disabled>RGB</button><button type="button" data-vision-channel="depth" aria-pressed="false" disabled>深度</button></div></div>
+  <div class="vision-heading"><div><span class="eyebrow" id="vision-source-heading">PERCEPTION / RGB-D</span><h2>相机最近观测</h2></div><div class="vision-switch" aria-label="相机通道"><button type="button" data-vision-channel="rgb" aria-pressed="true" disabled>RGB</button><button type="button" data-vision-channel="depth" aria-pressed="false" disabled>深度</button></div></div>
+  <div class="vision-view-row"><div class="vision-switch" aria-label="相机视角"><button type="button" data-vision-view="external" aria-pressed="true" disabled>外部相机</button><button type="button" data-vision-view="wrist" aria-pressed="false" disabled>腕部相机</button></div><span id="vision-view-help">外部相机 · 固定机位</span></div>
   <p class="vision-explanation">颜色检测已知物体，结合深度估计位置；夹爪与接触来自传感器。动作预演仍使用仿真安全筛选。</p>
   <div class="vision-image-wrap"><div id="vision-image-container"></div><p id="vision-empty" role="status">选择「RGB-D 视觉」并重置实验后，显示实际相机画面。</p><span id="vision-image-label" hidden>最近感知帧</span></div>
-  <div class="vision-meta" id="vision-meta" hidden><div><span>观测来源</span><strong>RGB-D · 颜色检测</strong></div><div><span>感知耗时</span><strong id="vision-latency">—</strong></div><div><span>采集时刻</span><strong id="vision-time">—</strong></div><div><span>可见物体</span><strong id="vision-visibility">—</strong></div></div>
-  <p class="vision-status" id="vision-status" role="status"></p><button type="button" class="text-button" id="vision-retry" hidden>重试读取</button><p class="vision-note" id="vision-note">这里显示最近一次感知画面；场景页展示当前仿真。此模式支持已知颜色物体，尚不具备通用视觉识别能力。</p>`;
+  <div class="vision-meta" id="vision-meta" hidden><div><span>观测来源</span><strong id="vision-source-label">RGB-D · 颜色检测</strong></div><div><span>感知耗时</span><strong id="vision-latency">—</strong></div><div><span>采集时刻</span><strong id="vision-time">—</strong></div><div><span id="vision-visibility-label">可见物体</span><strong id="vision-visibility">—</strong></div></div>
+  <p class="vision-status" id="vision-status" role="status"></p><div class="vision-download-row"><button type="button" class="text-button" id="vision-retry" hidden>重试读取</button><button type="button" class="text-button" id="vision-export" disabled>下载观测帧</button><span>全部 RGB 视角 + SHA-256 清单 · ZIP</span></div><p class="vision-note" id="vision-note">这里显示最近一次感知画面；场景页展示当前仿真。此模式支持已知颜色物体，尚不具备通用视觉识别能力。</p>`;
 $("#viewport").append(visionPanel);
 const comparisonContainer = document.createElement("main");
 comparisonContainer.id = "comparison-view";
@@ -321,6 +346,13 @@ liveInputs.hidden = true;
 liveInputs.innerHTML =
   '<summary>本轮模型输入</summary><pre id="live-inputs"></pre>';
 $("#history-observations").before(liveInputs);
+const planningOutput = document.createElement("div");
+planningOutput.id = "planning-output";
+planningOutput.className = "planning-output";
+planningOutput.hidden = true;
+planningOutput.innerHTML =
+  '<p class="planning-caption">本步模型说明 · 用于检查决策依据</p><dl><dt>行动意图</dt><dd id="planning-intent"></dd><dt>视觉依据</dt><dd id="planning-evidence"></dd><dt>选中动作</dt><dd id="planning-action"></dd><dt>输入图像</dt><dd id="planning-image"></dd></dl>';
+$("#probabilities").before(planningOutput);
 const historyList = document.createElement("details");
 historyList.className = "history-list";
 historyList.id = "history-list";
@@ -394,6 +426,8 @@ async function api(path, body) {
 const sceneView = new RobotScene($("#viewport"), { onError: toast });
 $(".viewport-label p").firstChild.textContent = "仿真画面 / ";
 let visionChannel = "rgb",
+  visionView = "external",
+  cameraExportPending = false,
   visionRequestKey = "",
   visionRequest = 0,
   visionMetadata = null,
@@ -409,16 +443,17 @@ function clearVisionImage(message) {
 
 function renderVisionImage() {
   if (!visionMetadata?.capture_id || !state?.id) return;
-  const key = `${state.id}:${visionMetadata.capture_id}:${visionChannel}`;
+  const key = `${state.id}:${visionMetadata.capture_id}:${visionView}:${visionChannel}`;
   if (key === visionImageKey) return;
   clearVisionImage("读取已采集画面…");
   visionImageKey = key;
   const image = new Image();
   image.id = "vision-image";
   image.alt =
-    visionChannel === "rgb"
+    `${visionView === "wrist" ? "腕部" : "外部"} · ` +
+    (visionChannel === "rgb"
       ? "MuJoCo 相机实际 RGB 画面"
-      : "MuJoCo 相机实际深度画面";
+      : "MuJoCo 相机实际深度画面");
   image.hidden = true;
   image.onload = () => {
     if (visionImageKey !== key) return;
@@ -426,7 +461,7 @@ function renderVisionImage() {
     $("#vision-empty").hidden = true;
     $("#vision-image-label").hidden = false;
     $("#vision-image-label").textContent =
-      visionChannel === "rgb" ? "RGB · 最近感知帧" : "深度 · 最近感知帧";
+      `${visionChannel === "rgb" ? "RGB" : "深度"} · 最近感知帧${visionView === "wrist" ? " · 腕部相机" : ""}`;
   };
   image.onerror = () => {
     if (visionImageKey !== key) return;
@@ -436,15 +471,48 @@ function renderVisionImage() {
   const query = new URLSearchParams({
     episode_id: state.id,
     capture_id: visionMetadata.capture_id,
+    view: visionView,
   });
   image.src = `/api/perception/${visionChannel}.png?${query}`;
   $("#vision-image-container").replaceChildren(image);
 }
 
 function renderVisionMetadata(metadata) {
+  const direct = state.observation_mode === "vision";
+  const previewOnly = state.observation_mode === "privileged";
   $("#vision-meta").hidden = false;
   for (const button of document.querySelectorAll("[data-vision-channel]"))
-    button.disabled = false;
+    button.disabled = direct && button.dataset.visionChannel === "depth";
+  const views = metadata.camera_views || enabledCameras(state);
+  if (!views.includes(visionView)) visionView = views[0] || "external";
+  for (const button of document.querySelectorAll("[data-vision-view]")) {
+    button.hidden = !views.includes(button.dataset.visionView);
+    button.disabled = !views.includes(button.dataset.visionView);
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.visionView === visionView),
+    );
+  }
+  $("#vision-view-help").textContent =
+    visionView === "wrist" ? "腕部相机 · 随机械臂移动" : "外部相机 · 固定机位";
+  if (direct && visionChannel !== "rgb") {
+    visionChannel = "rgb";
+    for (const button of document.querySelectorAll("[data-vision-channel]"))
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.visionChannel === "rgb"),
+      );
+  }
+  $("#vision-source-label").textContent = direct
+    ? "RGB 图像 → 多模态模型"
+    : previewOnly
+      ? "RGB 相机预览 · 不发送模型"
+      : "RGB-D · 颜色检测";
+  $("#vision-visibility-label").textContent = direct
+    ? "空间关系"
+    : previewOnly
+      ? "用途"
+      : "可见物体";
   $("#vision-latency").textContent = Number.isFinite(metadata.latency_ms)
     ? `${metadata.latency_ms.toFixed(1)} ms`
     : "—";
@@ -459,19 +527,27 @@ function renderVisionMetadata(metadata) {
         ...value,
       }));
   const visible = objects.filter((object) => object.visible).length;
-  $("#vision-visibility").textContent = objects.length
-    ? `${visible} / ${objects.length}`
-    : "—";
+  $("#vision-visibility").textContent = direct
+    ? "由图像判断"
+    : previewOnly
+      ? "仅预览"
+      : objects.length
+        ? `${visible} / ${objects.length}`
+        : "—";
   const missing = objects
     .filter((object) => !object.visible)
     .map((object) => object.label || object.id);
   $("#vision-status").textContent =
-    metadata.message ||
-    (missing.length
-      ? `遮挡或未检测到：${missing.join("、")}`
-      : objects.length
-        ? "当前已知物体可见"
-        : "等待检测结果");
+    (previewOnly
+      ? "相机仅供查看；模型使用仿真真值，非视觉输入。"
+      : metadata.message) ||
+    (direct
+      ? "模型直接接收 RGB 图像；不提供物体或目标坐标。"
+      : missing.length
+        ? `遮挡或未检测到：${missing.join("、")}`
+        : objects.length
+          ? "当前已知物体可见"
+          : "等待检测结果");
   $("#vision-status").classList.toggle(
     "has-alert",
     missing.length > 0 ||
@@ -482,31 +558,68 @@ function renderVisionMetadata(metadata) {
 
 function renderVision(s) {
   const rgbd = s.observation_mode === "rgbd";
-  $("#observation-help").textContent = rgbd
-    ? "相机估计已知物体位置，夹爪与接触保留传感器读数。"
-    : "直接读取仿真中的物体位置。";
-  $("#observation-source").textContent = rgbd
-    ? "RGB-D 感知 + 接触传感器"
-    : "仿真真值 · 几何与接触";
+  const direct = s.observation_mode === "vision";
+  const cameras = enabledCameras(s);
+  const camera = cameras.length > 0;
+  const cameraLabel = cameraNames(cameras);
+  $("#vision-export").disabled =
+    cameraExportPending || !s.id || !s.perception?.capture_id;
+  $("#camera-help").textContent = !camera
+    ? "无相机 · 模型使用仿真真值，非视觉输入。"
+    : direct
+      ? `模型接收${cameraLabel}相机图像。`
+      : rgbd
+        ? `${cameraLabel}相机用于 RGB-D 位置估计，模型接收检测坐标。`
+        : `${cameraLabel}相机仅供查看；模型使用仿真真值，非视觉输入。`;
+  for (const button of document.querySelectorAll("[data-vision-view]"))
+    button.hidden = !cameras.includes(button.dataset.visionView);
+  $("#control-help").textContent =
+    s.control_mode === "incremental"
+      ? `${s.provider === "baseline" ? "规则基线" : "模型"}每步选择 XYZ 位移与夹爪动作，执行后重新观测。是否能规划须由实验检验。`
+      : "选择预设技能，技能内部轨迹由程序执行。";
+  $("#observation-help").textContent = direct
+    ? `发送${cameraLabel} RGB 图像及机器人自身状态，不提供物体/目标坐标。需要逐步 XYZ 和支持图像的 Chat / Claude 模型。`
+    : rgbd
+      ? "发送颜色检测与深度估计的物体坐标；模型不直接接收图像。"
+      : "模型读取仿真中的物体位置，不接收图像（非视觉输入）。";
+  $("#observation-source").textContent = direct
+    ? `模型输入 · ${cameraLabel} RGB + 自身状态`
+    : rgbd
+      ? "RGB-D 感知 + 接触传感器"
+      : "非视觉输入 · 仿真真值与接触";
   if (visionPanel.hidden || comparisonVisible || extensionsVisible) return;
+  $("#vision-source-heading").textContent = direct
+    ? "MODEL INPUT / RGB"
+    : rgbd
+      ? "PERCEPTION / RGB-D"
+      : "CAMERA PREVIEW";
+  $(".vision-explanation").textContent = direct
+    ? `${cameraLabel} RGB 图像直接送入多模态模型。模型结合末端位置、夹爪与接触反馈判断空间关系，再选择下一步动作；不提供物体和目标坐标。`
+    : rgbd
+      ? "颜色检测已知物体，结合深度估计位置；模型接收检测坐标，夹爪与接触来自传感器。动作预演仍使用仿真安全筛选。"
+      : camera
+        ? "相机仅供查看仿真画面；本轮模型读取仿真真值，不发送图像。"
+        : "当前未启用相机；本轮模型读取仿真真值，属于非视觉实验。";
   $("#vision-note").textContent =
-    `${replayMode ? "正在回放轨迹；这里仍是最近一次感知画面。" : "这里显示最近一次感知画面；场景页展示当前仿真。"}此模式支持已知颜色物体，尚不具备通用视觉识别能力。`;
+    `${replayMode ? "正在回放轨迹；这里仍是最近一次感知画面。" : "相机在决策与动作边界采集，等待模型返回时画面暂停，并非实时视频。"}${rgbd ? "此模式支持已知颜色物体，尚不具备通用视觉识别能力。" : `${cameras.includes("external") ? "外部相机机位固定。" : ""}${cameras.includes("wrist") ? "腕部相机随机械臂移动。" : ""}${direct ? "每步图像与简短视觉依据可随实验导出。" : "图像仅用于查看，不发送给模型。"}`}`;
   const capture = s.perception?.capture_id;
-  if (!rgbd || !capture) {
+  if (!camera || !capture) {
     visionRequest++;
     visionRequestKey = "";
     visionMetadata = null;
     for (const button of document.querySelectorAll("[data-vision-channel]"))
       button.disabled = true;
+    for (const button of document.querySelectorAll("[data-vision-view]"))
+      button.disabled = true;
     $("#vision-meta").hidden = true;
-    $("#vision-status").textContent = rgbd
+    $("#vision-status").textContent = camera
       ? s.perception?.message || "等待感知采集"
       : "";
     $("#vision-retry").hidden = true;
     clearVisionImage(
-      rgbd
+      camera
         ? "尚无相机画面。感知就绪后将在这里显示。"
-        : "选择「RGB-D 视觉」并重置实验后，显示实际相机画面。",
+        : "选择「RGB-D 视觉」或「直接图像」会启用相机；也可在「启用相机」中单独开启预览。",
     );
     return;
   }
@@ -541,27 +654,84 @@ for (const button of document.querySelectorAll("[data-vision-channel]"))
       other.setAttribute("aria-pressed", String(other === button));
     renderVisionImage();
   };
+for (const button of document.querySelectorAll("[data-vision-view]"))
+  button.onclick = () => {
+    visionView = button.dataset.visionView;
+    if (visionMetadata) renderVisionMetadata(visionMetadata);
+  };
 $("#vision-retry").onclick = () => {
   visionRequestKey = "";
   if (state) renderVision(state);
+};
+$("#vision-export").onclick = async () => {
+  if (cameraExportPending || !state?.id || !state.perception?.capture_id)
+    return;
+  const episodeId = state.id;
+  cameraExportPending = true;
+  $("#vision-export").disabled = true;
+  $("#vision-export").textContent = "读取观测帧…";
+  try {
+    const response = await fetch(
+      `/api/export/cameras.zip?${new URLSearchParams({ episode_id: episodeId })}`,
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        typeof error.detail === "string"
+          ? error.detail
+          : "观测帧下载失败，请重试。",
+      );
+    }
+    const file = await response.blob();
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `camera-observations-${episodeId}.zip`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (error) {
+    toast(error.message);
+  } finally {
+    cameraExportPending = false;
+    $("#vision-export").textContent = "下载观测帧";
+    $("#vision-export").disabled = !state?.id || !state.perception?.capture_id;
+  }
 };
 let lastFrame;
 function renderFrame(frame) {
   if (!frame) return;
   sceneView.render(frame);
   lastFrame = frame;
-  const o = frame.observation;
+  const o = frame.observation || {};
   ["x", "y", "z"].forEach(
-    (k, i) => ($(`#tcp-${k}`).textContent = o.tcp[i].toFixed(3)),
+    (k, i) =>
+      ($(`#tcp-${k}`).textContent = Number.isFinite(o.tcp?.[i])
+        ? o.tcp[i].toFixed(3)
+        : "—"),
   );
-  $("#lift").textContent = (o.max_lift_m * 1000).toFixed(0);
+  $("#lift").textContent = Number.isFinite(o.max_lift_m)
+    ? (o.max_lift_m * 1000).toFixed(0)
+    : "—";
   $("#gripper").textContent = o.gripper === "closed" ? "CLOSED" : "OPEN";
-  $("#contact-l").classList.toggle("on", o.finger_contacts.includes("left"));
-  $("#contact-r").classList.toggle("on", o.finger_contacts.includes("right"));
-  $("#support").textContent = o.support_contact ? "YES" : "NO";
+  $("#contact-l").classList.toggle(
+    "on",
+    o.finger_contacts?.includes("left") || false,
+  );
+  $("#contact-r").classList.toggle(
+    "on",
+    o.finger_contacts?.includes("right") || false,
+  );
+  $("#support").textContent =
+    o.support_contact === undefined ? "—" : o.support_contact ? "YES" : "NO";
   $("#support").classList.toggle("on", o.support_contact);
-  $("#stable").textContent = o.stable_seconds.toFixed(2) + " s";
-  $("#scene-time").textContent = "t = " + o.sim_seconds.toFixed(2) + " s";
+  $("#stable").textContent = Number.isFinite(o.stable_seconds)
+    ? o.stable_seconds.toFixed(2) + " s"
+    : "—";
+  $("#scene-time").textContent = Number.isFinite(o.sim_seconds)
+    ? "t = " + o.sim_seconds.toFixed(2) + " s"
+    : "—";
   $("#raw-state").textContent = JSON.stringify(o, null, 2);
 }
 async function loadScene() {
@@ -580,7 +750,21 @@ function decisionSnapshot(s) {
     intent: s.last_intent,
     decision: s.last_decision,
     candidates: s.candidates || [],
+    decision_inputs: s.last_decision_inputs,
   };
+}
+
+function selectedActionSummary(action, before) {
+  if (!action) return "等待选择";
+  const delta =
+    action.delta_xyz ||
+    (action.target?.length === 3 && before?.tcp?.length === 3
+      ? action.target.map((value, index) => value - before.tcp[index])
+      : null);
+  const motion = delta?.every(Number.isFinite)
+    ? `ΔXYZ (${delta.map((value) => `${value >= 0 ? "+" : ""}${value.toFixed(3)}`).join(", ")}) m`
+    : "ΔXYZ 未记录";
+  return `${motion} · 夹爪${{ open: "张开", close: "闭合", closed: "闭合" }[action.gripper] || "保持"}`;
 }
 
 function renderDecision(s) {
@@ -597,6 +781,9 @@ function renderDecision(s) {
   const intent = shown.intent;
   const decision = shown.decision;
   const candidates = shown.candidates || (shown.action ? [shown.action] : []);
+  const incremental =
+    shown.phase === "incremental" || s.control_mode === "incremental";
+  const direct = s.observation_mode === "vision";
   const loading =
     s.provider === "minicpm" && s.model_runtime?.status === "loading";
   const pending =
@@ -608,9 +795,11 @@ function renderDecision(s) {
     ? `历史第 ${history.cycle} 步 · 执行前观测`
     : replayMode
       ? "回放观测"
-      : s.observation_mode === "rgbd"
-        ? "最近 RGB-D 位置估计 · 接触传感器"
-        : "仿真真值 · 位置与接触";
+      : direct
+        ? `模型输入 · ${cameraNames(enabledCameras(s))} RGB + 自身状态`
+        : s.observation_mode === "rgbd"
+          ? "最近 RGB-D 位置估计 · 接触传感器"
+          : "仿真真值 · 位置与接触";
   $("#input-positions").innerHTML = [
     ["末端", "tcp"],
     ["方块", "object"],
@@ -618,7 +807,7 @@ function renderDecision(s) {
   ]
     .map(
       ([label, key]) =>
-        `<tr><th>${label}</th>${[0, 1, 2].map((index) => `<td>${Number.isFinite(observation?.[key]?.[index]) ? observation[key][index].toFixed(3) : "—"}</td>`).join("")}</tr>`,
+        `<tr><th>${label}</th>${direct && key !== "tcp" ? '<td colspan="3" class="image-position">由图像判断</td>' : [0, 1, 2].map((index) => `<td>${Number.isFinite(observation?.[key]?.[index]) ? observation[key][index].toFixed(3) : "—"}</td>`).join("")}</tr>`,
     )
     .join("");
   $("#input-contacts").textContent = observation
@@ -651,6 +840,25 @@ function renderDecision(s) {
   $("#decision-title").textContent =
     candidates.find((candidate) => candidate.id === decision?.choice)?.label ||
     (loading ? "首次加载模型" : "等待开始");
+  $("#planning-output").hidden = !incremental;
+  $("#planning-intent").textContent =
+    decision?.intent || (decision ? "模型未提供行动意图" : "等待模型决策");
+  $("#planning-evidence").textContent =
+    decision?.visual_evidence ||
+    (direct ? "模型尚未提供视觉依据" : "本步输入为结构化观测");
+  const chosenAction =
+    candidates.find((candidate) => candidate.id === decision?.choice) ||
+    shown.action;
+  $("#planning-action").textContent = selectedActionSummary(
+    chosenAction,
+    history?.before || shown.decision_inputs?.action?.state?.observation,
+  );
+  const imageHash = decision?.image_sha256;
+  $("#planning-image").textContent = imageHash
+    ? `SHA-256 ${typeof imageHash === "string" ? imageHash : JSON.stringify(imageHash)}`
+    : direct
+      ? "等待本步图像记录"
+      : "未发送图像";
   $("#decision-provider").textContent =
     decision?.model ||
     intent?.model ||
@@ -679,7 +887,9 @@ function renderDecision(s) {
       : previous
         ? "保留上一次完整选择，新结果返回后自动更新。"
         : decision
-          ? "候选由任务控制器生成；概率不代表任务成功率。"
+          ? incremental
+            ? `${s.provider === "baseline" ? "规则基线" : "模型"}逐步选择位移和夹爪动作；物理成功不等于已验证规划能力。`
+            : "候选由任务控制器生成；概率不代表任务成功率。"
           : "运行实验后查看动作选择。";
   $("#history-observations").hidden = !history;
   $("#live-inputs-detail").hidden =
@@ -698,7 +908,7 @@ function renderDecision(s) {
   ]);
   if (signature === candidateSignature) return;
   candidateSignature = signature;
-  $("#intent-panel").hidden = !intent;
+  $("#intent-panel").hidden = incremental || !intent;
   $("#intent-latency").textContent = intent?.model_call
     ? Number(intent.latency_ms).toFixed(0) + " ms"
     : intent?.reason === "only_eligible_action"
@@ -781,16 +991,36 @@ function updateControlAvailability() {
   $(".controls").setAttribute("aria-busy", String(pending));
   const locked = pending || ["running", "paused"].includes(state.status);
   for (const el of document.querySelectorAll(
-    "#model-connect,#provider,#observation-mode,.task-option,#seed,#budget,#preview,#threshold,#speed",
+    "#model-connect,#provider,#control-mode,#observation-mode,#camera-mode,.task-option,#seed,#budget,#preview,#threshold,#speed,#intervention-kind,#shuffle-candidates",
   ))
     el.disabled = locked;
+  const interventionEnabled = $("#intervention-kind").value !== "none";
+  $("#intervention-fields").hidden = !interventionEnabled;
+  for (const input of $("#intervention-fields").querySelectorAll("input"))
+    input.disabled = locked || !interventionEnabled;
   $("#threshold").disabled =
     locked || ["baseline", "chat", "claude"].includes(state.provider);
 }
 
 let logSignature = "";
 function renderLogs(s) {
-  const events = s.events || [];
+  const events = [...(s.events || [])];
+  for (const intervention of s.interventions || []) {
+    if (
+      !events.some(
+        (event) =>
+          event.event === "external_intervention" &&
+          event.cycle === intervention.after_cycle,
+      )
+    )
+      events.push({
+        event: "external_intervention",
+        level: "warning",
+        time: intervention.sim_time,
+        cycle: intervention.after_cycle,
+        message: `外部评测扰动：${intervention.kind === "object_shift" ? "移动方块" : "移动目标"}，不是模型动作。`,
+      });
+  }
   const signature = JSON.stringify(events.slice(-12));
   if (signature === logSignature) return;
   logSignature = signature;
@@ -842,6 +1072,13 @@ function renderState(s) {
       ? "profile:" + s.profile_id
       : s.provider;
     $("#observation-mode").value = s.observation_mode || "privileged";
+    $("#control-mode").value = s.control_mode || "skills";
+    $("#camera-mode").value = cameraSelection(enabledCameras(s));
+    $("#intervention-kind").value = s.intervention?.kind || "none";
+    $("#intervention-cycle").value = s.intervention?.after_cycle ?? 5;
+    $("#intervention-x").value = s.intervention?.delta_xy?.[0] ?? 0.04;
+    $("#intervention-y").value = s.intervention?.delta_xy?.[1] ?? 0;
+    $("#shuffle-candidates").checked = s.shuffle_candidates === true;
     $("#seed").value = s.seed;
     $("#budget").value = s.max_cycles;
     $("#preview").checked = s.preview;
@@ -883,6 +1120,10 @@ function renderState(s) {
   renderDecision(s);
   renderVision(s);
   renderLogs(s);
+  $("#intervention-status").hidden = !s.interventions?.length;
+  $("#intervention-status").textContent = s.interventions?.length
+    ? `已注入 ${s.interventions.length} 次外部评测扰动；详见运行日志。`
+    : "";
   $("#run-budget").textContent =
     String(s.cycles).padStart(2, "0") + " / " + s.max_cycles + " 步";
   $("#run-label").textContent =
@@ -943,6 +1184,26 @@ function renderState(s) {
   $("#connection").textContent = "● 已连接";
 }
 
+function configuredIntervention() {
+  const kind = $("#intervention-kind").value;
+  if (kind === "none") return null;
+  const after_cycle = Number($("#intervention-cycle").value);
+  const delta_xy = [$("#intervention-x"), $("#intervention-y")].map((input) =>
+    input.value.trim() === "" ? NaN : Number(input.value),
+  );
+  if (!Number.isInteger(after_cycle) || after_cycle < 1 || after_cycle > 199)
+    throw new Error("外部评测扰动时刻必须为第 1–199 步后。");
+  if (
+    delta_xy.some(
+      (value) => !Number.isFinite(value) || Math.abs(value) > 0.06,
+    ) ||
+    delta_xy.every((value) => value === 0)
+  )
+    throw new Error(
+      "外部评测扰动的 X / Y 位移必须在 ±0.06 米内，且不能同时为零。",
+    );
+  return { kind, after_cycle, delta_xy };
+}
 function setup() {
   return {
     expected_episode_id: state?.id,
@@ -950,6 +1211,10 @@ function setup() {
     scene_config: configuredScene,
     user_context: configuredContext,
     observation_mode: $("#observation-mode").value,
+    control_mode: $("#control-mode").value,
+    camera_views: [...cameraSelections[$("#camera-mode").value]],
+    intervention: configuredIntervention(),
+    shuffle_candidates: $("#shuffle-candidates").checked,
     seed: Number($("#seed").value),
     ...selectionConfig($("#provider").value, profileValues),
     preview: $("#preview").checked,
@@ -967,6 +1232,20 @@ async function reset(fromControl = false) {
   replayRequest++;
   replayMode = false;
   try {
+    if ($("#observation-mode").value === "vision") {
+      if ($("#control-mode").value !== "incremental")
+        throw new Error(
+          "直接图像需要「逐步 XYZ」动作决策。请先切换动作决策方式。",
+        );
+      if (
+        !["chat", "claude"].includes(
+          selectionConfig($("#provider").value, profileValues).provider,
+        )
+      )
+        throw new Error(
+          "直接图像需要支持图像的 Chat 或 Claude 模型。请先配置并选择模型连接。",
+        );
+    }
     const s = await api("/api/reset", setup());
     await loadScene();
     renderState(s);
@@ -1065,20 +1344,47 @@ $("#threshold").oninput = () =>
   ));
 $("#speed").oninput = () =>
   ($("#speed-value").textContent = Number($("#speed").value).toFixed(1) + "×");
-$("#provider").onchange = () => {
+$("#provider").onchange = async () => {
   $("#provider-note").textContent =
     $("#provider").value === "baseline"
       ? "离线 · 确定性策略"
       : $("#provider").value === "jev"
         ? "远程 · TypeSafe API"
         : "本地 · 候选概率";
-  reset();
+  if (!(await reset()))
+    $("#provider").value = state?.profile_id
+      ? "profile:" + state.profile_id
+      : state?.provider || "baseline";
 };
-$("#observation-mode").onchange = async () => {
+$("#control-mode").onchange = async () => {
+  const oldBudget = $("#budget").value;
+  if ($("#control-mode").value === "incremental" && Number(oldBudget) === 30)
+    $("#budget").value = 100;
   if (!(await reset())) {
-    $("#observation-mode").value = state?.observation_mode || "privileged";
+    $("#control-mode").value = state?.control_mode || "skills";
+    $("#budget").value = oldBudget;
   }
 };
+$("#observation-mode").onchange = async () => {
+  if (
+    ["vision", "rgbd"].includes($("#observation-mode").value) &&
+    $("#camera-mode").value === "none"
+  )
+    $("#camera-mode").value = "both";
+  if (!(await reset())) {
+    $("#observation-mode").value = state?.observation_mode || "privileged";
+    $("#camera-mode").value = cameraSelection(enabledCameras(state));
+  }
+};
+$("#camera-mode").onchange = async () => {
+  const noCamera = $("#camera-mode").value === "none";
+  if (noCamera) $("#observation-mode").value = "privileged";
+  if (!(await reset())) {
+    $("#camera-mode").value = cameraSelection(enabledCameras(state));
+    $("#observation-mode").value = state.observation_mode || "privileged";
+  } else if (noCamera) toast("已关闭相机，模型使用仿真真值（非视觉输入）。");
+};
+$("#intervention-kind").onchange = updateControlAvailability;
 function drawer(open) {
   $("#sidebar").classList.toggle("open", open);
   $("#scrim").classList.toggle("visible", open);

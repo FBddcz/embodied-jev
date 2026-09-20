@@ -678,6 +678,101 @@ a {
   background: #fff;
   box-shadow: 0 1px 3px #32564212;
 }
+.vision-view-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.vision-download-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.vision-download-row span {
+  color: #71877b;
+  font-size: 10px;
+}
+#vision-export:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.evaluation-settings {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5ebe7;
+}
+.evaluation-settings .field-label {
+  margin: 0 0 8px;
+  color: #698074;
+  font-size: 11px;
+}
+.evaluation-settings p {
+  margin: 8px 0;
+  color: #7d8f83;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.evaluation-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  color: #607b68;
+  font-size: 11px;
+}
+.evaluation-checkbox input {
+  accent-color: #2d8158;
+}
+#intervention-status {
+  color: #856a32;
+}
+#vision-view-help {
+  color: #71877b;
+  font-size: 10px;
+}
+.image-position {
+  text-align: left;
+  color: #5c7968;
+  font-family: inherit;
+}
+.planning-output {
+  margin-top: 14px;
+  padding: 12px;
+  background: #f0f6f2;
+  border: 1px solid #dfe9e2;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+.planning-output[hidden] {
+  display: none;
+}
+.planning-caption {
+  margin: 0 0 12px;
+  color: #73897a;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.planning-output dl {
+  margin: 0;
+}
+.planning-output dt {
+  margin: 10px 0 4px;
+  font-size: 10px;
+  color: #7d8f83;
+}
+.planning-output dd {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.65;
+  color: #365c47;
+}
+#planning-action,
+#planning-image {
+  font-family: var(--mono);
+  font-size: 10px;
+}
 .vision-explanation,
 .vision-note,
 .vision-status {

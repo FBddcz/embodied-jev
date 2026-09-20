@@ -258,6 +258,42 @@
   color: #6c8576;
   font-size: 10px;
 }
+.lane-input-source {
+  margin: 0 0 8px;
+  color: #6c8576;
+  font-size: 10px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.lane-planning {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #f0f6f2;
+  overflow-wrap: anywhere;
+}
+.lane-planning p {
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 1.65;
+}
+.lane-planning p:last-child {
+  margin-bottom: 0;
+}
+.lane-planning span,
+.lane-planning strong {
+  display: block;
+  font-weight: 400;
+}
+.lane-planning span,
+.lane-planning-note {
+  color: #7b8f81;
+  font-size: 10px;
+}
+.lane-action-detail {
+  font-family: var(--mono);
+  font-size: 10px;
+}
 .lane-decision-mode {
   margin: 0 0 16px;
   color: #99a59e;

@@ -20,7 +20,12 @@ def main():
     bench.add_argument("--threshold", type=float, default=.55)
     bench.add_argument("--max-cycles", type=int, default=30)
     bench.add_argument("--timeout", type=float, default=600)
-    bench.add_argument("--observation-mode", choices=["privileged", "rgbd"], default="privileged")
+    bench.add_argument("--observation-mode", choices=["privileged", "rgbd", "vision"], default="privileged")
+    bench.add_argument("--cameras", choices=["none", "external", "wrist", "both"],
+                       help="Enabled camera views; omitted uses the observation mode's default")
+    bench.add_argument("--control-mode", choices=["skills", "incremental"], default="skills")
+    bench.add_argument("--shuffle-candidates", action="store_true")
+    bench.add_argument("--intervention", help='JSON: {"kind":"object_shift","after_cycle":5,"delta_xy":[0.04,0]}')
     sub.add_parser("warmup", help="Load MiniCPM5-2B and make a real two-candidate decision")
     args = parser.parse_args()
     if args.command == "serve":
@@ -41,6 +46,13 @@ def main():
         print(json.dumps({"runtime": minicpm_status(), "decision": result}, ensure_ascii=False, indent=2))
     else:
         from .runtime import run_headless
+        camera_views = {"none": [], "external": ["external"], "wrist": ["wrist"],
+                        "both": ["external", "wrist"]}.get(args.cameras)
+        try:
+            from .runtime import validate_intervention
+            intervention = validate_intervention(json.loads(args.intervention)) if args.intervention else None
+        except (ValueError, TypeError) as exc:
+            parser.error(str(exc))
         preset = None
         if args.preset:
             from .presets import load_preset
@@ -59,11 +71,16 @@ def main():
                 session = run_headless(task, seed, provider=args.provider, threshold=args.threshold,
                                        max_cycles=args.max_cycles, timeout=args.timeout,
                                        observation_mode=args.observation_mode,
+                                       camera_views=camera_views,
+                                       control_mode=args.control_mode, intervention=intervention,
+                                       shuffle_candidates=args.shuffle_candidates,
                                        scene_config=preset["scene_config"] if preset else None,
                                        user_context=preset["user_context"] if preset else None)
                 exported = session.export()
                 row = {"task": task, "seed": seed, "success": exported["success"], "status": session.status,
                        "observation_mode": args.observation_mode,
+                       "camera_views": exported["camera_views"],
+                       "control_mode": args.control_mode, "interventions": exported["interventions"],
                        "cycles": session.cycles, "max_lift_m": session.world.max_lift,
                        "forbidden_contact_steps": session.world.unsafe_contacts, "message": session.message,
                        **{key: exported[key] for key in ("model", "model_runtime", "policy_version", "model_calls", "input_tokens",

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import io
 import json
 import math
 import threading
 import time
 import uuid
+import zipfile
 from collections import deque
 from datetime import datetime, timezone
 
@@ -18,16 +21,57 @@ from .eventlog import write_event
 POLICY_VERSION = PROMPT_VERSION
 
 
+def validate_camera_views(value, observation_mode):
+    if value is None:
+        return ["external", "wrist"] if observation_mode in {"rgbd", "vision"} else []
+    if not isinstance(value, (list, tuple)) or any(not isinstance(view, str) or view not in {"external", "wrist"} for view in value):
+        raise ValueError("相机只能选择 external 或 wrist")
+    if len(set(value)) != len(value):
+        raise ValueError("相机视角不能重复")
+    if not value and observation_mode in {"rgbd", "vision"}:
+        raise ValueError("视觉观测至少需要一种相机；无相机请使用 privileged 结构化状态模式")
+    return [view for view in ("external", "wrist") if view in value]
+
+
+def validate_intervention(value):
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) != {"kind", "after_cycle", "delta_xy"}:
+        raise ValueError("扰动需要 kind、after_cycle 和 delta_xy")
+    if value["kind"] not in {"object_shift", "target_shift"}:
+        raise ValueError("未知扰动类型")
+    if type(value["after_cycle"]) is not int or not 1 <= value["after_cycle"] <= 199:
+        raise ValueError("扰动时刻必须为 1–199 步")
+    delta = value["delta_xy"]
+    if not isinstance(delta, (list, tuple)) or len(delta) != 2 or any(
+            type(x) not in (int, float) or not math.isfinite(x) or abs(x) > .06 for x in delta):
+        raise ValueError("扰动 XY 位移必须在 ±0.06 米内")
+    if not any(delta):
+        raise ValueError("扰动位移不能全为零")
+    return {"kind": value["kind"], "after_cycle": value["after_cycle"], "delta_xy": list(delta)}
+
+
 class Session:
     def __init__(self, task="transfer", seed=0, provider="baseline", preview=True,
                  threshold=.55, max_cycles=30, speed=1.5, connection=None,
-                 scene_config=None, user_context=None, observation_mode="privileged"):
-        if observation_mode not in {"privileged", "rgbd"}:
+                 scene_config=None, user_context=None, observation_mode="privileged",
+                 control_mode="skills", intervention=None, shuffle_candidates=False, camera_views=None):
+        if observation_mode not in {"privileged", "rgbd", "vision"}:
             raise ValueError("Unknown observation mode")
+        if control_mode not in {"skills", "incremental"}:
+            raise ValueError("Unknown control mode")
+        if observation_mode == "vision" and (control_mode != "incremental" or provider not in {"chat", "claude"}):
+            raise ValueError("直接图像模式需要逐步 XYZ 控制和支持图像的 OpenAI 兼容或 Claude 接口")
         self.id = uuid.uuid4().hex[:12]
         self.observation_mode = observation_mode
+        self.control_mode = control_mode
+        self.camera_views = validate_camera_views(camera_views, observation_mode)
+        self.intervention = validate_intervention(intervention)
+        self.interventions = []
+        self.shuffle_candidates = bool(shuffle_candidates)
         self.observer = None
         self.perception_history = []
+        self.image_frames = {}
         self.user_context = validate_user_context(user_context)
         self.world = RobotWorld(task, seed, scene_config=scene_config)
         self.policy = DecisionPolicy(provider, connection)
@@ -47,7 +91,10 @@ class Session:
         self.frames = []
         if observation_mode == "rgbd":
             from .perception import VisualObserver
-            self.observer = VisualObserver(self.world)
+            self.observer = VisualObserver(self.world, **({"camera_views": self.camera_views} if camera_views is not None else {}))
+        elif self.camera_views:
+            from .perception import ImageObserver
+            self.observer = ImageObserver(self.world, **({"camera_views": self.camera_views} if camera_views is not None else {}))
         try:
             self.observation = self._observe()
         except Exception:
@@ -68,21 +115,49 @@ class Session:
     def _observe(self):
         try:
             observation = self.observer.observe() if self.observer else self.world.observe()
+            if self.observation_mode == "privileged" and self.observer:
+                # Optional preview cameras never change the policy's state input.
+                observation = self.world.observe()
         except Exception:
             snapshot = self.camera_snapshot()
             if snapshot:
                 self.perception_history.append(copy.deepcopy(snapshot["metadata"]))
+                self._archive_capture(snapshot)
             raise
         self.observation = copy.deepcopy(observation)
-        metadata = observation.get("perception")
+        capture = self.camera_snapshot()
+        metadata = capture["metadata"] if capture else observation.get("perception")
         if metadata and (not self.perception_history or
                          self.perception_history[-1].get("capture_id") != metadata.get("capture_id")):
             self.perception_history.append(copy.deepcopy(metadata))
+            if capture:
+                self._archive_capture(capture)
         return observation
 
     def camera_snapshot(self):
         # The observer owns its render thread; HTTP reads only cached bytes.
         return self.observer.camera_snapshot() if self.observer else None
+
+    def _archive_capture(self, capture):
+        self.image_frames[str(capture["metadata"]["capture_id"])] = {
+            view: frame["rgb"] for view, frame in capture.get("views", {"external": capture}).items()}
+
+    def camera_manifest(self):
+        return [{"capture_id": capture, "view": view, "file": f"captures/{capture}-{view}.png",
+                 "sha256": hashlib.sha256(pixels).hexdigest(), "byte_length": len(pixels)}
+                for capture, views in self.image_frames.items() for view, pixels in views.items()]
+
+    def camera_archive(self):
+        with self.lock:
+            stream = io.BytesIO()
+            with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("manifest.json", json.dumps({"episode_id": self.id,
+                    "observation_mode": self.observation_mode, "camera_views": self.camera_views,
+                    "frames": self.camera_manifest()}, indent=2))
+                for capture, views in self.image_frames.items():
+                    for view, pixels in views.items():
+                        archive.writestr(f"captures/{capture}-{view}.png", pixels)
+            return stream.getvalue()
 
     def _close_resources(self):
         self.policy.close()
@@ -110,7 +185,7 @@ class Session:
             self.last_frame = frame
             self.frames.append({"time": frame["time"], "qpos": frame["qpos"],
                                 "observation": frame["observation"], "cycle": self.cycles,
-                                "phase": self.phase})
+                                "phase": self.phase, "evaluation_target": self.world.target.tolist()})
 
     def start(self, single_step=False, threshold=None):
         with self.lock:
@@ -161,6 +236,9 @@ class Session:
 
     def _run(self):
         try:
+            if self.control_mode == "incremental":
+                self._run_incremental()
+                return
             while not self.cancel.is_set():
                 if not self._wait():
                     return
@@ -175,6 +253,7 @@ class Session:
                 with self.lock:
                     if self.cancel.is_set():
                         return
+                    self._apply_intervention()
                     observation = self._observe()
                     if self.observer:
                         self._record(self.world.frame())
@@ -302,7 +381,151 @@ class Session:
         finally:
             self._close_resources()
 
-    def _choose(self, stage, *args):
+    def _apply_intervention(self):
+        if not self.intervention or self.interventions or self.cycles < self.intervention["after_cycle"]:
+            return
+        event = self.world.perturb(self.intervention["kind"], self.intervention["delta_xy"])
+        event.update(after_cycle=self.cycles, sim_time=float(self.world.data.time) - self.world.start_time)
+        self.interventions.append(event)
+        if self.observer:
+            self.observer.invalidate()
+        self._event("external_intervention", f"外部评测扰动：{event['kind']}，发生于动作 {self.cycles} 后", "warning")
+
+    def _run_incremental(self):
+        from .incremental import incremental_candidates, planning_state, baseline_choice, PLANNING_INSTRUCTIONS
+        import random
+
+        while not self.cancel.is_set():
+            if not self._wait():
+                return
+            with self.lock:
+                if self.cancel.is_set():
+                    return
+                if self.cycles >= self.max_cycles:
+                    self.status, self.message = "exhausted", "已达到动作预算"
+                    self.finished = time.perf_counter()
+                    self._event("budget_exhausted", self.message, "warning")
+                    return
+                self._apply_intervention()
+                observation = self._observe()
+                self._record(self.world.frame())
+                model_observation = {**observation, **({"user_context": self.user_context} if self.user_context else {})}
+                state = planning_state(model_observation, self.history)
+                options = incremental_candidates(observation)
+                if self.shuffle_candidates:
+                    random.Random(self.world.seed * 1009 + self.cycles).shuffle(options)
+                legal = [option for option in options if option.admitted]
+                if not legal:
+                    raise ValueError("没有工作区内的短步动作")
+                serialised = []
+                for option in options:
+                    item = option.serialise()
+                    item["delta_xyz"] = [round(a - b, 5) for a, b in zip(option.target, observation["tcp"])]
+                    serialised.append(item)
+                menu = {item["id"]: json.dumps({key: item[key] for key in
+                        ("delta_xyz", "gripper", "seconds")}, separators=(",", ":"))
+                        for item in serialised if item["admitted"]}
+                default = baseline_choice(observation, options) if self.policy.provider == "baseline" else None
+                images = None
+                if self.observation_mode == "vision":
+                    capture = self.camera_snapshot()
+                    images = [{"rgb": capture["views"][view]["rgb"], "view": view,
+                               "capture_id": capture["metadata"]["capture_id"]}
+                              for view in self.camera_views]
+                self.phase, self.stage = "incremental", "deciding"
+                self.current_candidates = serialised
+                self.last_decision, self.last_intent = None, None
+                self.last_decision_inputs = {"phase": None, "action": None}
+            self._event("deciding", "正在根据当前观测规划一个短步动作")
+            decision = self._choose("action", state, PLANNING_INSTRUCTIONS, menu,
+                                    baseline_choice=default, image=images, plan=True)
+            if decision is None or not self._wait():
+                return
+            if decision["selected_probability"] is not None and decision["selected_probability"] < self.threshold:
+                self._uncertain(decision)
+                continue
+            selected = next(option for option in legal if option.id == decision["choice"])
+            rejection = None
+            with self.lock:
+                if self.cancel.is_set():
+                    return
+                self.stage = "previewing"
+                shadow = self.world.clone()
+            try:
+                # Safety checks only the model's selected command, never ranks
+                # progress or exposes future object positions to the policy.
+                if self.preview:
+                    bad = shadow.unsafe_contacts
+                    for _ in shadow.motion(selected.target, selected.gripper, selected.seconds, emit=False):
+                        pass
+                    if shadow.unsafe_contacts > bad:
+                        rejection = "所选动作的仿真预演发生机械臂与台面或障碍接触"
+                else:
+                    _, error = shadow.solve_ik(selected.target)
+                    if error > .004:
+                        rejection = "所选短步目标不可达"
+            except (ValueError, RuntimeError):
+                rejection = "所选短步未通过可执行性检查"
+            if not self._wait():
+                return
+            with self.lock:
+                if self.cancel.is_set():
+                    return
+                self.cycles += 1
+                self.last_decision = decision
+                self.stage = "executing" if rejection is None else "observing"
+            before = copy.deepcopy(observation)
+            if rejection is None:
+                bad = self.world.unsafe_contacts
+                motion = self.world.motion(selected.target, selected.gripper, selected.seconds)
+                while True:
+                    if not self._wait():
+                        return
+                    with self.lock:
+                        if self.cancel.is_set():
+                            return
+                        if not self.wake.is_set():
+                            continue
+                        try:
+                            frame = next(motion)
+                        except StopIteration:
+                            break
+                        self._record(frame)
+                        if self.world.unsafe_contacts > bad:
+                            raise ValueError("执行层检测到台面或障碍接触，已停止")
+                    if self.speed > 0 and self.cancel.wait(.04 / self.speed):
+                        return
+            with self.lock:
+                after = self._observe()
+                self._record(self.world.frame())
+                action = next(item for item in serialised if item["id"] == selected.id).copy()
+                action.update(admitted=rejection is None, rejection=rejection,
+                              preview={"source": "simulator_safety_filter", "safe": rejection is None} if self.preview else None)
+                self.history.append({"cycle": self.cycles, "phase": "incremental", "label": selected.label,
+                    "intent": None, "decision": decision, "action": action,
+                    "executed": rejection is None, "rejection": rejection,
+                    "before": before, "after": after, "candidates": serialised,
+                    "decision_inputs": copy.deepcopy(self.last_decision_inputs),
+                    "rejected_count": sum(not option.admitted for option in options) + int(rejection is not None)})
+                self.stage = "observing"
+                self._event("action_rejected" if rejection else "action_completed",
+                            rejection or f"完成短步：{selected.label}", "warning" if rejection else "info")
+            if self.world.success():
+                self._finish()
+                return
+            if self._stalled():
+                with self.lock:
+                    if self.cancel.is_set():
+                        return
+                    self.status, self.stage = "stalled", "observing"
+                    self.message = "连续三次相同短步未产生位姿或接触变化，已停止；没有切换规则策略。"
+                    self.finished = time.perf_counter()
+                    self._event("stalled", self.message, "warning")
+                return
+            if self.single_step:
+                self.pause()
+
+    def _choose(self, stage, *args, plan=False, **kwargs):
         # Admit each decision under the control lock, then release it before
         # inference. A stop/pause during preview must not start another request;
         # an already admitted request may finish, but cancellation discards its answer.
@@ -317,7 +540,7 @@ class Session:
                 self.policy.last_input = None
                 break
         try:
-            return self.policy.choose(*args)
+            return self.policy.choose_plan(*args, **kwargs) if plan else self.policy.choose(*args)
         except Exception as exc:
             # Even a gateway exception can contain a secret. Retain only safe diagnostics.
             import httpx
@@ -334,14 +557,16 @@ class Session:
         if len(self.history) < 3:
             return False
         recent = self.history[-3:]
+        if self.control_mode == "incremental" and len({h["action"]["id"] for h in recent}) != 1:
+            return False
         if len({h["phase"] for h in recent}) != 1:
             return False
         if any(math.dist(recent[0]["before"][k], recent[-1]["after"][k]) >= .002
-               for k in ("tcp", "object")):
+               for k in ("tcp", "object") if k in recent[0]["before"] and k in recent[-1]["after"]):
             return False
         for item in recent:
             before, after = item["before"], item["after"]
-            if any(math.dist(before[k], after[k]) >= .002 for k in ("tcp", "object")):
+            if any(math.dist(before[k], after[k]) >= .002 for k in ("tcp", "object") if k in before and k in after):
                 return False
             if any(before[k] != after[k] for k in ("held", "gripper", "finger_contacts", "support_contact")):
                 return False
@@ -374,6 +599,9 @@ class Session:
                     "cycles": self.cycles, "max_cycles": self.max_cycles, "provider": self.policy.provider,
                     "profile_id": self.profile_id, "scene_config": copy.deepcopy(self.world.scene_config),
                     "observation_mode": self.observation_mode,
+                    "camera_views": list(self.camera_views),
+                    "control_mode": self.control_mode, "intervention": copy.deepcopy(self.intervention),
+                    "interventions": copy.deepcopy(self.interventions), "shuffle_candidates": self.shuffle_candidates,
                     "perception": copy.deepcopy((self.camera_snapshot() or {}).get("metadata")),
                     "user_context": copy.deepcopy(self.user_context),
                     "preview": self.preview, "threshold": self.threshold, "message": self.message,
@@ -398,19 +626,28 @@ class Session:
             mujoco.mj_forward(world.model, world.data)
             frame = world.frame()
             frame.update(time=saved["time"], observation=saved["observation"])
+            if "evaluation_target" in saved:
+                for gid in world.target_geom_ids:
+                    for axis in (0, 1):
+                        frame["positions"][gid][axis] += saved["evaluation_target"][axis] - world.target[axis]
             return frame
 
     def export(self):
         with self.lock:
+            from .incremental import PROMPT_VERSION as INCREMENTAL_VERSION
             return {"format": "embodied-jev-episode-v1", "id": self.id, "task": self.world.task,
                     "seed": self.world.seed, "scene_hash": self.world.scene_hash, "provider": self.policy.provider,
                     "profile_id": self.profile_id, "scene_config": copy.deepcopy(self.world.scene_config),
                     "observation_mode": self.observation_mode,
+                    "camera_views": list(self.camera_views),
+                    "control_mode": self.control_mode, "intervention": copy.deepcopy(self.intervention),
+                    "interventions": copy.deepcopy(self.interventions), "shuffle_candidates": self.shuffle_candidates,
                     "perception_history": copy.deepcopy(self.perception_history),
+                    "camera_manifest": self.camera_manifest(),
                     "user_context": copy.deepcopy(self.user_context),
                     "preview": self.preview, "status": self.status, "success": bool(self.world.success()),
                     "model": self.policy.model, "threshold": self.threshold, "max_cycles": self.max_cycles,
-                    "policy_version": POLICY_VERSION,
+                    "policy_version": (INCREMENTAL_VERSION if self.control_mode == "incremental" else POLICY_VERSION),
                     "history": list(self.history), "frames": list(self.frames),
                     "events": list(self.events),
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
@@ -420,18 +657,23 @@ class Session:
                     "last_intent": self.last_intent,
                     "last_decision_inputs": dict(self.last_decision_inputs),
                     "wall_seconds": self.snapshot()["wall_seconds"], "message": self.message,
-                    "observation_source": ("RGB-D color perception with simulated proprioception and contacts"
-                                           if self.observer else "privileged simulator geometry and contacts"),
+                    "observation_source": (" + ".join(self.camera_views) + " RGB pixels with simulated proprioception and contacts"
+                                           if self.observation_mode == "vision" else
+                                           "RGB-D color perception with simulated proprioception and contacts"
+                                           if self.observation_mode == "rgbd" else "privileged simulator geometry and contacts"),
                     "safety_source": "privileged simulator safety filter" if self.preview else "live simulator contact checks",
                     "evaluation_source": "privileged simulator physical success conditions"}
 
 
 def run_headless(task="transfer", seed=0, preview=True, max_cycles=30,
                  provider="baseline", threshold=.55, timeout=600, scene_config=None, user_context=None,
-                 observation_mode="privileged"):
+                 observation_mode="privileged", control_mode="skills", intervention=None,
+                 shuffle_candidates=False, connection=None, camera_views=None):
     session = Session(task=task, seed=seed, preview=preview, max_cycles=max_cycles,
                       speed=0, provider=provider, threshold=threshold,
-                      scene_config=scene_config, user_context=user_context, observation_mode=observation_mode)
+                      scene_config=scene_config, user_context=user_context, observation_mode=observation_mode,
+                      control_mode=control_mode, intervention=intervention, shuffle_candidates=shuffle_candidates,
+                      connection=connection, camera_views=camera_views)
     session.start()
     deadline = time.monotonic() + timeout
     while session.worker.is_alive():

@@ -1,0 +1,637 @@
+{
+  "format": "embodied-jev-planning-experiments-v1",
+  "date": "2026-09-20",
+  "experiments": [
+    {
+      "id": "9e0948b5ea5a",
+      "task": "transfer",
+      "seed": 7,
+      "provider": "chat",
+      "model": "gpt-6-astra-2026-09-03",
+      "policy_version": "incremental-planning-v1",
+      "observation_mode": "vision",
+      "control_mode": "incremental",
+      "preview": true,
+      "max_cycles": 80,
+      "status": "stalled",
+      "success": false,
+      "model_calls": 32,
+      "input_tokens": 138838,
+      "output_tokens": 4077,
+      "wall_seconds": 238.51,
+      "message": "连续三次相同短步未产生位姿或接触变化，已停止；没有切换规则策略。",
+      "scene_hash": "34e568613cbcda621e6518c22fc6b443d077691f20677d4abb83108d86209bf8",
+      "interventions": [],
+      "name": "vision-gpt6-initial",
+      "settings": {
+        "settings": {
+          "task": "transfer",
+          "seed": 7,
+          "observation_mode": "vision",
+          "control_mode": "incremental",
+          "provider": "chat",
+          "preview": true,
+          "threshold": 0,
+          "max_cycles": 80,
+          "speed": 0,
+          "intervention": null,
+          "scene_config": null,
+          "shuffle_candidates": true
+        },
+        "source_sha256": {
+          "scenarios.py": "375fcd075916c50f2e116c534caef99df1e2d291d3bf5099c9cd572719f46948",
+          "connection_store.py": "c9a6b51fb5a2356e15a695e39ea71c358af3ef8d3b258df38ce016134f63b174",
+          "server.py": "5394044d5fe75c0e57150491d85a6c1b4a9321e8d2d8407e5d7f917871cd7d85",
+          "presets.py": "37547d3708411a4d0f4dceafdfb43f4efa8978de5bb29d8c0f7a6728a6c5335e",
+          "eventlog.py": "9b39973e7bba656c978cd0fe8d2f1aa9795b741ef55611a796e25a94ab09cae0",
+          "__init__.py": "09475579667cfd0caf89e3830b8f1f38b9a41ad4839fed3bd5e8a95aaf293f29",
+          "runtime.py": "a1aa6233b06f2dc456fd943b0a1cab3eeed42553acc413845ee6b7cb40847c3a",
+          "comparison.py": "72a0339433146b5a07ad9d01aca7a63fb7496defa6aded4be44ad08e722cc092",
+          "physics.py": "e6a0d2a537a9cac28f874d81e60cc53814194d00ad75f6d4648dae5bc272ddc8",
+          "cli.py": "f90bb589dc6d74437c3e1da7f69b8fc6af76cb875586a4037cfc846adbce5dd4",
+          "planning.py": "faae2d85a349ff6518cb0a214154559906881f6a8e2248678a6672ab328c86ed",
+          "perception.py": "eb5afaa2cdcab0e86a77a20cfa14e8fafa6893f741995e4f47ed2fb1d423260a",
+          "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197",
+          "policies.py": "65c04113d61c73b5fa1970e6087c895e94c6792e9c193aa5e6eb721ae1f58198",
+          "incremental.py": "f3cdce46b68975dcf688733e41eb43ceafe39d64a8daef79923f8ef07ff0f70c"
+        }
+      },
+      "actions": 32,
+      "executed": 32,
+      "rejected": 0,
+      "forbidden_contact_in_recorded_frames": false,
+      "input_image_hash_checks": 66,
+      "archived_views": 66,
+      "episode_file": "planning-vision-gpt6-initial.json.gz",
+      "episode_sha256": "bc1b0d0db3e148eb48bd0d409d6af6e8923262c0e2a7638f736bb087fd0e7c6f",
+      "compressed_sha256": "11c09c64be2821c53eca803e6f891b456017f3a6f853700dcd3e2fbc007a0ec5",
+      "cameras_file": "planning-vision-gpt6-initial-cameras.zip",
+      "cameras_sha256": "98e040bd6cf33608408f9281da7845f8bdf8e6fb9abe3f38ae0b719385954f36"
+    },
+    {
+      "id": "ea0c9af77bb7",
+      "task": "transfer",
+      "seed": 7,
+      "provider": "chat",
+      "model": "gpt-6-astra",
+      "policy_version": "incremental-planning-v2",
+      "observation_mode": "vision",
+      "control_mode": "incremental",
+      "preview": true,
+      "max_cycles": 80,
+      "status": "error",
+      "success": false,
+      "model_calls": 3,
+      "input_tokens": 5799,
+      "output_tokens": 267,
+      "wall_seconds": 85.23,
+      "message": "模型决策失败（ReadTimeout），请查看模型连接测试结果。",
+      "scene_hash": "34e568613cbcda621e6518c22fc6b443d077691f20677d4abb83108d86209bf8",
+      "interventions": [],
+      "name": "vision-gpt6-v2-transfer",
+      "settings": {
+        "settings": {
+          "task": "transfer",
+          "seed": 7,
+          "observation_mode": "vision",
+          "control_mode": "incremental",
+          "provider": "chat",
+          "preview": true,
+          "threshold": 0,
+          "max_cycles": 80,
+          "speed": 0,
+          "intervention": null,
+          "scene_config": null,
+          "shuffle_candidates": true
+        },
+        "source_sha256": {
+          "scenarios.py": "375fcd075916c50f2e116c534caef99df1e2d291d3bf5099c9cd572719f46948",
+          "connection_store.py": "c9a6b51fb5a2356e15a695e39ea71c358af3ef8d3b258df38ce016134f63b174",
+          "server.py": "5394044d5fe75c0e57150491d85a6c1b4a9321e8d2d8407e5d7f917871cd7d85",
+          "presets.py": "37547d3708411a4d0f4dceafdfb43f4efa8978de5bb29d8c0f7a6728a6c5335e",
+          "eventlog.py": "9b39973e7bba656c978cd0fe8d2f1aa9795b741ef55611a796e25a94ab09cae0",
+          "__init__.py": "09475579667cfd0caf89e3830b8f1f38b9a41ad4839fed3bd5e8a95aaf293f29",
+          "runtime.py": "25f117e84f299f819e9e5f683903eb821e58d3e29bc74eff87ac6b1d103960f7",
+          "comparison.py": "72a0339433146b5a07ad9d01aca7a63fb7496defa6aded4be44ad08e722cc092",
+          "physics.py": "e6a0d2a537a9cac28f874d81e60cc53814194d00ad75f6d4648dae5bc272ddc8",
+          "cli.py": "f90bb589dc6d74437c3e1da7f69b8fc6af76cb875586a4037cfc846adbce5dd4",
+          "planning.py": "faae2d85a349ff6518cb0a214154559906881f6a8e2248678a6672ab328c86ed",
+          "perception.py": "eb5afaa2cdcab0e86a77a20cfa14e8fafa6893f741995e4f47ed2fb1d423260a",
+          "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197",
+          "policies.py": "65c04113d61c73b5fa1970e6087c895e94c6792e9c193aa5e6eb721ae1f58198",
+          "incremental.py": "18979e5354edb5f9346d986fef225db29b80845861c55ca8cb116c1ce58c79ee"
+        }
+      },
+      "actions": 2,
+      "executed": 2,
+      "rejected": 0,
+      "forbidden_contact_in_recorded_frames": false,
+      "input_image_hash_checks": 6,
+      "archived_views": 6,
+      "episode_file": "planning-vision-gpt6-v2-transfer.json.gz",
+      "episode_sha256": "0e82313a434a98d2f78231639f1aa07c6b0156191f96d3ad8edb0158e30af50f",
+      "compressed_sha256": "9a14803c13b7f41b596413ee83be46556a96dc0a3e934bd15f1dbf9736856af8",
+      "cameras_file": "planning-vision-gpt6-v2-transfer-cameras.zip",
+      "cameras_sha256": "da35c828426da850f03ce78f184d3b16d11c48836ac19d858c7401d668d9ca6a"
+    },
+    {
+      "id": "99663ede23c3",
+      "task": "transfer",
+      "seed": 7,
+      "provider": "chat",
+      "model": "gpt-6-astra",
+      "policy_version": "incremental-planning-v2",
+      "observation_mode": "vision",
+      "control_mode": "incremental",
+      "preview": true,
+      "max_cycles": 80,
+      "status": "error",
+      "success": false,
+      "model_calls": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_seconds": 60.76,
+      "message": "模型决策失败（ReadTimeout），请查看模型连接测试结果。",
+      "scene_hash": "34e568613cbcda621e6518c22fc6b443d077691f20677d4abb83108d86209bf8",
+      "interventions": [],
+      "name": "vision-gpt6-v2-target-shift",
+      "settings": {
+        "settings": {
+          "task": "transfer",
+          "seed": 7,
+          "observation_mode": "vision",
+          "control_mode": "incremental",
+          "provider": "chat",
+          "preview": true,
+          "threshold": 0,
+          "max_cycles": 80,
+          "speed": 0,
+          "intervention": {
+            "kind": "target_shift",
+            "after_cycle": 20,
+            "delta_xy": [
+              0.06,
+              0
+            ]
+          },
+          "scene_config": null,
+          "shuffle_candidates": true
+        },
+        "source_sha256": {
+          "scenarios.py": "375fcd075916c50f2e116c534caef99df1e2d291d3bf5099c9cd572719f46948",
+          "connection_store.py": "c9a6b51fb5a2356e15a695e39ea71c358af3ef8d3b258df38ce016134f63b174",
+          "server.py": "5394044d5fe75c0e57150491d85a6c1b4a9321e8d2d8407e5d7f917871cd7d85",
+          "presets.py": "37547d3708411a4d0f4dceafdfb43f4efa8978de5bb29d8c0f7a6728a6c5335e",
+          "eventlog.py": "9b39973e7bba656c978cd0fe8d2f1aa9795b741ef55611a796e25a94ab09cae0",
+          "__init__.py": "09475579667cfd0caf89e3830b8f1f38b9a41ad4839fed3bd5e8a95aaf293f29",
+          "runtime.py": "25f117e84f299f819e9e5f683903eb821e58d3e29bc74eff87ac6b1d103960f7",
+          "comparison.py": "72a0339433146b5a07ad9d01aca7a63fb7496defa6aded4be44ad08e722cc092",
+          "physics.py": "e6a0d2a537a9cac28f874d81e60cc53814194d00ad75f6d4648dae5bc272ddc8",
+          "cli.py": "f90bb589dc6d74437c3e1da7f69b8fc6af76cb875586a4037cfc846adbce5dd4",
+          "planning.py": "faae2d85a349ff6518cb0a214154559906881f6a8e2248678a6672ab328c86ed",
+          "perception.py": "eb5afaa2cdcab0e86a77a20cfa14e8fafa6893f741995e4f47ed2fb1d423260a",
+          "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197",
+          "policies.py": "65c04113d61c73b5fa1970e6087c895e94c6792e9c193aa5e6eb721ae1f58198",
+          "incremental.py": "18979e5354edb5f9346d986fef225db29b80845861c55ca8cb116c1ce58c79ee"
+        }
+      },
+      "actions": 0,
+      "executed": 0,
+      "rejected": 0,
+      "forbidden_contact_in_recorded_frames": false,
+      "input_image_hash_checks": 2,
+      "archived_views": 2,
+      "episode_file": "planning-vision-gpt6-v2-target-shift.json.gz",
+      "episode_sha256": "c5c9aa226251fd36035ba2dce635d2f0a8033e46c897af9e658b808ae9e1c022",
+      "compressed_sha256": "b1356cc65f0f22a26030acf35657bf5a948d4e6630f82f96496cffd1bf770f54",
+      "cameras_file": "planning-vision-gpt6-v2-target-shift-cameras.zip",
+      "cameras_sha256": "75f98ffbb8cfeb94816b7bc02af2e83295daccd06d38cbb32e45f1a031271684"
+    },
+    {
+      "id": "3dc6161ccd01",
+      "task": "transfer",
+      "seed": 7,
+      "provider": "baseline",
+      "model": "baseline",
+      "policy_version": "incremental-planning-v2",
+      "observation_mode": "privileged",
+      "control_mode": "incremental",
+      "preview": true,
+      "max_cycles": 100,
+      "status": "completed",
+      "success": true,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_seconds": 2.28,
+      "message": null,
+      "scene_hash": "34e568613cbcda621e6518c22fc6b443d077691f20677d4abb83108d86209bf8",
+      "interventions": [
+        {
+          "kind": "target_shift",
+          "delta_xy": [
+            0.06,
+            0.0
+          ],
+          "before": [
+            0.43,
+            0.18,
+            0.026
+          ],
+          "after": [
+            0.49,
+            0.18,
+            0.026
+          ],
+          "source": "explicit external evaluation intervention",
+          "after_cycle": 20,
+          "sim_time": 9.199999999999909
+        }
+      ],
+      "name": "baseline-incremental-target-shift",
+      "settings": {
+        "settings": {
+          "task": "transfer",
+          "seed": 7,
+          "observation_mode": "privileged",
+          "control_mode": "incremental",
+          "provider": "baseline",
+          "preview": true,
+          "threshold": 0,
+          "max_cycles": 100,
+          "speed": 0,
+          "intervention": {
+            "kind": "target_shift",
+            "after_cycle": 20,
+            "delta_xy": [
+              0.06,
+              0
+            ]
+          },
+          "scene_config": null,
+          "shuffle_candidates": true
+        },
+        "source_sha256": {
+          "scenarios.py": "375fcd075916c50f2e116c534caef99df1e2d291d3bf5099c9cd572719f46948",
+          "connection_store.py": "c9a6b51fb5a2356e15a695e39ea71c358af3ef8d3b258df38ce016134f63b174",
+          "server.py": "5394044d5fe75c0e57150491d85a6c1b4a9321e8d2d8407e5d7f917871cd7d85",
+          "presets.py": "37547d3708411a4d0f4dceafdfb43f4efa8978de5bb29d8c0f7a6728a6c5335e",
+          "eventlog.py": "9b39973e7bba656c978cd0fe8d2f1aa9795b741ef55611a796e25a94ab09cae0",
+          "__init__.py": "09475579667cfd0caf89e3830b8f1f38b9a41ad4839fed3bd5e8a95aaf293f29",
+          "runtime.py": "25f117e84f299f819e9e5f683903eb821e58d3e29bc74eff87ac6b1d103960f7",
+          "comparison.py": "72a0339433146b5a07ad9d01aca7a63fb7496defa6aded4be44ad08e722cc092",
+          "physics.py": "e6a0d2a537a9cac28f874d81e60cc53814194d00ad75f6d4648dae5bc272ddc8",
+          "cli.py": "f90bb589dc6d74437c3e1da7f69b8fc6af76cb875586a4037cfc846adbce5dd4",
+          "planning.py": "faae2d85a349ff6518cb0a214154559906881f6a8e2248678a6672ab328c86ed",
+          "perception.py": "eb5afaa2cdcab0e86a77a20cfa14e8fafa6893f741995e4f47ed2fb1d423260a",
+          "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197",
+          "policies.py": "65c04113d61c73b5fa1970e6087c895e94c6792e9c193aa5e6eb721ae1f58198",
+          "incremental.py": "18979e5354edb5f9346d986fef225db29b80845861c55ca8cb116c1ce58c79ee"
+        }
+      },
+      "actions": 40,
+      "executed": 40,
+      "rejected": 0,
+      "forbidden_contact_in_recorded_frames": false,
+      "input_image_hash_checks": 0,
+      "archived_views": 0,
+      "episode_file": "planning-baseline-incremental-target-shift.json.gz",
+      "episode_sha256": "e3aa0cefdec92d9710d57262d2b9dc823da07924545f28dcd61e233db5c5c00b",
+      "compressed_sha256": "768dd1a332ce75b760f4cc91f46abed9c3c9f4eba6e55146e28242b74a60db17",
+      "cameras_file": "planning-baseline-incremental-target-shift-cameras.zip",
+      "cameras_sha256": "f0d27f930148702f147b8f212754debb8f344c0d28e1ea193fac8ccdcf0eeca4"
+    },
+    {
+      "id": "4bd78b7a8005",
+      "task": "transfer",
+      "seed": 7,
+      "provider": "chat",
+      "model": "gpt-6-astra-2026-09-03",
+      "policy_version": "incremental-planning-v2",
+      "observation_mode": "vision",
+      "control_mode": "incremental",
+      "preview": true,
+      "max_cycles": 80,
+      "status": "completed",
+      "success": true,
+      "model_calls": 32,
+      "input_tokens": 140800,
+      "output_tokens": 4320,
+      "wall_seconds": 235.41,
+      "message": null,
+      "scene_hash": "34e568613cbcda621e6518c22fc6b443d077691f20677d4abb83108d86209bf8",
+      "interventions": [],
+      "name": "vision-gpt6-v2-cameras-transfer",
+      "settings": {
+        "settings": {
+          "task": "transfer",
+          "seed": 7,
+          "provider": "chat",
+          "preview": true,
+          "threshold": 0,
+          "max_cycles": 80,
+          "speed": 0,
+          "control_mode": "incremental",
+          "observation_mode": "vision",
+          "camera_views": [
+            "external",
+            "wrist"
+          ],
+          "intervention": null,
+          "shuffle_candidates": true
+        },
+        "wall_timeout_seconds": 900,
+        "source_sha256": {
+          "__init__.py": "09475579667cfd0caf89e3830b8f1f38b9a41ad4839fed3bd5e8a95aaf293f29",
+          "cli.py": "2e4466daaec6092e1c47e8f43c02b75a2998a0a34c27b4ebb9b833ee19110025",
+          "comparison.py": "fcffe21290e4d2f56546cc53e91b4f2e463e2534fa262b3350b5d3373e5eadd9",
+          "connection_store.py": "c9a6b51fb5a2356e15a695e39ea71c358af3ef8d3b258df38ce016134f63b174",
+          "eventlog.py": "9b39973e7bba656c978cd0fe8d2f1aa9795b741ef55611a796e25a94ab09cae0",
+          "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197",
+          "incremental.py": "18979e5354edb5f9346d986fef225db29b80845861c55ca8cb116c1ce58c79ee",
+          "perception.py": "4dbfda40c58eefd09a4d7b1b65120299c44b412cb6cac406a761feaddd16dc47",
+          "physics.py": "e6a0d2a537a9cac28f874d81e60cc53814194d00ad75f6d4648dae5bc272ddc8",
+          "planning.py": "faae2d85a349ff6518cb0a214154559906881f6a8e2248678a6672ab328c86ed",
+          "policies.py": "65c04113d61c73b5fa1970e6087c895e94c6792e9c193aa5e6eb721ae1f58198",
+          "presets.py": "37547d3708411a4d0f4dceafdfb43f4efa8978de5bb29d8c0f7a6728a6c5335e",
+          "runtime.py": "c1d2c526ada38d41d1e8901cdfc5fab0df1c3b695b348bcb75c9d0438152dc5e",
+          "scenarios.py": "375fcd075916c50f2e116c534caef99df1e2d291d3bf5099c9cd572719f46948",
+          "server.py": "c6838b74f12aee185b23f62b40a5ee24915a2752be0cb25546e9e1a26d0f8a28"
+        }
+      },
+      "actions": 32,
+      "executed": 32,
+      "rejected": 0,
+      "forbidden_contact_in_recorded_frames": false,
+      "input_image_hash_checks": 66,
+      "archived_views": 66,
+      "episode_file": "planning-vision-gpt6-v2-cameras-transfer.json.gz",
+      "episode_sha256": "cced59a1184cdadae8dc19368d4b6e3b04a59cb9d56932fb2b957de6806f45ac",
+      "compressed_sha256": "cf601e168ca1309a3ab7caee8ac1c9d8e27bbb3511bb25c6e733a75ab83a1c71",
+      "cameras_file": "planning-vision-gpt6-v2-cameras-transfer-cameras.zip",
+      "cameras_sha256": "9ce111bc6bb32107bf1c63bc169a749ce4656d71bab92e44078c6f476057109d"
+    },
+    {
+      "id": "27dfbc5fa782",
+      "task": "transfer",
+      "seed": 7,
+      "provider": "chat",
+      "model": "gpt-6-astra-2026-09-03",
+      "policy_version": "incremental-planning-v2",
+      "observation_mode": "vision",
+      "control_mode": "incremental",
+      "preview": true,
+      "max_cycles": 80,
+      "status": "completed",
+      "success": true,
+      "model_calls": 43,
+      "input_tokens": 189594,
+      "output_tokens": 6037,
+      "wall_seconds": 342.21,
+      "message": null,
+      "scene_hash": "34e568613cbcda621e6518c22fc6b443d077691f20677d4abb83108d86209bf8",
+      "interventions": [
+        {
+          "kind": "target_shift",
+          "delta_xy": [
+            0.06,
+            0.0
+          ],
+          "before": [
+            0.43,
+            0.18,
+            0.026
+          ],
+          "after": [
+            0.49,
+            0.18,
+            0.026
+          ],
+          "source": "explicit external evaluation intervention",
+          "after_cycle": 20,
+          "sim_time": 9.399999999999975
+        }
+      ],
+      "name": "vision-gpt6-v2-live-target-shift-run1",
+      "settings": {
+        "settings": {
+          "provider": "chat",
+          "task": "transfer",
+          "seed": 7,
+          "observation_mode": "vision",
+          "control_mode": "incremental",
+          "camera_views": [
+            "external",
+            "wrist"
+          ],
+          "shuffle_candidates": true,
+          "preview": true,
+          "threshold": 0,
+          "max_cycles": 80,
+          "speed": 4,
+          "intervention": {
+            "kind": "target_shift",
+            "after_cycle": 20,
+            "delta_xy": [
+              0.06,
+              0
+            ]
+          }
+        },
+        "source_sha256": {
+          "scenarios.py": "375fcd075916c50f2e116c534caef99df1e2d291d3bf5099c9cd572719f46948",
+          "connection_store.py": "c9a6b51fb5a2356e15a695e39ea71c358af3ef8d3b258df38ce016134f63b174",
+          "server.py": "c6838b74f12aee185b23f62b40a5ee24915a2752be0cb25546e9e1a26d0f8a28",
+          "presets.py": "37547d3708411a4d0f4dceafdfb43f4efa8978de5bb29d8c0f7a6728a6c5335e",
+          "eventlog.py": "9b39973e7bba656c978cd0fe8d2f1aa9795b741ef55611a796e25a94ab09cae0",
+          "__init__.py": "09475579667cfd0caf89e3830b8f1f38b9a41ad4839fed3bd5e8a95aaf293f29",
+          "runtime.py": "c1d2c526ada38d41d1e8901cdfc5fab0df1c3b695b348bcb75c9d0438152dc5e",
+          "comparison.py": "fcffe21290e4d2f56546cc53e91b4f2e463e2534fa262b3350b5d3373e5eadd9",
+          "physics.py": "e6a0d2a537a9cac28f874d81e60cc53814194d00ad75f6d4648dae5bc272ddc8",
+          "cli.py": "2e4466daaec6092e1c47e8f43c02b75a2998a0a34c27b4ebb9b833ee19110025",
+          "planning.py": "faae2d85a349ff6518cb0a214154559906881f6a8e2248678a6672ab328c86ed",
+          "perception.py": "4dbfda40c58eefd09a4d7b1b65120299c44b412cb6cac406a761feaddd16dc47",
+          "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197",
+          "policies.py": "65c04113d61c73b5fa1970e6087c895e94c6792e9c193aa5e6eb721ae1f58198",
+          "incremental.py": "18979e5354edb5f9346d986fef225db29b80845861c55ca8cb116c1ce58c79ee"
+        },
+        "execution": "local server"
+      },
+      "actions": 43,
+      "executed": 43,
+      "rejected": 0,
+      "forbidden_contact_in_recorded_frames": false,
+      "input_image_hash_checks": 88,
+      "archived_views": 90,
+      "episode_file": "planning-vision-gpt6-v2-live-target-shift-run1.json.gz",
+      "episode_sha256": "8cd89efa87b5e3225b241a9939872085a296095eb7adfa167f8d2e216276690b",
+      "compressed_sha256": "30e7996bbde8ea3ec2ae7f5ac331f146ec34e382b08961ee16d86541595df074",
+      "cameras_file": "planning-vision-gpt6-v2-live-target-shift-run1-cameras.zip",
+      "cameras_sha256": "a9511905150857203ec85f938aaa95f94a952f2ed480342a5da8712a5f33ec2f"
+    }
+  ],
+  "limitations": [
+    "Development trials with prompt revisions and API failures; do not pool into a success rate.",
+    "All model trials use the same transfer task and seed 7; no broad generalization claim.",
+    "Configured/resolved model names and token usage are reported by the API provider.",
+    "No hidden simulator object/target coordinates in direct-vision model input; simulator still supplies proprioception, safety checks and evaluation.",
+    "The deterministic comparator receives privileged state, not images, and makes zero model calls.",
+    "The live intervention trial uses speed 4; headless runs use speed 0. Wall time is not a controlled latency comparison.",
+    "No paired single-camera or no-image model ablation was run; image hashes alone do not establish visual reasoning."
+  ],
+  "camera_mode_render_smoke": [
+    {
+      "camera_views": [],
+      "pixels_changed_after_motion": {},
+      "model_calls": 0
+    },
+    {
+      "camera_views": [
+        "external"
+      ],
+      "pixels_changed_after_motion": {
+        "external": true
+      },
+      "model_calls": 0
+    },
+    {
+      "camera_views": [
+        "wrist"
+      ],
+      "pixels_changed_after_motion": {
+        "wrist": true
+      },
+      "model_calls": 0
+    },
+    {
+      "camera_views": [
+        "external",
+        "wrist"
+      ],
+      "pixels_changed_after_motion": {
+        "external": true,
+        "wrist": true
+      },
+      "model_calls": 0
+    }
+  ],
+  "rgbd_dual_camera_regression": {
+    "provider": "baseline",
+    "threshold": 0.55,
+    "max_cycles": 16,
+    "preset": null,
+    "results": [
+      {
+        "task": "transfer",
+        "seed": 0,
+        "success": true,
+        "status": "completed",
+        "observation_mode": "rgbd",
+        "camera_views": [
+          "external",
+          "wrist"
+        ],
+        "control_mode": "skills",
+        "interventions": [],
+        "cycles": 8,
+        "max_lift_m": 0.19696402793952492,
+        "forbidden_contact_steps": 0,
+        "message": null,
+        "model": "baseline",
+        "model_runtime": null,
+        "policy_version": "compact-effects-v4",
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "model_latency_ms": [],
+        "wall_seconds": 2.12,
+        "last_decision": {
+          "choice": "direct",
+          "probabilities": {},
+          "latency_ms": 0,
+          "provider": "baseline",
+          "model_call": false,
+          "selected_probability": null,
+          "reason": "baseline"
+        },
+        "episode_file": "planning-rgbd-dual-baseline-transfer-0.json.gz",
+        "episode_sha256": "081cd4f6bb6cde4fe6b25f28ffa46f8fa1b275b79338e771138c84fb64639779",
+        "compressed_sha256": "ec04cbc90d245b54ac37b0f77b859786b072d3d6027151d1b5e4c09226328d75"
+      },
+      {
+        "task": "stack",
+        "seed": 0,
+        "success": true,
+        "status": "completed",
+        "observation_mode": "rgbd",
+        "camera_views": [
+          "external",
+          "wrist"
+        ],
+        "control_mode": "skills",
+        "interventions": [],
+        "cycles": 8,
+        "max_lift_m": 0.19696913456225484,
+        "forbidden_contact_steps": 0,
+        "message": null,
+        "model": "baseline",
+        "model_runtime": null,
+        "policy_version": "compact-effects-v4",
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "model_latency_ms": [],
+        "wall_seconds": 2.1,
+        "last_decision": {
+          "choice": "direct",
+          "probabilities": {},
+          "latency_ms": 0,
+          "provider": "baseline",
+          "model_call": false,
+          "selected_probability": null,
+          "reason": "baseline"
+        },
+        "episode_file": "planning-rgbd-dual-baseline-stack-0.json.gz",
+        "episode_sha256": "9ef9fcfddae65a426bddf81c80c492f5640d8172f896bf2dfccba994962e04b7",
+        "compressed_sha256": "132305dd7820da35b14139831658af63b436e50a849da215ee9e11d733dfa5ac"
+      },
+      {
+        "task": "barrier",
+        "seed": 0,
+        "success": true,
+        "status": "completed",
+        "observation_mode": "rgbd",
+        "camera_views": [
+          "external",
+          "wrist"
+        ],
+        "control_mode": "skills",
+        "interventions": [],
+        "cycles": 8,
+        "max_lift_m": 0.19696402793952492,
+        "forbidden_contact_steps": 0,
+        "message": null,
+        "model": "baseline",
+        "model_runtime": null,
+        "policy_version": "compact-effects-v4",
+        "model_calls": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "model_latency_ms": [],
+        "wall_seconds": 2.1,
+        "last_decision": {
+          "choice": "direct",
+          "probabilities": {},
+          "latency_ms": 0,
+          "provider": "baseline",
+          "model_call": false,
+          "selected_probability": null,
+          "reason": "baseline"
+        },
+        "episode_file": "planning-rgbd-dual-baseline-barrier-0.json.gz",
+        "episode_sha256": "0a42f3a23b5082802835924a97863712b0cbc2a31f2b1168fb221955c453650a",
+        "compressed_sha256": "f2e55f95b06c074a7a37e6cbe6f615703217a128810381b395a5797ccece35de"
+      }
+    ]
+  }
+}

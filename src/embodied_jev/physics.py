@@ -31,6 +31,10 @@ def build_scene(task="transfer", seed=0, scene_config=None):
     root.remove(root.find("keyframe"))
     hand = root.find(".//body[@name='hand']")
     ET.SubElement(hand, "site", name="tcp", pos="0 0 0.1034", size=".004", rgba="0 0 0 0")
+    # Camera follows the hand and looks along the fingers toward the workspace.
+    # MuJoCo cameras look along local -Z; these axes turn it toward hand +Z.
+    ET.SubElement(hand, "camera", name="wrist_camera", pos=".045 0 .025",
+                  xyaxes="1 0 0 0 -1 0", fovy="80")
     for geom in root.findall(".//default[@class='collision']//geom"):
         geom.set("friction", "1.8 .02 .002")
     world = root.find("worldbody")
@@ -54,9 +58,9 @@ def build_scene(task="transfer", seed=0, scene_config=None):
     else:
         target_geometries.append(ET.SubElement(world, "geom", name="support", type="box", pos=".43 .18 .003", size=".07 .07 .003",
                       rgba=".10 .44 .72 1", friction="1.2 .01 .001"))
-        for x, y, sx, sy in [(.354, .18, .006, .082), (.506, .18, .006, .082),
-                             (.43, .104, .07, .006), (.43, .256, .07, .006)]:
-            target_geometries.append(ET.SubElement(world, "geom", type="box", pos=f"{x} {y} .012", size=f"{sx} {sy} .012",
+        for i, (x, y, sx, sy) in enumerate([(.354, .18, .006, .082), (.506, .18, .006, .082),
+                             (.43, .104, .07, .006), (.43, .256, .07, .006)]):
+            target_geometries.append(ET.SubElement(world, "geom", name=f"tray_wall_{i}", type="box", pos=f"{x} {y} .012", size=f"{sx} {sy} .012",
                           rgba=".12 .47 .74 1"))
     offset = target[:2] - np.asarray(SCENE_DEFAULTS["target_xy"])
     if np.any(offset):
@@ -95,6 +99,9 @@ class RobotWorld:
         self.cube_geom = self.model.geom("cube_geom").id
         self.cube_dof = self.model.jnt_dofadr[self.model.joint("cube_joint").id]
         self.support_id = self.model.geom("support").id
+        self.target_geom_ids = [i for i in range(self.model.ngeom)
+                               if self.model.geom(i).name == "support" or
+                               (self.model.geom(i).name or "").startswith("tray_wall_")]
         self.left = self.model.body("left_finger").id
         self.right = self.model.body("right_finger").id
         self.closed = False
@@ -219,6 +226,41 @@ class RobotWorld:
         other.target = self.target.copy()
         other.source = self.source.copy()
         return other
+
+    def perturb(self, kind, delta_xy):
+        """Explicit evaluation intervention, only while physics/rendering is idle.
+
+        This is an external displacement, never a robot action. It is logged by
+        Session and resets the independent success accumulator.
+        """
+        delta = np.asarray(delta_xy, dtype=float)
+        if delta.shape != (2,) or not np.isfinite(delta).all() or np.any(np.abs(delta) > .06):
+            raise ValueError("扰动位移必须是两个不超过 0.06 米的有限数字")
+        if kind == "target_shift":
+            config = dict(self.scene_config, target_xy=(self.target[:2] + delta).tolist())
+            validate_scene_config(self.task, config)
+            before = self.target.copy()
+            for gid in self.target_geom_ids:
+                self.model.geom_pos[gid, :2] += delta
+            self.target[:2] += delta
+            after = self.target.copy()
+        elif kind == "object_shift":
+            if self.contacts()[0]:
+                raise ValueError("物体已有夹爪接触，不能施加位置扰动；请提前扰动时刻")
+            before = self.cube
+            point = before[:2] + delta
+            config = dict(self.scene_config, source_xy=point.tolist(), target_xy=self.target[:2].tolist())
+            validate_scene_config(self.task, config)
+            address = self.model.jnt_qposadr[self.model.joint("cube_joint").id]
+            self.data.qpos[address:address + 2] += delta
+            self.data.qvel[self.cube_dof:self.cube_dof + 6] = 0
+            after = np.r_[point, before[2]]
+        else:
+            raise ValueError("Unknown intervention")
+        self.stable_seconds = 0.
+        mujoco.mj_forward(self.model, self.data)
+        return {"kind": kind, "delta_xy": delta.tolist(), "before": before.tolist(), "after": after.tolist(),
+                "source": "explicit external evaluation intervention"}
 
     def motion(self, target=None, gripper=None, seconds=.6, emit=True):
         target = self.position if target is None else np.asarray(target, dtype=float)
