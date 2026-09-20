@@ -14,7 +14,7 @@
 | 输入 / 输出用量 | 140,800 / 4,320 tokens |
 | 最终末端高度 | 约 0.198 m，超过要求的 0.17 m |
 | 相机存档 | 33 次采样，66 张原始 PNG |
-| 下载 | [MP4](media/vision-transfer.mp4) · [实验 JSON](results/planning-vision-gpt6-v2-cameras-transfer.json.gz) · [相机 ZIP](results/planning-vision-gpt6-v2-cameras-transfer-cameras.zip) |
+| 下载 | [下载 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/vision-transfer.mp4) · [实验 JSON](results/planning-vision-gpt6-v2-cameras-transfer.json.gz) · [相机 ZIP](results/planning-vision-gpt6-v2-cameras-transfer-cameras.zip) |
 
 模型没有拿到方块和托盘的坐标，也没有预先给定的抓取、搬运阶段。它得到的是相机图像、标定、机器人自身状态和近期动作结果。记录帧中未发现禁止接触标志。
 
@@ -35,7 +35,7 @@
 
 重新抓取由模型逐步选择的动作完成，程序没有调用预设恢复技能。全局 **43 个动作、43 次模型调用**，用时 **342.21 秒**；输入 / 输出为 **189,594 / 6,037 tokens**。最终末端高度约 0.193 m，记录帧中未发现禁止接触标志。
 
-[▶ 看 MP4](media/vision-recovery.mp4) · [实验 JSON](results/planning-vision-gpt6-v2-live-target-shift-run1.json.gz) · [相机 ZIP：45 次采样、90 张 PNG](results/planning-vision-gpt6-v2-live-target-shift-run1-cameras.zip)
+[⬇ 下载 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/vision-recovery.mp4) · [实验 JSON](results/planning-vision-gpt6-v2-live-target-shift-run1.json.gz) · [相机 ZIP：45 次采样、90 张 PNG](results/planning-vision-gpt6-v2-live-target-shift-run1-cameras.zip)
 
 这一局能核对“反馈变化—新动作—实际恢复”的过程。不过，两种变化发生在同一回合，不能把增加的步数完全归因于其中一种，也不能由这一局推算恢复成功率。普通实验默认不施加扰动，设置方法见[规划指南](PLANNING.md#托盘为什么会自己移动)。
 

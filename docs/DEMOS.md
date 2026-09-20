@@ -4,10 +4,10 @@
 
 | 演示 | 动作数 | 原始实验耗时 | 视频 / 动图 |
 | --- | --- | --- | --- |
-| 看图抓取与搬运 | 32 | 235.41 秒 | [MP4](media/vision-transfer.mp4) · [GIF](media/vision-transfer.gif) |
-| 托盘移动与重新抓取 | 43 | 342.21 秒 | [MP4](media/vision-recovery.mp4) · [GIF](media/vision-recovery.gif) |
+| 看图抓取与搬运 | 32 | 235.41 秒 | [下载 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/vision-transfer.mp4) · [GIF](media/vision-transfer.gif) |
+| 托盘移动与重新抓取 | 43 | 342.21 秒 | [下载 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/vision-recovery.mp4) · [GIF](media/vision-recovery.gif) |
 
-MP4 分辨率为 1280 × 900，适合全屏观看；GIF 是便于 README 直接播放的压缩预览。完整实验设置与失败回合见[视觉规划结果](PLANNING_RESULTS.md)。
+MP4 可下载后播放，分辨率为 1280 × 900，适合全屏观看；GIF 是便于 README 直接播放的压缩预览。完整实验设置与失败回合见[视觉规划结果](PLANNING_RESULTS.md)。
 
 ## 画面各部分是什么意思？
 

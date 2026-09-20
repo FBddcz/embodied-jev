@@ -32,7 +32,7 @@
 
 ![双相机视觉搬运：动作回放与模型原始输入](docs/media/vision-transfer.gif)
 
-[▶ 高清 MP4](docs/media/vision-transfer.mp4) · [实验说明与原始记录](docs/PLANNING_RESULTS.md)
+[⬇ 下载高清 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/vision-transfer.mp4) · [实验说明与原始记录](docs/PLANNING_RESULTS.md)
 
 ### 🔄 托盘移动后，还能继续吗？
 
@@ -40,7 +40,7 @@
 
 ![托盘扰动与重新抓取：43 步真实视觉回合](docs/media/vision-recovery.gif)
 
-[▶ 高清 MP4](docs/media/vision-recovery.mp4) · [托盘为什么会移动？](docs/PLANNING.md#托盘为什么会自己移动)
+[⬇ 下载高清 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/vision-recovery.mp4) · [托盘为什么会移动？](docs/PLANNING.md#托盘为什么会自己移动)
 
 > 💡 托盘移动是主动开启的**扰动测试**，默认关闭。重新抓取由模型选择动作完成。两段演示都来自同一个搬运场景，说明这两个回合跑通了；更多场景下是否稳定，还需要继续验证。首次失败和 API 超时也保留在[完整记录](docs/PLANNING_RESULTS.md)中。
 
