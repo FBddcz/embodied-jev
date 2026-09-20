@@ -23,7 +23,7 @@ def main():
     bench.add_argument("--observation-mode", choices=["privileged", "rgbd", "vision"], default="privileged")
     bench.add_argument("--cameras", choices=["none", "external", "wrist", "both"],
                        help="Enabled camera views; omitted uses the observation mode's default")
-    bench.add_argument("--control-mode", choices=["skills", "incremental"], default="skills")
+    bench.add_argument("--control-mode", choices=["skills", "incremental", "hierarchical"], default="skills")
     bench.add_argument("--shuffle-candidates", action="store_true")
     bench.add_argument("--intervention", help='JSON: {"kind":"object_shift","after_cycle":5,"delta_xy":[0.04,0]}')
     sub.add_parser("warmup", help="Load MiniCPM5-2B and make a real two-candidate decision")

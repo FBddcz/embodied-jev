@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 import httpx
 import pytest
 
@@ -58,3 +61,46 @@ def test_missing_provider_does_not_fall_back(monkeypatch):
     monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
     with pytest.raises(ValueError, match="not configured"):
         DecisionPolicy("jev")
+
+
+def test_recorded_jev_mismatch_preserves_choice_probabilities_and_execution(monkeypatch):
+    from embodied_jev.runtime import Session
+
+    # Captured from Jev 1.13.0 on 2026-09-20: choice 18%, another option 19%.
+    response = json.loads((Path(__file__).parent / "fixtures" / "jev-choice-probability-mismatch.json").read_text())
+    monkeypatch.setattr(DecisionPolicy, "_post", staticmethod(lambda url, **kwargs: httpx.Response(
+        200, request=httpx.Request("POST", url), json=response)))
+    session = Session(provider="jev", connection={"url": "https://example.invalid", "key": "fixture-secret", "model": "jev-latest"},
+                      seed=7, control_mode="incremental", max_cycles=1, threshold=0, speed=0)
+    try:
+        before = session.world.observe()["tcp"]
+        session.start()
+        session.worker.join(5)
+        assert not session.worker.is_alive()
+        exported = session.export()
+        assert exported["status"] == "exhausted" and exported["model_calls"] == 1
+        row = exported["history"][0]
+        assert row["executed"] and row["action"]["id"] == "y_neg_40"
+        assert row["decision"]["probabilities"] == response["answers"]["action"]["probabilities"]
+        assert row["decision"]["selected_probability"] == .18
+        assert row["decision"]["probability_warning"] == "choice_below_reported_max"
+        assert row["after"]["tcp"][1] < before[1] - .03
+        assert "fixture-secret" not in json.dumps(exported)
+        # Other typed providers still enforce their strict contract.
+        with pytest.raises(ValueError, match="highest-probability"):
+            validate_answer(response["answers"]["action"], row["decision"]["probabilities"])
+    finally:
+        session.stop()
+
+
+@pytest.mark.parametrize("answer", [
+    {"choice": "unknown", "probabilities": {"a": .5, "b": .5}},
+    {"choice": [], "probabilities": {"a": .5, "b": .5}},
+    {"choice": "a", "probabilities": {"a": .5}},
+    {"choice": "a", "probabilities": {"a": -.1, "b": 1.1}},
+    {"choice": "a", "probabilities": {"a": float("nan"), "b": .5}},
+    {"choice": "a", "probabilities": {"a": .8, "b": .8}},
+])
+def test_jev_choice_authority_does_not_relax_probability_integrity(answer):
+    with pytest.raises(ValueError):
+        validate_answer(answer, ["a", "b"], require_highest=False)

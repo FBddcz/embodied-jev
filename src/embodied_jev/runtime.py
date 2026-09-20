@@ -58,7 +58,7 @@ class Session:
                  control_mode="skills", intervention=None, shuffle_candidates=False, camera_views=None):
         if observation_mode not in {"privileged", "rgbd", "vision"}:
             raise ValueError("Unknown observation mode")
-        if control_mode not in {"skills", "incremental"}:
+        if control_mode not in {"skills", "incremental", "hierarchical"}:
             raise ValueError("Unknown control mode")
         if observation_mode == "vision" and (control_mode != "incremental" or provider not in {"chat", "claude"}):
             raise ValueError("直接图像模式需要逐步 XYZ 控制和支持图像的 OpenAI 兼容或 Claude 接口")
@@ -236,6 +236,9 @@ class Session:
 
     def _run(self):
         try:
+            if self.control_mode == "hierarchical":
+                self._run_hierarchical()
+                return
             if self.control_mode == "incremental":
                 self._run_incremental()
                 return
@@ -445,87 +448,164 @@ class Session:
                 self._uncertain(decision)
                 continue
             selected = next(option for option in legal if option.id == decision["choice"])
-            rejection = None
-            with self.lock:
-                if self.cancel.is_set():
-                    return
-                self.stage = "previewing"
-                shadow = self.world.clone()
-            try:
-                # Safety checks only the model's selected command, never ranks
-                # progress or exposes future object positions to the policy.
-                if self.preview:
-                    bad = shadow.unsafe_contacts
-                    for _ in shadow.motion(selected.target, selected.gripper, selected.seconds, emit=False):
-                        pass
-                    if shadow.unsafe_contacts > bad:
-                        rejection = "所选动作的仿真预演发生机械臂与台面或障碍接触"
-                else:
-                    _, error = shadow.solve_ik(selected.target)
-                    if error > .004:
-                        rejection = "所选短步目标不可达"
-            except (ValueError, RuntimeError):
-                rejection = "所选短步未通过可执行性检查"
+            if not self._execute_increment(observation, selected, options, serialised, decision):
+                return
+
+    def _run_hierarchical(self):
+        from .hierarchical import (SUBGOALS, SUBGOAL_INSTRUCTIONS, hierarchy_state, motor_questions,
+                                   assemble_motion, baseline_subgoal, baseline_channels)
+        import random
+
+        while not self.cancel.is_set():
             if not self._wait():
                 return
             with self.lock:
-                if self.cancel.is_set():
+                if self.cycles >= self.max_cycles:
+                    self.status, self.message = "exhausted", "已达到动作预算"
+                    self.finished = time.perf_counter()
+                    self._event("budget_exhausted", self.message, "warning")
                     return
-                self.cycles += 1
-                self.last_decision = decision
-                self.stage = "executing" if rejection is None else "observing"
-            before = copy.deepcopy(observation)
-            if rejection is None:
-                bad = self.world.unsafe_contacts
-                motion = self.world.motion(selected.target, selected.gripper, selected.seconds)
-                while True:
-                    if not self._wait():
-                        return
-                    with self.lock:
-                        if self.cancel.is_set():
-                            return
-                        if not self.wake.is_set():
-                            continue
-                        try:
-                            frame = next(motion)
-                        except StopIteration:
-                            break
-                        self._record(frame)
-                        if self.world.unsafe_contacts > bad:
-                            raise ValueError("执行层检测到台面或障碍接触，已停止")
-                    if self.speed > 0 and self.cancel.wait(.04 / self.speed):
-                        return
-            with self.lock:
-                after = self._observe()
+                self._apply_intervention()
+                observation = self._observe()
                 self._record(self.world.frame())
-                action = next(item for item in serialised if item["id"] == selected.id).copy()
-                action.update(admitted=rejection is None, rejection=rejection,
-                              preview={"source": "simulator_safety_filter", "safe": rejection is None} if self.preview else None)
-                self.history.append({"cycle": self.cycles, "phase": "incremental", "label": selected.label,
-                    "intent": None, "decision": decision, "action": action,
-                    "executed": rejection is None, "rejection": rejection,
-                    "before": before, "after": after, "candidates": serialised,
-                    "decision_inputs": copy.deepcopy(self.last_decision_inputs),
-                    "rejected_count": sum(not option.admitted for option in options) + int(rejection is not None)})
-                self.stage = "observing"
-                self._event("action_rejected" if rejection else "action_completed",
-                            rejection or f"完成短步：{selected.label}", "warning" if rejection else "info")
-            if self.world.success():
-                self._finish()
+                state = hierarchy_state({**observation, "user_context": self.user_context}, self.history)
+                subgoals = list(SUBGOALS.items())
+                if self.shuffle_candidates:
+                    random.Random(self.world.seed * 1009 + self.cycles).shuffle(subgoals)
+                self.phase, self.stage = "hierarchical", "deciding"
+                self.last_decision = self.last_intent = None
+                self.current_candidates = []
+                self.last_decision_inputs = {"phase": None, "action": None}
+            self._event("deciding", "正在根据当前状态选择子目标")
+            default = baseline_subgoal(state) if self.policy.provider == "baseline" else None
+            intent = self._choose("phase", state, SUBGOAL_INSTRUCTIONS, dict(subgoals), baseline_choice=default, plan=True)
+            if intent is None or not self._wait():
                 return
-            if self._stalled():
+            with self.lock:
+                self.last_intent = intent
+            if intent["selected_probability"] is not None and intent["selected_probability"] < self.threshold:
+                self._uncertain(intent)
+                continue
+            motor_state, questions = motor_questions(state, intent["choice"])
+            if self.shuffle_candidates:
+                for index, question in enumerate(questions.values()):
+                    criteria = list(question["criteria"].items())
+                    random.Random(self.world.seed * 1009 + self.cycles * 7 + index).shuffle(criteria)
+                    question["criteria"] = dict(criteria)
+            defaults = baseline_channels(motor_state) if self.policy.provider == "baseline" else None
+            self._event("deciding", f"子目标 {intent['choice']}：正在选择 XYZ 与夹爪通道")
+            started, calls_before = time.perf_counter(), self.policy.calls
+            channels = self._choose("action", motor_state, questions, baseline_choices=defaults, channels=True)
+            if channels is None or not self._wait():
+                return
+            selected, serialised = assemble_motion(observation, motor_state, channels)
+            decision = {"choice": selected.id, "probabilities": {}, "selected_probability": None,
+                        "provider": self.policy.provider, "model": self.policy.model,
+                        "model_call": self.policy.calls > calls_before, "model_calls": self.policy.calls - calls_before,
+                        "latency_ms": (time.perf_counter() - started) * 1000 if self.policy.calls > calls_before else 0,
+                        "readout": "separate_motor_channels", "channel_decisions": channels,
+                        "image_count": 0, "image_views": [], "image_sha256": None}
+            if any(row.get("probability_warning") for row in channels.values()):
+                decision["probability_warning"] = "choice_below_reported_max"
+            with self.lock:
+                self.current_candidates = [serialised]
+                self.last_decision = decision
+            low = [name for name, row in channels.items()
+                   if row["selected_probability"] is not None and row["selected_probability"] < self.threshold]
+            if low:
+                self._uncertain(decision)
+                with self.lock:
+                    self.message = "动作通道概率低于设定门槛：" + ", ".join(low)
+                continue
+            if not self._execute_increment(observation, selected, [selected], [serialised], decision, intent):
+                return
+
+    def _execute_increment(self, observation, selected, options, serialised, decision, intent=None):
+        rejection = selected.rejection if not selected.admitted else None
+        with self.lock:
+            if self.cancel.is_set():
+                return
+            self.stage = "previewing"
+            shadow = self.world.clone()
+        try:
+            # Safety checks only the model's selected command, never ranks
+            # progress or exposes future object positions to the policy.
+            if rejection is not None:
+                pass
+            elif self.preview:
+                bad = shadow.unsafe_contacts
+                for _ in shadow.motion(selected.target, selected.gripper, selected.seconds, emit=False):
+                    pass
+                if shadow.unsafe_contacts > bad:
+                    rejection = "所选动作的仿真预演发生机械臂与台面或障碍接触"
+            else:
+                _, error = shadow.solve_ik(selected.target)
+                if error > .004:
+                    rejection = "所选短步目标不可达"
+        except (ValueError, RuntimeError):
+            rejection = "所选短步未通过可执行性检查"
+        if not self._wait():
+            return
+        with self.lock:
+            if self.cancel.is_set():
+                return
+            self.cycles += 1
+            self.last_decision = decision
+            self.stage = "executing" if rejection is None else "observing"
+        before = copy.deepcopy(observation)
+        if rejection is None:
+            bad = self.world.unsafe_contacts
+            motion = self.world.motion(selected.target, selected.gripper, selected.seconds)
+            while True:
+                if not self._wait():
+                    return
                 with self.lock:
                     if self.cancel.is_set():
                         return
-                    self.status, self.stage = "stalled", "observing"
-                    self.message = "连续三次相同短步未产生位姿或接触变化，已停止；没有切换规则策略。"
-                    self.finished = time.perf_counter()
-                    self._event("stalled", self.message, "warning")
-                return
-            if self.single_step:
-                self.pause()
+                    if not self.wake.is_set():
+                        continue
+                    try:
+                        frame = next(motion)
+                    except StopIteration:
+                        break
+                    self._record(frame)
+                    if self.world.unsafe_contacts > bad:
+                        raise ValueError("执行层检测到台面或障碍接触，已停止")
+                if self.speed > 0 and self.cancel.wait(.04 / self.speed):
+                    return
+        with self.lock:
+            after = self._observe()
+            self._record(self.world.frame())
+            action = next(item for item in serialised if item["id"] == selected.id).copy()
+            action.update(admitted=rejection is None, rejection=rejection,
+                          preview={"source": "simulator_safety_filter", "safe": rejection is None} if self.preview else None)
+            self.history.append({"cycle": self.cycles, "phase": self.control_mode, "label": selected.label,
+                "intent": copy.deepcopy(intent), "decision": decision, "action": action,
+                "executed": rejection is None, "rejection": rejection,
+                "before": before, "after": after, "candidates": serialised,
+                "decision_inputs": copy.deepcopy(self.last_decision_inputs),
+                "rejected_count": sum(not option.admitted or (option is selected and rejection is not None)
+                                      for option in options)})
+            self.stage = "observing"
+            self._event("action_rejected" if rejection else "action_completed",
+                        rejection or f"完成短步：{selected.label}", "warning" if rejection else "info")
+        if self.world.success():
+            self._finish()
+            return
+        if self._stalled():
+            with self.lock:
+                if self.cancel.is_set():
+                    return
+                self.status, self.stage = "stalled", "observing"
+                self.message = "连续三次相同短步未产生位姿或接触变化，已停止；没有切换规则策略。"
+                self.finished = time.perf_counter()
+                self._event("stalled", self.message, "warning")
+            return
+        if self.single_step:
+            self.pause()
+        return True
 
-    def _choose(self, stage, *args, plan=False, **kwargs):
+    def _choose(self, stage, *args, plan=False, channels=False, **kwargs):
         # Admit each decision under the control lock, then release it before
         # inference. A stop/pause during preview must not start another request;
         # an already admitted request may finish, but cancellation discards its answer.
@@ -540,6 +620,8 @@ class Session:
                 self.policy.last_input = None
                 break
         try:
+            if channels:
+                return self.policy.choose_channels(*args, continue_run=self._wait, **kwargs)
             return self.policy.choose_plan(*args, **kwargs) if plan else self.policy.choose(*args)
         except Exception as exc:
             # Even a gateway exception can contain a secret. Retain only safe diagnostics.
@@ -557,7 +639,7 @@ class Session:
         if len(self.history) < 3:
             return False
         recent = self.history[-3:]
-        if self.control_mode == "incremental" and len({h["action"]["id"] for h in recent}) != 1:
+        if self.control_mode in {"incremental", "hierarchical"} and len({h["action"]["id"] for h in recent}) != 1:
             return False
         if len({h["phase"] for h in recent}) != 1:
             return False
@@ -635,6 +717,7 @@ class Session:
     def export(self):
         with self.lock:
             from .incremental import PROMPT_VERSION as INCREMENTAL_VERSION
+            from .hierarchical import PROMPT_VERSION as HIERARCHICAL_VERSION
             return {"format": "embodied-jev-episode-v1", "id": self.id, "task": self.world.task,
                     "seed": self.world.seed, "scene_hash": self.world.scene_hash, "provider": self.policy.provider,
                     "profile_id": self.profile_id, "scene_config": copy.deepcopy(self.world.scene_config),
@@ -647,7 +730,8 @@ class Session:
                     "user_context": copy.deepcopy(self.user_context),
                     "preview": self.preview, "status": self.status, "success": bool(self.world.success()),
                     "model": self.policy.model, "threshold": self.threshold, "max_cycles": self.max_cycles,
-                    "policy_version": (INCREMENTAL_VERSION if self.control_mode == "incremental" else POLICY_VERSION),
+                    "policy_version": (HIERARCHICAL_VERSION if self.control_mode == "hierarchical" else
+                                       INCREMENTAL_VERSION if self.control_mode == "incremental" else POLICY_VERSION),
                     "history": list(self.history), "frames": list(self.frames),
                     "events": list(self.events),
                     "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,

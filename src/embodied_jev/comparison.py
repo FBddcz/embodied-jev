@@ -216,7 +216,8 @@ class Comparison:
                       "model": lane["session"].policy.model, "status": lane["status"], "session": lane["session"].snapshot()}
                      for lane in self.lanes]
             ends = [self._bounds(lane["session"])[1] for lane in self.lanes]
-            notes = ["各路使用独立仿真；逐步规划每轮选择一个短步并重新观测。" if self.config["control_mode"] == "incremental"
+            notes = ["各路使用独立仿真；模型每轮选择子目标，再选择 XYZ 与夹爪通道。" if self.config["control_mode"] == "hierarchical" else
+                     "各路使用独立仿真；逐步规划每轮选择一个短步并重新观测。" if self.config["control_mode"] == "incremental"
                      else "各路使用独立仿真；阶段选择完成后才进行动作选择。"]
             if self.config["observation_mode"] == "rgbd":
                 notes.append("RGB-D 估计位置用于决策输入；接触反馈、预演安全过滤和最终评分仍来自仿真。")

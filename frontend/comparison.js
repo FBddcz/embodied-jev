@@ -26,6 +26,7 @@ const phases = {
   recover: "张开重试",
   finish: "完成",
   incremental: "逐步 XYZ 决策",
+  hierarchical: "分层 XYZ 决策",
 };
 const statuses = {
   empty: "尚未开始",
@@ -101,7 +102,7 @@ export async function createComparison(container, { api, toast }) {
       <label>动作预算<input id="cmp-budget" type="number" min="1" max="200" value="30"></label>
       <label>概率门槛<input id="cmp-threshold" type="number" min="0" max="1" step="0.05" value="0"></label>
       <label>执行速度<input id="cmp-speed" type="number" min="0.5" max="4" step="0.5" value="1.5"></label>
-      <label>共同动作决策<select id="cmp-control-mode"><option value="skills">预设技能选择</option><option value="incremental">逐步 XYZ · 闭环规划</option></select></label>
+      <label>共同动作决策<select id="cmp-control-mode"><option value="skills">预设技能选择</option><option value="incremental">逐步 XYZ · 闭环规划</option><option value="hierarchical">分层 XYZ · 子目标规划</option></select></label>
       <label>共同观测来源<select id="cmp-observation-mode"><option value="privileged">仿真真值 · 默认</option><option value="rgbd">RGB-D 视觉 · 实验</option><option value="vision">直接图像 · 多模态模型</option></select></label>
       <label>共同启用相机<select id="cmp-camera-mode"><option value="none">无相机</option><option value="external">仅外部相机</option><option value="wrist">仅腕部相机</option><option value="both">双相机</option></select></label>
       <label class="comparison-checkbox"><input id="cmp-preview" type="checkbox" checked> 动作预演</label>
@@ -147,6 +148,8 @@ export async function createComparison(container, { api, toast }) {
   setupRows();
   $("#cmp-count").onchange = setupRows;
   $("#cmp-control-mode").onchange = () => {
+    if ($("#cmp-control-mode").value === "hierarchical" && Number($("#cmp-budget").value) < 160)
+      $("#cmp-budget").value = 160;
     if (
       $("#cmp-control-mode").value === "incremental" &&
       Number($("#cmp-budget").value) === 30
@@ -304,8 +307,9 @@ export async function createComparison(container, { api, toast }) {
       config.providers.find((provider) => provider.id === lane.provider)
         ?.name ||
       lane.provider;
+    const hierarchical = session.control_mode === "hierarchical";
     const incremental =
-      session.control_mode === "incremental" || choice?.phase === "incremental";
+      hierarchical || session.control_mode === "incremental" || choice?.phase === "incremental";
     const direct = session.observation_mode === "vision";
     card.querySelector(".lane-source").textContent = source(lane.provider);
     card.querySelector(".lane-input-source").textContent = direct
@@ -321,10 +325,10 @@ export async function createComparison(container, { api, toast }) {
     card.querySelector(".lane-phase-heading").textContent = incremental
       ? "行动意图"
       : "阶段选择";
-    card.querySelector(".lane-phase").innerHTML = incremental
+    card.querySelector(".lane-phase").innerHTML = incremental && !hierarchical
       ? `<span class="comparison-choice">${escape(choice?.decision?.intent || (choice?.decision ? "未提供行动意图" : "等待决策"))}</span>`
       : options(choice?.intent, phases);
-    card.querySelector(".lane-action").innerHTML = options(choice?.decision, {
+    card.querySelector(".lane-action").innerHTML = hierarchical ? motorChannelsHtml(choice?.decision, escape) : options(choice?.decision, {
       direct: "正常执行",
       gentle: "减速执行",
       hold: "保持不动",
@@ -757,3 +761,4 @@ export async function createComparison(container, { api, toast }) {
     },
   };
 }
+import { motorChannelsHtml } from "./motor-channels.js";

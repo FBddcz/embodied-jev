@@ -1091,6 +1091,19 @@ a {
 .prob-row {
   font-size: 10px;
 }
+.motor-channel .decision-meta {
+  margin-bottom: 8px;
+}
+.motor-channel .prob-row + .prob-row {
+  margin-top: 7px;
+}
+#decision-section #intent-probabilities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 12px 0 18px;
+  min-height: 0;
+}
 .prob-top {
   display: flex;
   justify-content: space-between;

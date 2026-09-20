@@ -1,7 +1,8 @@
-"""Make an annotated MP4/GIF from a saved episode and its original camera ZIP.
+"""Make an annotated MP4/GIF from a saved visual or hierarchical episode.
 
 No model calls or physics steps are made. The large view redraws recorded qpos;
 the two smaller views show the exact PNGs sent to the model for that decision.
+Hierarchical episodes show recorded subgoal and motor probabilities instead.
 Playback gives each decision equal screen time and omits API waiting.
 """
 from __future__ import annotations
@@ -82,6 +83,9 @@ class Demo:
                 if row["sha256"] != saved["sha256"]:
                     raise ValueError("Model input does not match the archived pixels")
                 self.checked += 1
+        self.setup_scene(episode)
+
+    def setup_scene(self, episode):
         xml, target, _ = build_scene(episode["task"], episode["seed"], episode["scene_config"])
         if digest(xml.replace(str(ASSETS), "ASSETS").encode()) != episode["scene_hash"]:
             raise ValueError("Scene changed; render from the episode's original code version")
@@ -241,7 +245,7 @@ class Demo:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--episode", type=Path, required=True)
-    parser.add_argument("--cameras", type=Path, required=True)
+    parser.add_argument("--cameras", type=Path, help="Required for original-image visual episodes")
     parser.add_argument("--output", type=Path, required=True, help="Output filename stem, without extension")
     parser.add_argument("--title", required=True)
     parser.add_argument("--font")
@@ -256,13 +260,23 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     raw = args.episode.read_bytes()
     episode = json.loads(gzip.decompress(raw) if args.episode.suffix == ".gz" else raw)
+    episode = episode.get("episode", episode)
+    hierarchical = episode.get("control_mode") == "hierarchical"
+    if not hierarchical and args.cameras is None:
+        parser.error("Visual episodes require --cameras")
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     command = [ffmpeg, "-y", "-loglevel", "error", "-f", "rawvideo", "-pixel_format", "rgb24",
                "-video_size", f"{SIZE[0]}x{SIZE[1]}", "-framerate", str(FPS), "-i", "pipe:0", "-an",
                "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-pix_fmt", "yuv420p",
                "-movflags", "+faststart", str(outputs[".mp4"])]
-    with zipfile.ZipFile(args.cameras) as archive:
-        demo = Demo(episode, archive, args.title, find_font(args.font))
+    from contextlib import nullcontext
+    with zipfile.ZipFile(args.cameras) if args.cameras else nullcontext(None) as archive:
+        if hierarchical:
+            from render_hierarchical_demo import HierarchicalDemo
+            demo = HierarchicalDemo(episode, args.title, find_font(args.font))
+        else:
+            demo = Demo(episode, archive, args.title, find_font(args.font))
+        demo.gif_speed = args.gif_speed
         process = subprocess.Popen(command, stdin=subprocess.PIPE)
         count = 0
         try:
@@ -283,15 +297,19 @@ def main():
             "-filter_complex", f"setpts=PTS/{args.gif_speed},fps=10,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3",
             "-loop", "0", str(outputs[".gif"])], check=True)
         metadata = {"episode_id": episode["id"], "episode_file": args.episode.name,
-            "episode_file_sha256": digest(raw), "camera_archive": args.cameras.name,
-            "camera_archive_sha256": digest(args.cameras.read_bytes()),
+            "episode_file_sha256": digest(raw), "camera_archive": args.cameras.name if args.cameras else None,
+            "camera_archive_sha256": digest(args.cameras.read_bytes()) if args.cameras else None,
+            "model": episode.get("model"), "control_mode": episode.get("control_mode"),
+            "observation_mode": episode.get("observation_mode"),
             "input_images_verified": demo.checked, "frames": count, "fps": FPS,
             "duration_seconds": count / FPS, "original_wall_seconds": episode["wall_seconds"],
             "gif_speed": args.gif_speed, "gif_nominal_duration_seconds": count / FPS / args.gif_speed,
-            "decision_panel": "Recorded candidate order, selected action and API latency. Only provider-returned probabilities are shown; absent probabilities are explicitly labelled.",
+            "decision_panel": ("Recorded subgoal and four independent channel distributions, selected options and separate API latencies. No joint probability."
+                               if hierarchical else "Recorded candidate order, selected action and API latency. Only provider-returned probabilities are shown; absent probabilities are explicitly labelled."),
             "model_calls_during_export": 0, "physics_steps_during_export": 0,
             "playback": "Recorded qpos only; no interpolation; 1.2 seconds per decision; model waits omitted.",
-            "camera_panels": "Exact archived decision-input PNGs, resized for display; final panel shows final observation.",
+            "camera_panels": ("None. Model received measured coordinates and contacts; the large view is trajectory replay."
+                              if hierarchical else "Exact archived decision-input PNGs, resized for display; final panel shows final observation."),
             "moments": demo.moments,
             "outputs": {p.name: {"sha256": digest(p.read_bytes()), "bytes": p.stat().st_size}
                         for ext, p in outputs.items() if ext != ".json"}}

@@ -18,8 +18,9 @@ from embodied_jev.runtime import Session, validate_intervention
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--provider", choices=["chat", "claude", "baseline"], default="chat")
+    parser.add_argument("--provider", choices=["chat", "claude", "jev", "local", "minicpm", "baseline"], default="chat")
     parser.add_argument("--saved-connection", action="store_true")
+    parser.add_argument("--control-mode", choices=["incremental", "hierarchical"], default="incremental")
     parser.add_argument("--observation", choices=["vision", "rgbd", "privileged"], default="vision")
     parser.add_argument("--cameras", choices=["none", "external", "wrist", "both"])
     parser.add_argument("--task", choices=["transfer", "stack", "barrier"], default="transfer")
@@ -47,7 +48,7 @@ def main():
             parser.error("No saved connection for this provider")
     settings = dict(task=args.task, seed=args.seed, provider=args.provider, preview=True,
                     threshold=0, max_cycles=args.max_cycles, speed=0,
-                    control_mode="incremental", observation_mode=args.observation,
+                    control_mode=args.control_mode, observation_mode=args.observation,
                     camera_views=cameras, intervention=intervention,
                     shuffle_candidates=args.shuffle_candidates)
     args.output.mkdir(parents=True, exist_ok=False)
@@ -67,6 +68,8 @@ def main():
                 for row in session.history[seen:]:
                     print(json.dumps({"cycle": row["cycle"], "choice": row["decision"]["choice"],
                         "executed": row["executed"], "intent": row["decision"].get("intent"),
+                        "subgoal": (row.get("intent") or {}).get("choice"),
+                        "channels": row["action"].get("channels"),
                         "visual_evidence": row["decision"].get("visual_evidence"),
                         "tcp": row["after"]["tcp"], "held": row["after"]["held"],
                         "rejection": row.get("rejection")}, ensure_ascii=False), flush=True)

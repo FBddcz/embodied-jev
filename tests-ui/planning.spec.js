@@ -22,6 +22,7 @@ async function planningFixture(page) {
     ),
     providers: [
       { id: "baseline", name: "规则基线", ready: true },
+      { id: "jev", name: "TypeSafe Jev", ready: true },
       { id: "chat", name: "OpenAI 兼容 API", ready: true },
       { id: "claude", name: "Claude 原生 API", ready: true },
     ],
@@ -155,6 +156,94 @@ async function boot(page) {
   await page.goto("/");
   await expect(page.locator("#connection")).toContainText("已连接");
 }
+
+test("hierarchical setup, separate probabilities and historical decisions", async ({ page }, testInfo) => {
+  const { snapshot, requests } = await planningFixture(page);
+  await boot(page);
+  await page.locator("#control-mode").selectOption("hierarchical");
+  await expect.poll(() => requests.resets.at(-1)?.control_mode).toBe("hierarchical");
+  expect(requests.resets.at(-1).max_cycles).toBe(160);
+  await expect(page.locator("#control-help")).toContainText("子目标");
+  const channel = (choice, alternatives) => ({ choice, probabilities: Object.fromEntries(
+    alternatives.map(option => [option, option === choice ? .9 : .05])), selected_probability: .9 });
+  const decision = { choice: "channels", probabilities: {}, selected_probability: null,
+    model: "fixture-jev", model_call: true, latency_ms: 330,
+    channel_decisions: { x: channel("hold", ["negative", "hold", "positive"]),
+      y: channel("positive", ["negative", "hold", "positive"]),
+      z: channel("hold", ["negative", "hold", "positive"]),
+      gripper: channel("close", ["open", "hold", "close"]) } };
+  const intent = { choice: "carry", probabilities: { carry: .8, lift: .2 }, model_call: true, latency_ms: 310 };
+  const action = { id: "channels", label: "X 0 / Y +12 mm", delta_xyz: [0, .012, 0], channels: { y: "positive" }, admitted: true };
+  Object.assign(snapshot, { provider: "jev", phase: "hierarchical", cycles: 2,
+    last_decision: decision, last_intent: intent, candidates: [action], history: [{
+      cycle: 1, phase: "hierarchical", label: "历史上升", intent: { ...intent, choice: "lift" },
+      decision: { ...decision, channel_decisions: { ...decision.channel_decisions,
+        z: channel("positive", ["negative", "hold", "positive"]) } }, action,
+      candidates: [action], executed: true, before: { tcp: [.3, 0, .2] },
+      after: { tcp: [.3, 0, .21], sim_seconds: .35, held: true }, decision_inputs: { phase: {}, action: {} },
+    }] });
+  await expect(page.locator("#intent-panel")).toBeVisible();
+  await expect(page.locator("#intent-panel")).toContainText("当前子目标");
+  await expect(page.locator("#intent-probabilities .selected")).toContainText("移向目标");
+  await expect(page.locator("#probabilities .motor-channel")).toHaveCount(4);
+  await expect(page.locator('#probabilities [data-channel="y"] .selected')).toContainText("90.0%");
+  await expect(page.locator('#probabilities [data-channel="gripper"] .selected')).toContainText("闭合");
+  await expect(page.locator("#decision-note")).toContainText("不合成为整步概率");
+  await page.locator("#history-list > summary").click();
+  await page.locator('[data-cycle="1"]').click();
+  await expect(page.locator("#intent-probabilities .selected")).toContainText("抬升物体");
+  await expect(page.locator('#probabilities [data-channel="z"] .selected')).toContainText("正方向");
+  await page.locator("#decision-live").click();
+  await expect(page.locator('#probabilities [data-channel="z"] .selected')).toContainText("保持");
+  for (const channel of Object.values(decision.channel_decisions)) channel.probabilities = {};
+  snapshot.last_decision = { ...decision };
+  await expect(page.locator('#probabilities [data-channel="y"] .selected')).toContainText("已选择");
+  await expect(page.locator("#probabilities .bar")).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("hierarchical-desktop.png"), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("comparison forwards hierarchical mode and displays all channels", async ({ page }) => {
+  const { snapshot, requests } = await planningFixture(page);
+  snapshot.last_intent = { choice: "lift", probabilities: { lift: .9, grasp: .1 }, model_call: true };
+  snapshot.last_decision = { choice: "combined", model_call: true, probabilities: {},
+    channel_decisions: Object.fromEntries(["x", "y", "z", "gripper"].map(name => [name,
+      { choice: "hold", probabilities: { hold: .8 }, selected_probability: .8 }])) };
+  await boot(page);
+  await page.locator("#comparison-open").click();
+  await page.locator(".comparison-advanced > summary").click();
+  await page.locator("#cmp-control-mode").selectOption("hierarchical");
+  await expect(page.locator("#cmp-budget")).toHaveValue("160");
+  await page.locator("#cmp-start").click();
+  await expect(page.locator(".comparison-card")).toHaveCount(2);
+  expect(requests.comparisons[0].control_mode).toBe("hierarchical");
+  await expect(page.locator(".lane-action .motor-channel")).toHaveCount(8);
+  await expect(page.locator(".lane-phase").first()).toContainText("抬升");
+});
+
+test("mocked Jev preserves its reported choice and discloses probability mismatch", async ({ page }) => {
+  const { snapshot } = await planningFixture(page);
+  Object.assign(snapshot, {
+    provider: "jev",
+    control_mode: "incremental",
+    cycles: 1,
+    candidates: [
+      { id: "y_neg_40", label: "Y -0.040 m", admitted: true, delta_xyz: [0, -0.04, 0] },
+      { id: "z_neg_40", label: "Z -0.040 m", admitted: true, delta_xyz: [0, 0, -0.04] },
+    ],
+    last_decision: {
+      choice: "y_neg_40", model: "jev-1.13.0", model_call: true, latency_ms: 310,
+      probabilities: { y_neg_40: 0.18, z_neg_40: 0.19 }, selected_probability: 0.18,
+      probability_warning: "choice_below_reported_max",
+    },
+  });
+  await boot(page);
+  await expect(page.locator("#probabilities .selected")).toContainText("Y -0.040 m");
+  await expect(page.locator("#probabilities .selected")).toContainText("18.0%");
+  await expect(page.locator("#probabilities")).toContainText("19.0%");
+  await expect(page.locator("#decision-note")).toContainText("API 选择与公布概率排序不一致");
+});
 
 test("mocked planning settings validate vision and preserve modes across reset and task changes", async ({
   page,

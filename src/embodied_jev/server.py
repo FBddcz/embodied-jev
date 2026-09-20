@@ -65,7 +65,7 @@ class Setup(ScenarioInput):
     seed: int = Field(default=0, ge=0, le=99999)
     provider: Literal["baseline", "jev", "minicpm", "local", "chat", "claude"] = "baseline"
     observation_mode: Literal["privileged", "rgbd", "vision"] = "privileged"
-    control_mode: Literal["skills", "incremental"] = "skills"
+    control_mode: Literal["skills", "incremental", "hierarchical"] = "skills"
     preview: bool = True
     threshold: float = Field(default=.55, ge=0, le=1)
     max_cycles: int = Field(default=30, ge=1, le=200)
@@ -98,7 +98,7 @@ class ComparisonSetup(ScenarioInput):
     task: Literal["transfer", "stack", "barrier"] = "transfer"
     seed: int = Field(default=0, ge=0, le=99999)
     observation_mode: Literal["privileged", "rgbd", "vision"] = "privileged"
-    control_mode: Literal["skills", "incremental"] = "skills"
+    control_mode: Literal["skills", "incremental", "hierarchical"] = "skills"
     preview: bool = True
     threshold: float = Field(default=.55, ge=0, le=1)
     max_cycles: int = Field(default=30, ge=1, le=200)

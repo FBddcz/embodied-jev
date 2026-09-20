@@ -1,0 +1,46 @@
+{
+  "episode_id": "afe221e005f9",
+  "episode_file": "jev-hierarchical-live-2026-09-20.json.gz",
+  "episode_file_sha256": "b4fdc183da378c26bd77a9dc25950a5275e39f1ce2075be534de5c2288785a6f",
+  "camera_archive": null,
+  "camera_archive_sha256": null,
+  "model": "jev-1.13.0",
+  "control_mode": "hierarchical",
+  "observation_mode": "privileged",
+  "input_images_verified": 0,
+  "frames": 2212,
+  "fps": 20,
+  "duration_seconds": 110.6,
+  "original_wall_seconds": 79.71,
+  "gif_speed": 8.0,
+  "gif_nominal_duration_seconds": 13.825,
+  "decision_panel": "Recorded subgoal and four independent channel distributions, selected options and separate API latencies. No joint probability.",
+  "model_calls_during_export": 0,
+  "physics_steps_during_export": 0,
+  "playback": "Recorded qpos only; no interpolation; 1.2 seconds per decision; model waits omitted.",
+  "camera_panels": "None. Model received measured coordinates and contacts; the large view is trajectory replay.",
+  "moments": [
+    {
+      "cycle": 20,
+      "event": "grasp_contact"
+    },
+    {
+      "cycle": 80,
+      "event": "contact_lost"
+    }
+  ],
+  "outputs": {
+    "jev-hierarchical.mp4": {
+      "sha256": "4753151f1b8ff80c3a81e692531b4015ee3463f4e98921143d07a7bf50a352ba",
+      "bytes": 3448360
+    },
+    "jev-hierarchical.gif": {
+      "sha256": "4531ede98e218b4dcdeb7b0c3dcdf1448ae72ec526741596dfef463f7ee587a3",
+      "bytes": 5100486
+    },
+    "jev-hierarchical.png": {
+      "sha256": "2b5ad736a38fb0a1e04a501acf6bd9f257f8c59ec0cd22a64a5c4dd5bf4e0ee4",
+      "bytes": 281827
+    }
+  }
+}

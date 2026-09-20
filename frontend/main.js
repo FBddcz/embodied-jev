@@ -1,4 +1,5 @@
 import { RobotScene } from "./robot-scene.js";
+import { motorChannelsHtml } from "./motor-channels.js";
 import {
   selectionOptions,
   selectionConfig,
@@ -52,6 +53,7 @@ const phaseNames = {
   recover: "张开重试",
   finish: "完成",
   incremental: "逐步 XYZ 决策",
+  hierarchical: "分层 XYZ 决策",
 };
 const stateNames = {
   idle: "待命",
@@ -125,7 +127,7 @@ $("#app").innerHTML = `
    <p class="task-goal" id="task-goal"></p></section>
   <div class="divider"></div>
   <section><div class="section-topline"><h2>决策模型</h2><button class="icon-button connection-button" id="model-connect" title="模型连接" aria-label="模型连接">${icon("plug-zap")}</button></div><div class="select-wrap"><select id="provider" aria-label="决策模型"></select>${icon("chevron-down")}</div><div class="provider-status"><span class="dot"></span><span id="provider-note">离线 · 确定性策略</span></div></section>
-  <section class="observation-setting"><label class="field-label" for="control-mode">动作决策方式</label><div class="select-wrap"><select id="control-mode" aria-describedby="control-help"><option value="skills">预设技能选择</option><option value="incremental">逐步 XYZ · 闭环规划</option></select>${icon("chevron-down")}</div><p id="control-help">选择预设技能，技能内部轨迹由程序执行。</p></section>
+  <section class="observation-setting"><label class="field-label" for="control-mode">动作决策方式</label><div class="select-wrap"><select id="control-mode" aria-describedby="control-help"><option value="skills">预设技能选择</option><option value="incremental">逐步 XYZ · 闭环规划</option><option value="hierarchical">分层 XYZ · 子目标规划</option></select>${icon("chevron-down")}</div><p id="control-help">选择预设技能，技能内部轨迹由程序执行。</p></section>
   <section class="observation-setting"><label class="field-label" for="observation-mode">观测来源</label><div class="select-wrap"><select id="observation-mode" aria-describedby="observation-help"><option value="privileged">仿真真值 · 默认</option><option value="rgbd">RGB-D 视觉 · 实验</option><option value="vision">直接图像 · 多模态模型</option></select>${icon("chevron-down")}</div><p id="observation-help">直接读取仿真中的物体位置。</p></section>
   <section class="observation-setting"><label class="field-label" for="camera-mode">启用相机</label><div class="select-wrap"><select id="camera-mode" aria-describedby="camera-help"><option value="none">无相机</option><option value="external">仅外部相机</option><option value="wrist">仅腕部相机</option><option value="both">双相机</option></select>${icon("chevron-down")}</div><p id="camera-help">无相机 · 模型使用仿真真值，非视觉输入。</p></section>
   <div class="divider"></div>
@@ -574,7 +576,9 @@ function renderVision(s) {
   for (const button of document.querySelectorAll("[data-vision-view]"))
     button.hidden = !cameras.includes(button.dataset.visionView);
   $("#control-help").textContent =
-    s.control_mode === "incremental"
+    s.control_mode === "hierarchical"
+      ? `${s.provider === "baseline" ? "规则对照" : "模型"}每步先选子目标，再选 XYZ 方向和夹爪；程序计算几何与短步幅度。`
+      : s.control_mode === "incremental"
       ? `${s.provider === "baseline" ? "规则基线" : "模型"}每步选择 XYZ 位移与夹爪动作，执行后重新观测。是否能规划须由实验检验。`
       : "选择预设技能，技能内部轨迹由程序执行。";
   $("#observation-help").textContent = direct
@@ -781,8 +785,13 @@ function renderDecision(s) {
   const intent = shown.intent;
   const decision = shown.decision;
   const candidates = shown.candidates || (shown.action ? [shown.action] : []);
+  const hierarchical = s.control_mode === "hierarchical";
+  if (hierarchical && intentPanel.parentElement !== $("#decision-section"))
+    planningOutput.before(intentPanel);
+  else if (!hierarchical && intentPanel.parentElement !== $("#input-section"))
+    $("#input-section").append(intentPanel);
   const incremental =
-    shown.phase === "incremental" || s.control_mode === "incremental";
+    hierarchical || shown.phase === "incremental" || s.control_mode === "incremental";
   const direct = s.observation_mode === "vision";
   const loading =
     s.provider === "minicpm" && s.model_runtime?.status === "loading";
@@ -813,11 +822,9 @@ function renderDecision(s) {
   $("#input-contacts").textContent = observation
     ? `夹爪${observation.gripper === "closed" ? "闭合" : "张开"} · ${observation.held ? "双侧抓持" : observation.finger_contacts?.length ? "单侧接触" : "未接触物体"}`
     : "等待观测";
-  $("#intent-heading").textContent = history
-    ? "阶段选择 · 历史"
-    : previous
-      ? "阶段选择 · 上一条"
-      : "阶段选择";
+  $("#intent-heading").textContent =
+    (hierarchical ? "当前子目标" : "阶段选择") +
+    (history ? " · 历史" : previous ? " · 上一条" : "");
   $("#decision-heading").textContent = history
     ? `历史输出 · 第 ${history.cycle} 步`
     : "动作输出";
@@ -841,8 +848,12 @@ function renderDecision(s) {
     candidates.find((candidate) => candidate.id === decision?.choice)?.label ||
     (loading ? "首次加载模型" : "等待开始");
   $("#planning-output").hidden = !incremental;
+  $("#planning-output .planning-caption").textContent = hierarchical
+    ? "本步子目标与执行指令"
+    : "本步模型说明 · 用于检查决策依据";
   $("#planning-intent").textContent =
-    decision?.intent || (decision ? "模型未提供行动意图" : "等待模型决策");
+    (hierarchical && intent ? phaseNames[intent.choice] || intent.choice : decision?.intent) ||
+    (decision ? "模型未提供行动意图" : "等待模型决策");
   $("#planning-evidence").textContent =
     decision?.visual_evidence ||
     (direct ? "模型尚未提供视觉依据" : "本步输入为结构化观测");
@@ -887,10 +898,20 @@ function renderDecision(s) {
       : previous
         ? "保留上一次完整选择，新结果返回后自动更新。"
         : decision
-          ? incremental
+          ? hierarchical
+            ? "每个通道单独选择；四组概率不合成为整步概率，也不代表任务成功率。"
+            : incremental
             ? `${s.provider === "baseline" ? "规则基线" : "模型"}逐步选择位移和夹爪动作；物理成功不等于已验证规划能力。`
             : "候选由任务控制器生成；概率不代表任务成功率。"
           : "运行实验后查看动作选择。";
+  if (
+    decision?.probability_warning === "choice_below_reported_max" ||
+    intent?.probability_warning === "choice_below_reported_max"
+  ) {
+    $("#decision-note").textContent =
+      "API 选择与公布概率排序不一致；本步保留 API 返回的选择与原始概率。 " +
+      $("#decision-note").textContent;
+  }
   $("#history-observations").hidden = !history;
   $("#live-inputs-detail").hidden =
     !!history ||
@@ -908,7 +929,7 @@ function renderDecision(s) {
   ]);
   if (signature === candidateSignature) return;
   candidateSignature = signature;
-  $("#intent-panel").hidden = incremental || !intent;
+  $("#intent-panel").hidden = (incremental && !hierarchical) || !intent;
   $("#intent-latency").textContent = intent?.model_call
     ? Number(intent.latency_ms).toFixed(0) + " ms"
     : intent?.reason === "only_eligible_action"
@@ -926,7 +947,9 @@ function renderDecision(s) {
         .join("")
     : "";
   const probabilities = decision?.probabilities || {};
-  $("#probabilities").innerHTML = candidates.length
+  $("#probabilities").innerHTML = hierarchical
+    ? motorChannelsHtml(decision, escape)
+    : candidates.length
     ? candidates
         .map((candidate) => {
           const selected = decision?.choice === candidate.id;
@@ -1358,7 +1381,9 @@ $("#provider").onchange = async () => {
 };
 $("#control-mode").onchange = async () => {
   const oldBudget = $("#budget").value;
-  if ($("#control-mode").value === "incremental" && Number(oldBudget) === 30)
+  if ($("#control-mode").value === "hierarchical" && Number(oldBudget) < 160)
+    $("#budget").value = 160;
+  else if ($("#control-mode").value === "incremental" && Number(oldBudget) === 30)
     $("#budget").value = 100;
   if (!(await reset())) {
     $("#control-mode").value = state?.control_mode || "skills";

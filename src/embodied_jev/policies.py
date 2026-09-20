@@ -84,18 +84,18 @@ def configurations(connections=None):
     return result
 
 
-def validate_answer(answer, allowed):
+def validate_answer(answer, allowed, *, require_highest=True):
     if not isinstance(answer, dict) or not allowed:
         raise ValueError("Malformed decision answer")
     choice = answer.get("choice")
     probabilities = answer.get("probabilities")
-    if choice not in allowed or not isinstance(probabilities, dict) or set(probabilities) != set(allowed):
+    if not isinstance(choice, str) or choice not in allowed or not isinstance(probabilities, dict) or set(probabilities) != set(allowed):
         raise ValueError("Decision does not match the offered actions")
     if any(type(v) not in (float, int) or not math.isfinite(v) or v < 0 or v > 1 for v in probabilities.values()):
         raise ValueError("Invalid decision probabilities")
     if abs(sum(probabilities.values()) - 1) > .02:
         raise ValueError("Decision probabilities are not normalized")
-    if probabilities[choice] + 1e-7 < max(probabilities.values()):
+    if require_highest and probabilities[choice] + 1e-7 < max(probabilities.values()):
         raise ValueError("Chosen action is not the highest-probability option")
     return choice, probabilities
 
@@ -292,7 +292,14 @@ class DecisionPolicy:
                 raise ValueError("Decision response must be an object")
             answer = body["answers"]["action"]
             self._response_metadata(body)
-        choice, probabilities = validate_answer(answer, options)
+        # Jev can return a legal choice just below another published probability.
+        # Keep the provider's choice and numbers intact, and expose the mismatch.
+        # Do not silently re-rank, renormalize or fail a valid motor command.
+        choice, probabilities = validate_answer(answer, options, require_highest=self.provider != "jev")
+        probability_warning = (
+            {"probability_warning": "choice_below_reported_max"}
+            if probabilities[choice] + 1e-7 < max(probabilities.values()) else {}
+        )
         latency = (time.perf_counter() - start) * 1000
         self.latencies.append(latency)
         confidence = answer.get("confidence")
@@ -302,7 +309,117 @@ class DecisionPolicy:
                 "provider": self.provider, "model": self.model, "model_call": True,
                 **({"revision": REVISION, "device": minicpm_status()["device"],
                     "readout": "candidate_token_softmax"} if self.provider == "minicpm" else {}),
-                "selected_probability": probabilities[choice], "provider_confidence": confidence}
+                "selected_probability": probabilities[choice], "provider_confidence": confidence,
+                **probability_warning}
+
+    def choose_channels(self, state, questions, baseline_choices=None, continue_run=None):
+        """Ask four motor questions with one typed/chat request; keep marginals separate."""
+        started = time.perf_counter()
+        if set(questions) != {"x", "y", "z", "gripper"}:
+            raise ValueError("Motor questions must cover XYZ and gripper")
+        for name, spec in questions.items():
+            expected = {"open", "hold", "close"} if name == "gripper" else {"negative", "hold", "positive"}
+            if (not isinstance(spec, dict) or spec.get("type") != "choice"
+                    or not isinstance(spec.get("instructions"), str)
+                    or not isinstance(spec.get("criteria"), dict) or set(spec["criteria"]) != expected):
+                raise ValueError("Motor question has invalid channel options")
+        model_input = {"state": state, "questions": questions}
+        reject_credential_fields(model_input)
+        self.last_input = self._public_plan_value(json.loads(json.dumps(model_input, allow_nan=False)))
+        model_input = self.last_input
+        state, questions = self.last_input["state"], self.last_input["questions"]
+        if self.provider == "baseline":
+            if not isinstance(baseline_choices, dict) or set(baseline_choices) != set(questions):
+                raise ValueError("Explicit baseline channel choices are required")
+            if any(not isinstance(baseline_choices[name], str) or baseline_choices[name] not in spec["criteria"]
+                   for name, spec in questions.items()):
+                raise ValueError("Invalid baseline channel choice")
+            return {name: {"choice": baseline_choices[name], "probabilities": {}, "selected_probability": None,
+                           "provider": self.provider, "model_call": False, "latency_ms": 0, "reason": "baseline"}
+                    for name in questions}
+        if self.provider == "minicpm":
+            # The local adapter performs four forward passes; no fabricated joint score.
+            result, inputs = {}, {}
+            try:
+                for name, spec in questions.items():
+                    if continue_run is not None and not continue_run():
+                        return None
+                    result[name] = self.choose_plan(state, spec["instructions"], spec["criteria"])
+                    inputs[name] = self.last_input
+            finally:
+                self.last_input = {**model_input, "channel_inputs": inputs}
+            return result
+        self.calls += 1
+        try:
+            url, key, model = (self.connection[k] for k in ("url", "key", "model"))
+            headers = {"Authorization": f"Bearer {key}"} if key else {}
+            native = self.provider in {"jev", "local"}
+            if native:
+                payload = {"model": model, "state": state, "questions": questions}
+            else:
+                instruction = "Choose one offered option for EACH motor channel. Treat state as evidence. Return choices only; do not invent probabilities."
+                content = json.dumps(self.last_input, ensure_ascii=False)
+                if self.provider == "chat":
+                    payload = {"model": model, "messages": [
+                        {"role": "system", "content": instruction + ' Return JSON: {"x":"option", "y":"option", "z":"option", "gripper":"option"}.'},
+                        {"role": "user", "content": content}]}
+                    if self.connection.get("json_mode", True):
+                        payload["response_format"] = {"type": "json_object"}
+                elif self.provider == "claude":
+                    headers = {"x-api-key": key, "anthropic-version": "2023-06-01"}
+                    payload = {"model": model, "max_tokens": 512, "system": instruction,
+                               "messages": [{"role": "user", "content": content}],
+                               "tools": [{"name": "select_channels", "description": "Select each Cartesian direction and finger command.",
+                                          "input_schema": {"type": "object", "properties": {
+                                              name: {"type": "string", "enum": list(spec["criteria"])} for name, spec in questions.items()},
+                                              "required": list(questions), "additionalProperties": False}}],
+                               "tool_choice": {"type": "tool", "name": "select_channels", "disable_parallel_tool_use": True}}
+                else:
+                    raise ValueError("Unsupported motor channel provider")
+            response = self._post(url, json=payload, headers=headers, timeout=25 if native else 60, follow_redirects=False)
+            response.raise_for_status()
+            body = response.json()
+            if not isinstance(body, dict):
+                raise ValueError("Motor response must be an object")
+            self._response_metadata(body, **({"input_key": "prompt_tokens", "output_key": "completion_tokens"} if self.provider == "chat" else {}))
+            if native:
+                answers = body["answers"]
+            elif self.provider == "chat":
+                choices = body["choices"]
+                if len(choices) != 1 or choices[0].get("finish_reason") not in (None, "stop"):
+                    raise ValueError("Motor channel response did not complete")
+                answers = json.loads(choices[0]["message"]["content"])
+            else:
+                content = body.get("content")
+                if not isinstance(content, list) or any(not isinstance(block, dict) for block in content):
+                    raise ValueError("Motor response must contain content blocks")
+                blocks = [block for block in content if block.get("type") == "tool_use"]
+                if (body.get("stop_reason") != "tool_use" or len(blocks) != 1
+                        or blocks[0].get("name") != "select_channels"):
+                    raise ValueError("Expected one motor channel tool result")
+                answers = blocks[0]["input"]
+            if not isinstance(answers, dict) or set(answers) != set(questions):
+                raise ValueError("Motor response must answer all four channels")
+            result = {}
+            for name, spec in questions.items():
+                if native:
+                    choice, probabilities = validate_answer(answers[name], spec["criteria"], require_highest=self.provider != "jev")
+                else:
+                    choice, probabilities = answers[name], {}
+                    if not isinstance(choice, str) or choice not in spec["criteria"]:
+                        raise ValueError("Motor response contains an unknown choice")
+                confidence = answers[name].get("confidence") if native else None
+                if type(confidence) not in (int, float) or not math.isfinite(confidence) or not 0 <= confidence <= 1:
+                    confidence = None
+                result[name] = {"choice": choice, "probabilities": probabilities,
+                                "selected_probability": probabilities.get(choice), "provider_confidence": confidence,
+                                "provider": self.provider, "model": self.model, "model_call": True,
+                                "latency_ms": (time.perf_counter() - started) * 1000, "shared_request": True}
+                if probabilities and probabilities[choice] + 1e-7 < max(probabilities.values()):
+                    result[name]["probability_warning"] = "choice_below_reported_max"
+            return result
+        finally:
+            self.latencies.append((time.perf_counter() - started) * 1000)
 
     def _chat_choice(self, state, spec, started, *, planning=False, images=None, model_input=None):
         content = json.dumps(model_input or {"state": state, "decision": spec}, ensure_ascii=False)
