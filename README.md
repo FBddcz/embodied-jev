@@ -116,9 +116,9 @@ Windows 提供上述启动方式；当前已验证的环境为 macOS 与 Linux C
 
 普通聊天 API 只返回动作选择，界面不会把模型自报的“信心”当作真实概率。具体协议和环境变量见 [模型接入指南](docs/TECHNICAL_GUIDE.md#models)。
 
-### ⚡ 官方 Jev：申请 Key，连接就绪
+### ⚡ 官方 Jev：获准访问后，填 Key 就能连接
 
-打开 [TypeSafe 官方控制台](https://console.typesafe.ai)，用 Google 或邮箱登录，在控制台创建 API Key。然后回到行知的模型连接窗口：
+TypeSafe 当前采用邀请制。先到 [TypeSafe 官网](https://typesafe.ai) 点击 **Join Waitlist**，填写邮箱申请访问；收到邀请后，用获批邮箱登录 [官方控制台](https://console.typesafe.ai) 创建 API Key。已有访问权限的用户可直接进入控制台。然后回到行知的模型连接窗口：
 
 1. 选择 **TypeSafe Jev**，官方地址已自动填好。
 2. 模型默认 **`jev-latest`**；做固定版本对比时可改为账号有权限的版本，例如 `jev-1.13.0`。
