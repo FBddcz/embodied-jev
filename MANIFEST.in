@@ -1,0 +1,5 @@
+include LICENSE THIRD_PARTY_NOTICES.md CONTRIBUTING.md package.json package-lock.json vite.config.js playwright.config.js .env.example
+recursive-include frontend *.js *.css *.html
+recursive-include docs *.md *.json *.png
+recursive-include scripts *.py
+recursive-include tests-ui *.js

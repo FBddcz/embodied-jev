@@ -1,0 +1,95 @@
+{
+  "provider": "deterministic_baseline",
+  "results": [
+    {
+      "task": "transfer",
+      "seed": 0,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.19699307820985015,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "transfer",
+      "seed": 1,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.1979433342163997,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "transfer",
+      "seed": 2,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.19853464887012845,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "stack",
+      "seed": 0,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.19699307820985015,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "stack",
+      "seed": 1,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.1979433342163997,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "stack",
+      "seed": 2,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.19853464887012845,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "barrier",
+      "seed": 0,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.19699307820985015,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "barrier",
+      "seed": 1,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.1979433342163997,
+      "forbidden_contact_steps": 0,
+      "message": null
+    },
+    {
+      "task": "barrier",
+      "seed": 2,
+      "success": true,
+      "status": "completed",
+      "cycles": 8,
+      "max_lift_m": 0.19853464887012845,
+      "forbidden_contact_steps": 0,
+      "message": null
+    }
+  ]
+}

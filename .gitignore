@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.cache/
+.env
+.env.*
+!.env.example
+node_modules/
+src/embodied_jev/web/
+runs/
+playwright-results/
+build/
+dist/
+.DS_Store
