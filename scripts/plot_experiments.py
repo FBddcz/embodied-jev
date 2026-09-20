@@ -55,11 +55,11 @@ def write_sources(rows, output):
     fields = ["task", "seed", "status", "success", "cycles", "model_calls", "input_tokens",
               "output_tokens", "wall_seconds", "sim_seconds", "resolved_model", "episode_file"]
     with output.with_suffix(".csv").open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fields)
+        writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows({field: row.get(field) for field in fields} for row in rows)
     with output.with_name(output.name + "-latencies.csv").open("w", newline="", encoding="utf-8") as stream:
-        writer = csv.writer(stream)
+        writer = csv.writer(stream, lineterminator="\n")
         writer.writerow(["task", "seed", "call_index", "latency_seconds"])
         for row in rows:
             for index, latency in enumerate(row["model_latency_ms"], 1):
@@ -168,6 +168,8 @@ def main():
     fig.text(.055, .055, f"{calls} API calls · {tokens_in:,} input / {tokens_out:,} output tokens. All attempted trials retained.", size=6)
     fig.text(.055, .027, "Known geometry/contact states; bounded action menu. Descriptive development trials, not a general model ranking.", size=6)
     fig.savefig(output.with_suffix(".svg"), facecolor="white")
+    svg = output.with_suffix(".svg")
+    svg.write_text("\n".join(line.rstrip() for line in svg.read_text(encoding="utf-8").splitlines()) + "\n", encoding="utf-8")
     fig.savefig(output.with_suffix(".pdf"), facecolor="white")
     fig.savefig(output.with_suffix(".png"), dpi=600, facecolor="white")
     plt.close(fig)
