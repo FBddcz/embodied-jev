@@ -1,6 +1,6 @@
 {
   "layout": "2 rows x 6 columns; Jev then GPT-6 Astra",
-  "source_batch": "benchmark-hierarchy-v2-gpt-rerun-01",
+  "source_batch": "benchmark-hierarchy-v2-gpt-supplemented-01",
   "columns": [
     "reach-v3-0",
     "reach-v3-1",
@@ -126,7 +126,7 @@
       "error_type": null,
       "trace": "chat/reach-v3-0-trace.jsonl",
       "trace_sha256": "eba164d8ab8c5d5a737c1a41f0139d26adedd7bb344730026ba2fac50a7363e7",
-      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "summary_sha256": "5d7e919a08909ddbf6ed20e4fc697b174c5b18281ad24a880f25fddecce47d45",
       "initial_observation_sha256": "c23313a4e044cc26c3d1cb6ec7e87675cc385c9ff9a7eefeaaf6c596802f7d76",
       "max_observation_numeric_error": 0.0,
       "all_evaluations_match": true
@@ -135,12 +135,12 @@
       "policy": "chat",
       "case": "reach-v3-1",
       "model": "gpt-6-astra-2026-09-03",
-      "steps": 10,
-      "status": "runtime_error",
-      "error_type": "ReadTimeout",
+      "steps": 56,
+      "status": "success",
+      "error_type": null,
       "trace": "chat/reach-v3-1-trace.jsonl",
-      "trace_sha256": "65f4ebddbfbaefc280dda617af670351c5f5a7f8755c6ec37f43b6eb4226e52e",
-      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "trace_sha256": "81e636e03af9fe547ea0d19f47432da418675c2fb19f43ed9e49e24a4b06cb4b",
+      "summary_sha256": "5d7e919a08909ddbf6ed20e4fc697b174c5b18281ad24a880f25fddecce47d45",
       "initial_observation_sha256": "6ceef35628767a6514131e661bbb8f6d3262c2e80c9ce37d633279d3a206821a",
       "max_observation_numeric_error": 0.0,
       "all_evaluations_match": true
@@ -154,7 +154,7 @@
       "error_type": null,
       "trace": "chat/push-v3-0-trace.jsonl",
       "trace_sha256": "13436fef004388b94c5f90e415c5eeb89ef54f68915015184f2b8dc062bb39de",
-      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "summary_sha256": "5d7e919a08909ddbf6ed20e4fc697b174c5b18281ad24a880f25fddecce47d45",
       "initial_observation_sha256": "9420c03b4040aa95f88e190988cfee7c3c186cfd07fe2bcdb2c18f3b23f8c4be",
       "max_observation_numeric_error": 0.0,
       "all_evaluations_match": true
@@ -168,7 +168,7 @@
       "error_type": null,
       "trace": "chat/push-v3-1-trace.jsonl",
       "trace_sha256": "ba5996ad2517d7c336d1b69fac06dc4b8adaf305e906970ccc706dc613395946",
-      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "summary_sha256": "5d7e919a08909ddbf6ed20e4fc697b174c5b18281ad24a880f25fddecce47d45",
       "initial_observation_sha256": "b837782900c5c51fb7ec29cf1786b26edf364acc996162a5b7791c1fb7ad37f0",
       "max_observation_numeric_error": 0.0,
       "all_evaluations_match": true
@@ -177,12 +177,12 @@
       "policy": "chat",
       "case": "pick-place-v3-0",
       "model": "gpt-6-astra-2026-09-03",
-      "steps": 10,
-      "status": "runtime_error",
-      "error_type": "ReadTimeout",
+      "steps": 191,
+      "status": "success",
+      "error_type": null,
       "trace": "chat/pick-place-v3-0-trace.jsonl",
-      "trace_sha256": "9d4fdccd9334ac4b0485305d52e23b972e8126567e60588cec8afd4955f26c29",
-      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "trace_sha256": "b2f9449b4e82eb570ff3e1d5152dc14f87b861ea8e871e2a40b62007a0a30d5c",
+      "summary_sha256": "5d7e919a08909ddbf6ed20e4fc697b174c5b18281ad24a880f25fddecce47d45",
       "initial_observation_sha256": "24c36c4c0bedc8b06696c95f7ade0db94219c3dbf829d300096f4f0a8a03f695",
       "max_observation_numeric_error": 0.0,
       "all_evaluations_match": true
@@ -196,7 +196,7 @@
       "error_type": null,
       "trace": "chat/pick-place-v3-1-trace.jsonl",
       "trace_sha256": "f334d53bee2c8029b3146cad39d23545daf9ed5f3122bcc2b7be6d2aeb4fb0ec",
-      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "summary_sha256": "5d7e919a08909ddbf6ed20e4fc697b174c5b18281ad24a880f25fddecce47d45",
       "initial_observation_sha256": "a42e5e1d02f68731922bf0b43d1ba62d86ec8d723f0662a1fb9748c66efecd58",
       "max_observation_numeric_error": 0.0,
       "all_evaluations_match": true
@@ -204,16 +204,16 @@
   ],
   "artifacts": {
     "hierarchy-grid.mp4": {
-      "sha256": "f61c41df6d72a6debb4acc383dd3ea422ee787d25299ce3cfbb491b4418564e8",
-      "bytes": 1894280
+      "sha256": "6e94283be94e828418df33148c60874f488b1bdd44b1255790d5315f06567ab9",
+      "bytes": 2131481
     },
     "hierarchy-grid.gif": {
-      "sha256": "2653834b805017ab8f58a799127d1aca5bfebec7d23fa30d5b998b79d1bfb930",
-      "bytes": 7592095
+      "sha256": "239dcd4932e1250d3750a65daf4e333d0fd7fb1293e9e4b33356cae0337ff64f",
+      "bytes": 8508444
     },
     "hierarchy-grid.png": {
-      "sha256": "5ddc0d1ba9fdc2fb6b4aa9612eed5357fdce0292e5987e9ca1e8c2b84f543eec",
-      "bytes": 323784
+      "sha256": "fcc30b1e39392c4aee80b40dd6caaa88b1ad2e67fd96c827ebeefddfd1640294",
+      "bytes": 319717
     }
   }
 }

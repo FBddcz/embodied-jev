@@ -228,13 +228,17 @@ GPT-6 Astra 使用**仿真状态＋预设技能**，在三个任务的种子 0�
 
 ### 🆚 Meta-World：六局并排对照
 
-**上排 Jev，下排 GPT-6 Astra**；从左到右是到达、推物、抓放的 seed 0 / 1。每格同步展示机械臂动作、子目标、XYZ／夹爪选择和调用耗时；Jev 显示真实候选概率，GPT 显示所选项。
+**最终层级 v2 结果：Jev 5/6，GPT-6 Astra 5/6；两者都只在 `push-v3-0` 步数耗尽。** 任务为 reach、push、pick-place，各 seed 0 / 1；每局最多 200 步、80 次请求、600 秒。
 
-<img src="docs/results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid.gif" width="1200" alt="Meta-World 层级 v2：上排 Jev、下排 GPT-6，六局动作与决策同步回放">
+![Meta-World 层级 v2：成功率、token、延迟、耗时、请求和步数对照](docs/results/metaworld-hierarchy-v2-2026-09-21/comparison.png)
 
-Jev **5/6 成功**；GPT-6 **3 局成功、1 局步数耗尽、2 局请求超时**。回放按环境步对齐、省略 API 等待；结束后保留末帧，播放速度不代表推理速度。
+**上排 Jev，下排 GPT-6 Astra**；从左到右是到达、推物、抓放的 seed 0 / 1。每格同步展示动作、子目标、XYZ／夹爪选择和调用耗时；Jev 显示真实候选概率，GPT 显示所选项。
 
-[暂停查看 MP4](docs/results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid.mp4) · [完整对照结果](docs/BENCHMARK_EXPERIMENTS.md)
+<img src="docs/results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid-fast.gif" width="1200" alt="Meta-World 层级 v2 加速回放：上排 Jev、下排 GPT-6，六局动作与决策同步回放">
+
+**官方单价估算费用：Jev $0.018308，GPT-6 Astra $3.605290。** 回放按环境步对齐、省略 API 等待，播放速度不代表推理速度。
+
+[下载加速 MP4](docs/results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid-fast.mp4) · [完整 MP4](docs/results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid.mp4) · [完整对照结果](docs/BENCHMARK_EXPERIMENTS.md)
 
 ### ⚡ Jev 分层 XYZ：先选子目标，再选方向
 
@@ -303,7 +307,7 @@ EMBODIED_MINICPM=1 embodied-jev benchmark --provider minicpm \
 
 报告记录成功与失败、调用次数、延迟、阈值和轨迹。低于概率门槛时单实验暂停，批量评测记为 `uncertain`；没有自动切回规则基线。
 
-更系统的测试使用独立的 **[Benchmark 评测入口](docs/BENCHMARKS.md)**：固定任务清单与种子，对照成功率、API 报告用量、请求延迟、整局耗时和执行步数。Meta-World 直接四通道结果为 Jev **2/6**、GPT-6 **5/6**；修正版层级 v2 的 Jev 为 **5/6**，GPT-6 整批重跑记录 **3 局成功、1 局步数耗尽、2 局请求超时**，尚不能给出完整成功率。六维图表与异常说明见 [实测记录](docs/BENCHMARK_EXPERIMENTS.md)。这些是三任务开发子集，LIBERO 适配仍待真实环境验证。
+更系统的测试使用独立的 **[Benchmark 评测入口](docs/BENCHMARKS.md)**：固定任务清单与种子，对照成功率、API 报告用量、请求延迟、整局耗时和执行步数。Meta-World 直接四通道结果为 Jev **2/6**、GPT-6 **5/6**；修正版层级 v2 为 Jev **5/6**、GPT-6 **5/6**，两者都只剩 `push-v3-0` 步数耗尽。六维图表、加速回放和费用估算见 [实测记录](docs/BENCHMARK_EXPERIMENTS.md)。这些是三任务开发子集，LIBERO 适配仍待真实环境验证。
 
 ## 🛠️ 想继续折腾？
 

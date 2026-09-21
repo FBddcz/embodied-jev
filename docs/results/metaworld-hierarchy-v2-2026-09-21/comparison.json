@@ -48,7 +48,7 @@
     "hierarchical.py": "07a21d38479d73cb6f704c4031f17d5f28cfb12760674486fa7a0b65b253898e",
     "physics.py": "e6a0d2a537a9cac28f874d81e60cc53814194d00ad75f6d4648dae5bc272ddc8"
   },
-  "renderer_sha256": "051f2d60c6581fe97b06e1d248b9341333864e1611b7cff37329d38cafa3dd40",
+  "renderer_sha256": "ad97e6fc46097f686dd5b0660c8b3dbcce443c17845b26f8969b4561e3275d12",
   "protocol": {
     "max_steps": 200,
     "max_calls": 80,
@@ -59,7 +59,7 @@
     "observation_mode": "privileged",
     "action_repeat": 5
   },
-  "complete": false,
+  "complete": true,
   "paired_initial_states": 6,
   "planned_pairs": 6,
   "scope": "Frozen paired subset; not a full official benchmark leaderboard score",
@@ -169,37 +169,39 @@
       "resolved_models": [
         "gpt-6-astra-2026-09-03"
       ],
-      "report_sha256": "eb7cdc6da8365f8f94d7279b41c3fac9684bdf3c69207226e9866eccfea1a01a",
+      "report_sha256": "89eef9bb3ae20b699993bdfd19f7479a2f33c71c9a5d58d5fd8154708bd9ddbf",
       "planned": 6,
       "recorded": 6,
       "scored": 6,
       "missing": 0,
       "unscored": 0,
-      "successes": 3,
-      "complete": false,
-      "success_rate": null,
-      "verified_success_fraction": 0.5,
-      "observed_success_rate": 0.5,
-      "wilson_95": null,
-      "http_requests": 222,
-      "model_calls": 222,
-      "latency_n": 222,
-      "latency_p50_ms": 3997.265,
-      "latency_p95_ms": 7594.2186999999985,
+      "successes": 5,
+      "complete": true,
+      "success_rate": 0.8333333333333334,
+      "verified_success_fraction": 0.8333333333333334,
+      "observed_success_rate": 0.8333333333333334,
+      "wilson_95": [
+        0.43649717781352987,
+        0.9699466302516935
+      ],
+      "http_requests": 312,
+      "model_calls": 312,
+      "latency_n": 312,
+      "latency_p50_ms": 4011.3885,
+      "latency_p95_ms": 8126.23345,
       "failures": {
-        "runtime_error": 2,
         "step_limit": 1
       },
       "token_usage": {
         "input": {
-          "reported_calls": 220,
-          "reported_tokens": 222891,
-          "complete_episodes": 4
+          "reported_calls": 312,
+          "reported_tokens": 316469,
+          "complete_episodes": 6
         },
         "output": {
-          "reported_calls": 220,
-          "reported_tokens": 6291,
-          "complete_episodes": 4
+          "reported_calls": 312,
+          "reported_tokens": 8812,
+          "complete_episodes": 6
         }
       },
       "per_task": {
@@ -209,12 +211,15 @@
           "scored": 2,
           "missing": 0,
           "unscored": 0,
-          "successes": 1,
-          "complete": false,
-          "success_rate": null,
-          "verified_success_fraction": 0.5,
-          "observed_success_rate": 0.5,
-          "wilson_95": null
+          "successes": 2,
+          "complete": true,
+          "success_rate": 1.0,
+          "verified_success_fraction": 1.0,
+          "observed_success_rate": 1.0,
+          "wilson_95": [
+            0.34238022750665303,
+            1.0
+          ]
         },
         "push-v3": {
           "planned": 2,
@@ -238,17 +243,20 @@
           "scored": 2,
           "missing": 0,
           "unscored": 0,
-          "successes": 1,
-          "complete": false,
-          "success_rate": null,
-          "verified_success_fraction": 0.5,
-          "observed_success_rate": 0.5,
-          "wilson_95": null
+          "successes": 2,
+          "complete": true,
+          "success_rate": 1.0,
+          "verified_success_fraction": 1.0,
+          "observed_success_rate": 1.0,
+          "wilson_95": [
+            0.34238022750665303,
+            1.0
+          ]
         }
       },
       "http_accounting_complete": true,
-      "http_requests_with_saved_records": 222,
-      "http_requests_lower_bound": 222
+      "http_requests_with_saved_records": 312,
+      "http_requests_lower_bound": 312
     }
   ],
   "episodes": [
@@ -3018,58 +3026,183 @@
       "seed": 1,
       "init_index": null,
       "recorded": true,
-      "success": false,
-      "status": "runtime_error",
-      "steps": 10,
-      "model_calls": 6,
-      "http_requests": 6,
-      "wall_seconds": 82.821,
-      "simulated_seconds": 0.125,
-      "input_tokens": null,
-      "output_tokens": null,
+      "success": true,
+      "status": "success",
+      "steps": 56,
+      "model_calls": 24,
+      "http_requests": 24,
+      "wall_seconds": 123.365,
+      "simulated_seconds": 0.7,
+      "input_tokens": 22410,
+      "output_tokens": 789,
       "api_calls": [
         {
-          "latency_ms": 3551.651,
+          "latency_ms": 4996.829,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 579,
-          "output_tokens": 60
+          "output_tokens": 63
         },
         {
-          "latency_ms": 3688.25,
+          "latency_ms": 5851.971,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 1079,
           "output_tokens": 24
         },
         {
-          "latency_ms": 4405.982,
+          "latency_ms": 4414.973,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 618,
-          "output_tokens": 27
+          "output_tokens": 61
         },
         {
-          "latency_ms": 5713.156,
+          "latency_ms": 3383.411,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 1119,
           "output_tokens": 24
         },
         {
-          "latency_ms": 3996.598,
+          "latency_ms": 4100.719,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 658,
-          "output_tokens": 49
+          "output_tokens": 31
         },
         {
-          "latency_ms": 60003.253,
-          "http_status": null,
-          "model": null,
-          "input_tokens": null,
-          "output_tokens": null,
-          "error_type": "ReadTimeout"
+          "latency_ms": 4332.321,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1149,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3883.142,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 688,
+          "output_tokens": 32
+        },
+        {
+          "latency_ms": 3670.405,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1184,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3450.744,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 723,
+          "output_tokens": 30
+        },
+        {
+          "latency_ms": 3827.134,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1224,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3138.658,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 718,
+          "output_tokens": 31
+        },
+        {
+          "latency_ms": 3598.239,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1214,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3228.055,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 713,
+          "output_tokens": 53
+        },
+        {
+          "latency_ms": 10025.936,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1209,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4764.161,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 718,
+          "output_tokens": 30
+        },
+        {
+          "latency_ms": 6365.917,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1209,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4646.7,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 713,
+          "output_tokens": 50
+        },
+        {
+          "latency_ms": 7878.742,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1204,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 5145.914,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 708,
+          "output_tokens": 48
+        },
+        {
+          "latency_ms": 4537.107,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1199,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4452.92,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 703,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 6021.314,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1194,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4240.237,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 698,
+          "output_tokens": 46
+        },
+        {
+          "latency_ms": 12105.72,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1189,
+          "output_tokens": 24
         }
       ],
       "initial_observation_sha256": "6ceef35628767a6514131e661bbb8f6d3262c2e80c9ce37d633279d3a206821a",
@@ -3096,14 +3229,14 @@
           "control_hz": 80.0
         }
       },
-      "setup_seconds": 1.309,
-      "rollout_seconds": 81.383,
-      "input_reported_calls": 5,
-      "input_reported_tokens": 4053,
-      "input_complete": false,
-      "output_reported_calls": 5,
-      "output_reported_tokens": 184,
-      "output_complete": false
+      "setup_seconds": 1.08,
+      "rollout_seconds": 122.209,
+      "input_reported_calls": 24,
+      "input_reported_tokens": 22410,
+      "input_complete": true,
+      "output_reported_calls": 24,
+      "output_reported_tokens": 789,
+      "output_complete": true
     },
     {
       "label": "Chat",
@@ -4001,58 +4134,561 @@
       "seed": 0,
       "init_index": null,
       "recorded": true,
-      "success": false,
-      "status": "runtime_error",
-      "steps": 10,
-      "model_calls": 6,
-      "http_requests": 6,
-      "wall_seconds": 88.043,
-      "simulated_seconds": 0.125,
-      "input_tokens": null,
-      "output_tokens": null,
+      "success": true,
+      "status": "success",
+      "steps": 191,
+      "model_calls": 78,
+      "http_requests": 78,
+      "wall_seconds": 409.384,
+      "simulated_seconds": 2.3875,
+      "input_tokens": 79667,
+      "output_tokens": 2058,
       "api_calls": [
         {
-          "latency_ms": 4252.469,
+          "latency_ms": 4227.139,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 706,
           "output_tokens": 31
         },
         {
-          "latency_ms": 3199.172,
+          "latency_ms": 3743.234,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 1103,
           "output_tokens": 24
         },
         {
-          "latency_ms": 11178.068,
+          "latency_ms": 8393.496,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 736,
           "output_tokens": 29
         },
         {
-          "latency_ms": 4165.122,
+          "latency_ms": 4645.199,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 1134,
           "output_tokens": 24
         },
         {
-          "latency_ms": 4179.901,
+          "latency_ms": 3580.549,
           "http_status": 200,
           "model": "gpt-6-astra-2026-09-03",
           "input_tokens": 767,
-          "output_tokens": 34
+          "output_tokens": 28
         },
         {
-          "latency_ms": 60004.873,
-          "http_status": null,
-          "model": null,
-          "input_tokens": null,
-          "output_tokens": null,
-          "error_type": "ReadTimeout"
+          "latency_ms": 3441.016,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1165,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 8140.105,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 798,
+          "output_tokens": 29
+        },
+        {
+          "latency_ms": 3525.044,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1196,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3974.999,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 829,
+          "output_tokens": 29
+        },
+        {
+          "latency_ms": 5805.402,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1230,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4216.679,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 833,
+          "output_tokens": 36
+        },
+        {
+          "latency_ms": 3707.201,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1235,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3969.925,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 838,
+          "output_tokens": 28
+        },
+        {
+          "latency_ms": 3682.66,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1240,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4497.313,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 843,
+          "output_tokens": 28
+        },
+        {
+          "latency_ms": 3073.902,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1246,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4318.996,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 848,
+          "output_tokens": 28
+        },
+        {
+          "latency_ms": 5082.97,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1246,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3576.904,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 844,
+          "output_tokens": 37
+        },
+        {
+          "latency_ms": 4304.179,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1242,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3881.821,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 839,
+          "output_tokens": 36
+        },
+        {
+          "latency_ms": 3549.731,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1242,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 8114.884,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 839,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 3566.98,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1226,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3598.046,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 839,
+          "output_tokens": 30
+        },
+        {
+          "latency_ms": 35917.495,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1226,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 9000.437,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 839,
+          "output_tokens": 36
+        },
+        {
+          "latency_ms": 7999.099,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1241,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 20764.837,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 844,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 3965.128,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1220,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4175.426,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 838,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 4513.005,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1214,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3756.02,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 837,
+          "output_tokens": 25
+        },
+        {
+          "latency_ms": 4250.249,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1213,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3256.338,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 836,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 3761.995,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1212,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3244.967,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 2506.256,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1205,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 2848.912,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 25
+        },
+        {
+          "latency_ms": 3799.51,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1205,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3257.817,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 3278.441,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1206,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3491.344,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 27
+        },
+        {
+          "latency_ms": 4090.202,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1206,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3931.548,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 25
+        },
+        {
+          "latency_ms": 4146.991,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1206,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3927.452,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 27
+        },
+        {
+          "latency_ms": 6099.725,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1207,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4255.193,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 27
+        },
+        {
+          "latency_ms": 5169.074,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1208,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3462.755,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 25
+        },
+        {
+          "latency_ms": 3594.788,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1206,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 5280.99,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 27
+        },
+        {
+          "latency_ms": 3203.511,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1206,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4069.876,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 830,
+          "output_tokens": 26
+        },
+        {
+          "latency_ms": 3275.367,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1211,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3383.671,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 835,
+          "output_tokens": 29
+        },
+        {
+          "latency_ms": 4393.064,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1212,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3906.44,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 835,
+          "output_tokens": 28
+        },
+        {
+          "latency_ms": 4448.049,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1216,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4211.613,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 839,
+          "output_tokens": 41
+        },
+        {
+          "latency_ms": 4285.511,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1221,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4608.229,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 845,
+          "output_tokens": 29
+        },
+        {
+          "latency_ms": 6346.68,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1222,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4389.653,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 840,
+          "output_tokens": 31
+        },
+        {
+          "latency_ms": 3989.301,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1222,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4797.194,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 845,
+          "output_tokens": 27
+        },
+        {
+          "latency_ms": 4172.27,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1227,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 9932.304,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 845,
+          "output_tokens": 27
+        },
+        {
+          "latency_ms": 10048.344,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1232,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 17131.888,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 845,
+          "output_tokens": 29
+        },
+        {
+          "latency_ms": 3938.176,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1221,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3247.149,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 845,
+          "output_tokens": 29
+        },
+        {
+          "latency_ms": 4855.465,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1227,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 3671.38,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 845,
+          "output_tokens": 29
+        },
+        {
+          "latency_ms": 3514.803,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1227,
+          "output_tokens": 24
+        },
+        {
+          "latency_ms": 4053.977,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 845,
+          "output_tokens": 28
+        },
+        {
+          "latency_ms": 3467.382,
+          "http_status": 200,
+          "model": "gpt-6-astra-2026-09-03",
+          "input_tokens": 1226,
+          "output_tokens": 24
         }
       ],
       "initial_observation_sha256": "24c36c4c0bedc8b06696c95f7ade0db94219c3dbf829d300096f4f0a8a03f695",
@@ -4079,14 +4715,14 @@
           "control_hz": 80.0
         }
       },
-      "setup_seconds": 0.959,
-      "rollout_seconds": 87.008,
-      "input_reported_calls": 5,
-      "input_reported_tokens": 4446,
-      "input_complete": false,
-      "output_reported_calls": 5,
-      "output_reported_tokens": 142,
-      "output_complete": false
+      "setup_seconds": 1.038,
+      "rollout_seconds": 408.208,
+      "input_reported_calls": 78,
+      "input_reported_tokens": 79667,
+      "input_complete": true,
+      "output_reported_calls": 78,
+      "output_reported_tokens": 2058,
+      "output_complete": true
     },
     {
       "label": "Chat",

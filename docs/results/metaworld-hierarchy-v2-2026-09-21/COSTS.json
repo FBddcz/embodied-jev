@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-09-21T12:48:15.933987+00:00",
+  "currency": "USD",
+  "basis": "Provider-reported usage fields from the latest published supplemented v2 batch. Superseded timeout attempts are not included in the main-result estimate.",
+  "methods": {
+    "jev": {
+      "label": "Jev",
+      "model": [
+        "jev-1.13.0"
+      ],
+      "input_tokens": 435903,
+      "output_tokens": 30620,
+      "http_requests": 312,
+      "input_reported_requests": 312,
+      "output_reported_requests": 312,
+      "input_usd_per_million": 0.042,
+      "output_usd_per_million": 0.0,
+      "estimated_input_cost_usd": 0.018307926,
+      "estimated_output_cost_usd": 0.0,
+      "estimated_total_cost_usd": 0.018307926,
+      "pricing_source": "https://docs.typesafe.ai/models",
+      "pricing_note": "TypeSafe prices Jev input at $42 per billion tokens; generated tokens are free."
+    },
+    "chat": {
+      "label": "GPT-6 Astra",
+      "model": [
+        "gpt-6-astra-2026-09-03"
+      ],
+      "input_tokens": 316469,
+      "output_tokens": 8812,
+      "http_requests": 312,
+      "input_reported_requests": 312,
+      "output_reported_requests": 312,
+      "input_usd_per_million": 10.0,
+      "output_usd_per_million": 50.0,
+      "estimated_input_cost_usd": 3.16469,
+      "estimated_output_cost_usd": 0.4406,
+      "estimated_total_cost_usd": 3.6052899999999997,
+      "pricing_source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+      "pricing_note": "Standard uncached text-token rates; cached-input details were not logged."
+    }
+  }
+}

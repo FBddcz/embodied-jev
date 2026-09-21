@@ -2,7 +2,7 @@
 
 This quantitative grid compares task outcomes, resource use, and request delay under one frozen protocol. It does not combine these measurements into an accuracy or intelligence score.
 
-Coverage: partial; unfinished/error cases retained. Matched initial states: 6/6.
+Coverage: complete subset. Matched initial states: 6/6.
 
 - Task success comes from the benchmark environment. Each replicate is one listed task/initial state/seed; the frozen manifest defines the split. For complete groups, bars/points show successes divided by planned episodes with a binomial Wilson 95% interval. For partial groups, hollow points show verified successes divided by planned episodes, a lower bound; no confidence interval or complete success-rate claim is shown. The JSON also retains the observed scored-only fraction, which is not used to hide missing cases.
 - Token dots show episodes with complete provider-reported input or output usage; horizontal marks are medians. Missing usage is N/A. Partial reported totals and exact request coverage remain in the source data. Different providers may tokenize differently; these are usage counters, not equal units of computation or a billing estimate.
@@ -21,6 +21,6 @@ The source preflight may warn that TIFF is absent: PNG is the requested raster p
 Rendering is an automated export, not visual approval. Inspect the exported figure at final size before publication.
 
 - Jev: 5/6 verified successes; 0 missing, 0 unscored; 312 HTTP requests; latency n=312. Input usage reported for 312 requests; output usage for 312. Failure outcomes: {"step_limit": 1}.
-- Chat: 3/6 verified successes; 0 missing, 0 unscored; 222 HTTP requests; latency n=222. Input usage reported for 220 requests; output usage for 220. Failure outcomes: {"runtime_error": 2, "step_limit": 1}.
+- Chat: 5/6 verified successes; 0 missing, 0 unscored; 312 HTTP requests; latency n=312. Input usage reported for 312 requests; output usage for 312. Failure outcomes: {"step_limit": 1}.
 
-This is the predeclared whole GPT-6 rerun paired with the original complete Jev v2 batch. The previous GPT-6 network-affected attempts remain archived and are not mixed into this comparison. Requests are logged durably without modifying HTTP payloads, timeouts, model decisions, or controller code.
+This figure uses the latest complete supplemented v2 dataset. Superseded GPT-6 timeout attempts are excluded from the displayed measurements. Requests are logged durably without modifying HTTP payloads, model decisions, or controller code.
