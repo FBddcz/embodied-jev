@@ -1,0 +1,50 @@
+{
+  "model": "jev-1.13.0",
+  "task": "transfer",
+  "seed": 7,
+  "observation": "privileged simulator coordinates and contacts",
+  "camera_views": [],
+  "control_mode": "hierarchical",
+  "control_version": "hierarchical-xyz-v1",
+  "max_cycles": 160,
+  "threshold": 0,
+  "preview": true,
+  "rule_fallback": false,
+  "trials": [
+    {
+      "id": "50a925dc22f5",
+      "cycles": 89,
+      "model_calls": 178,
+      "wall_seconds": 72.43,
+      "request_median_ms": 361.08,
+      "success": true,
+      "input_tokens": 304627,
+      "output_tokens": 19623,
+      "max_lift_m": 0.1897,
+      "contact_lost_cycle": 81,
+      "release_subgoal_selected": false,
+      "speed": 0
+    },
+    {
+      "id": "afe221e005f9",
+      "cycles": 88,
+      "model_calls": 176,
+      "wall_seconds": 79.71,
+      "request_median_ms": 326.49,
+      "success": true,
+      "input_tokens": 301203,
+      "output_tokens": 19401,
+      "max_lift_m": 0.1896,
+      "contact_lost_cycle": 80,
+      "release_subgoal_selected": false,
+      "speed": 4
+    }
+  ],
+  "limitations": [
+    "Two development trials at the same seed; not a general success-rate estimate.",
+    "Both trials lost grasp during lowering; cube fell into tray before opening and withdrawal. Not reliable precise placement.",
+    "Model received coordinates and contact state, not images.",
+    "Task instructions, geometric errors and bounded step sizes assist the model.",
+    "Full raw trajectories and the experimental controller are not included in this publication."
+  ]
+}

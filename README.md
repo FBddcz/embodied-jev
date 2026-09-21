@@ -249,9 +249,9 @@ Jev **5/6 成功**；GPT-6 **3 局成功、1 局步数耗尽、2 局请求超时
 
 ![Jev 分层 XYZ：88 步真实动作、子目标与四通道概率，8 倍速](docs/media/jev-hierarchical.gif)
 
-[⬇ 下载高清 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/jev-hierarchical.mp4) · [查看完整输入、概率与物理记录](docs/JEV_EVALUATION.md) · [核对动图来源](docs/media/jev-hierarchical.json)
+[⬇ 下载高清 MP4](https://github.com/FBddcz/embodied-jev/raw/refs/heads/main/docs/media/jev-hierarchical.mp4) · [实验结果与限制](docs/JEV_RESULTS.md) · [媒体来源与文件哈希](docs/media/jev-hierarchical.json)
 
-**两局下放途中都失抓，方块落入托盘后才张爪、撤离，没有选择主动松爪的 `release` 子目标。** 因此这证明了当前场景的搬运终态已跑通，尚不能称为稳定精确放置。此前平铺 21 个候选的 40 步试跑未抓起方块；预算和动作接口不同，不能直接推算改进幅度或通用成功率。Jev 这两局未接收图像，左侧三维画面只是轨迹回放。
+**两局下放途中都失抓，方块落入托盘后才张爪、撤离，没有选择主动松爪的 `release` 子目标。** 因此当前场景的搬运终态已跑通，尚不能称为稳定精确放置，也不能据此推算通用成功率。此前平铺 21 个候选的 40 步试跑未抓起方块；预算和动作接口不同，不能直接推算改进幅度或通用成功率。Jev 这两局未接收图像，左侧三维画面只是轨迹回放。完整输入、概率与物理记录见 [Jev 实测](docs/JEV_EVALUATION.md)。
 
 ### 👁️ 逐步视觉规划：看图抓取与中途调整
 

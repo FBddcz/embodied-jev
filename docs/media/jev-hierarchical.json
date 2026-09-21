@@ -42,5 +42,8 @@
       "sha256": "2b5ad736a38fb0a1e04a501acf6bd9f257f8c59ec0cd22a64a5c4dd5bf4e0ee4",
       "bytes": 281827
     }
-  }
+  },
+  "source_episode_sha256": "b4fdc183da378c26bd77a9dc25950a5275e39f1ce2075be534de5c2288785a6f",
+  "raw_episode_in_repository": false,
+  "source_note": "Media generated from the locally saved real Jev trial. Only result summaries and demonstration media are published in this update."
 }
