@@ -1,0 +1,13 @@
+label,policy,id,task,seed,init_index,recorded,success,status,steps,model_calls,http_requests,wall_seconds,simulated_seconds,input_tokens,output_tokens,initial_observation_sha256,setup_seconds,rollout_seconds,input_reported_calls,input_reported_tokens,input_complete,output_reported_calls,output_reported_tokens,output_complete
+Jev,jev,reach-v3-0,reach-v3,0,,True,True,success,71,30,30,12.82,0.8875,39000,2625,c23313a4e044cc26c3d1cb6ec7e87675cc385c9ff9a7eefeaaf6c596802f7d76,1.037,11.705,30,39000,True,30,2625,True
+Jev,jev,reach-v3-1,reach-v3,1,,True,True,success,56,24,24,9.124,0.7,31190,2100,6ceef35628767a6514131e661bbb8f6d3262c2e80c9ce37d633279d3a206821a,0.878,8.173,24,31190,True,24,2100,True
+Jev,jev,push-v3-0,push-v3,0,,True,False,step_limit,200,80,80,33.391,2.5,116905,7678,9420c03b4040aa95f88e190988cfee7c3c186cfd07fe2bcdb2c18f3b23f8c4be,0.876,32.475,80,116905,True,80,7678,True
+Jev,jev,push-v3-1,push-v3,1,,True,True,success,78,32,32,12.099,0.975,45213,3058,b837782900c5c51fb7ec29cf1786b26edf364acc996162a5b7791c1fb7ad37f0,0.866,11.195,32,45213,True,32,3058,True
+Jev,jev,pick-place-v3-0,pick-place-v3,0,,True,True,success,191,78,78,29.716,2.3875,108590,8099,24c36c4c0bedc8b06696c95f7ade0db94219c3dbf829d300096f4f0a8a03f695,0.865,28.774,78,108590,True,78,8099,True
+Jev,jev,pick-place-v3-1,pick-place-v3,1,,True,True,success,169,68,68,23.957,2.1125,95005,7060,a42e5e1d02f68731922bf0b43d1ba62d86ec8d723f0662a1fb9748c66efecd58,0.884,22.946,68,95005,True,68,7060,True
+Chat,chat,reach-v3-0,reach-v3,0,,True,True,success,71,30,30,170.372,0.8875,28100,1005,c23313a4e044cc26c3d1cb6ec7e87675cc385c9ff9a7eefeaaf6c596802f7d76,1.157,169.086,30,28100,True,30,1005,True
+Chat,chat,reach-v3-1,reach-v3,1,,True,False,runtime_error,10,6,6,82.821,0.125,,,6ceef35628767a6514131e661bbb8f6d3262c2e80c9ce37d633279d3a206821a,1.309,81.383,5,4053,False,5,184,False
+Chat,chat,push-v3-0,push-v3,0,,True,False,step_limit,200,80,80,330.604,2.5,83921,2258,9420c03b4040aa95f88e190988cfee7c3c186cfd07fe2bcdb2c18f3b23f8c4be,1.048,329.427,80,83921,True,80,2258,True
+Chat,chat,push-v3-1,push-v3,1,,True,True,success,78,32,32,127.67,0.975,32836,826,b837782900c5c51fb7ec29cf1786b26edf364acc996162a5b7791c1fb7ad37f0,1.157,126.437,32,32836,True,32,826,True
+Chat,chat,pick-place-v3-0,pick-place-v3,0,,True,False,runtime_error,10,6,6,88.043,0.125,,,24c36c4c0bedc8b06696c95f7ade0db94219c3dbf829d300096f4f0a8a03f695,0.959,87.008,5,4446,False,5,142,False
+Chat,chat,pick-place-v3-1,pick-place-v3,1,,True,True,success,169,68,68,328.821,2.1125,69535,1876,a42e5e1d02f68731922bf0b43d1ba62d86ec8d723f0662a1fb9748c66efecd58,0.97,327.773,68,69535,True,68,1876,True

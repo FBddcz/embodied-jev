@@ -1,6 +1,8 @@
 # 演示与视频导出
 
-README 的实验章节默认展开三段动图：Jev 分层 XYZ 搬运、GPT 双相机视觉搬运，以及托盘移动后重新抓取。它们由已保存的实验记录生成，不需要重新请求模型。
+README 的实验章节包含 Meta-World 六局对照，以及 Jev 分层 XYZ 搬运、GPT 双相机视觉搬运和托盘移动后重新抓取。它们由已保存的实验记录生成，不需要重新请求模型。
+
+Meta-World 对照采用 **2 行 × 6 列**，上排 Jev、下排 GPT-6，按环境步同步。每格显示动作、子目标、方向选择及终态；Jev 保留真实概率，GPT 不补造概率。使用原种子和记录动作重新仿真，并逐步核对全部观测及成功标志。整段 24 秒，省略 API 等待；[GIF](results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid.gif) · [MP4](results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid.mp4) · [来源与核对结果](results/metaworld-hierarchy-v2-2026-09-21/figures/hierarchy-grid.json)。
 
 | 演示 | 动作数 | 原始实验耗时 | 视频 / 动图 |
 | --- | --- | --- | --- |
@@ -31,6 +33,17 @@ MP4 保留全部动作，每步展示 1.2 秒，省略 API 等待，正常视频
 第二段中，托盘在第 20 步后沿 X 平移 6 cm，这是启用的外部扰动。第 19 步后双指接触丢失则是实际执行中出现的情况；第 25 步重新抓住。视频中分别标注，不把它们合成一次预设恢复动画。
 
 ## 从记录重新导出
+
+六局对照使用独立脚本；用原实验的 Meta-World 3.1.1 / MuJoCo 3.3.0 环境运行，批次目录需包含两模型的轨迹、汇总和冻结的 `reproduction/benchmark_worker.py`：
+
+```bash
+"$METAWORLD_PYTHON" scripts/render_hierarchy_grid.py /path/to/batch \
+  --output runs/hierarchy-grid --ffmpeg /path/to/ffmpeg
+```
+
+`METAWORLD_PYTHON` 指向该环境的 Python；`--ffmpeg` 指定可执行文件。输出 GIF、MP4、末帧 PNG 和来源清单；发现版本、初始状态或逐步观测不一致时停止导出。
+
+下面三段单局演示使用原有导出脚本。
 
 先安装可选的视频依赖：
 

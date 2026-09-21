@@ -14,6 +14,8 @@
 | [SemIf](https://github.com/TheoLeeCJ/SemIf) | 有限候选概率读出 | MiniCPM5-2B 本地决策适配 |
 | [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) | Franka Panda 模型与资产 | 机器人模型，保留上游许可与来源 |
 
+2026-09-21 补充核对了 [CIGI](https://github.com/friendlyCamel/CIGI-Can-I-Get-It-)、[Jev-as-Policy](https://github.com/YuanKJing/Jev-as-Policy)、[RoboJEV](https://github.com/lykycy123/RoboJEV) 与 openarm-jev-lab 的 LIBERO 实现。具体可复用部分、源码版本及验证边界见 **[扩展路线](INTEGRATION_ROADMAP.md)**；新的统一评测入口见 **[Benchmark](BENCHMARKS.md)**。
+
 🎬 **演示参考**：[Dmytro Hrybov 的 MuJoCo 演示](https://x.com/dimentary/status/2101018760371171420)及[后续说明](https://x.com/dimentary/status/2101018934095003720)，展示了结构化几何、接触状态与两阶段决策。
 
 SemIf 已公开支持 MiniCPM5-2B；它是独立开源项目。行知的本地 MiniCPM 模式使用 MiniCPM 权重，官方 Jev 则通过 [TypeSafe API](https://docs.typesafe.ai/api) 接入。候选概率不等同于物理任务成功率。

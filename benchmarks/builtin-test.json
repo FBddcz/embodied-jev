@@ -1,0 +1,53 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "builtin-test",
+  "backend": "builtin",
+  "split": "test",
+  "cases": [
+    {
+      "id": "transfer-100",
+      "task": "transfer",
+      "seed": 100
+    },
+    {
+      "id": "transfer-101",
+      "task": "transfer",
+      "seed": 101
+    },
+    {
+      "id": "transfer-102",
+      "task": "transfer",
+      "seed": 102
+    },
+    {
+      "id": "stack-100",
+      "task": "stack",
+      "seed": 100
+    },
+    {
+      "id": "stack-101",
+      "task": "stack",
+      "seed": 101
+    },
+    {
+      "id": "stack-102",
+      "task": "stack",
+      "seed": 102
+    },
+    {
+      "id": "barrier-100",
+      "task": "barrier",
+      "seed": 100
+    },
+    {
+      "id": "barrier-101",
+      "task": "barrier",
+      "seed": 101
+    },
+    {
+      "id": "barrier-102",
+      "task": "barrier",
+      "seed": 102
+    }
+  ]
+}

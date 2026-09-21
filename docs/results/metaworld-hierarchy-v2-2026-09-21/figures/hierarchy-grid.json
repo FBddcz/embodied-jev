@@ -1,0 +1,219 @@
+{
+  "layout": "2 rows x 6 columns; Jev then GPT-6 Astra",
+  "source_batch": "benchmark-hierarchy-v2-gpt-rerun-01",
+  "columns": [
+    "reach-v3-0",
+    "reach-v3-1",
+    "push-v3-0",
+    "push-v3-1",
+    "pick-place-v3-0",
+    "pick-place-v3-1"
+  ],
+  "size": [
+    1506,
+    916
+  ],
+  "frames_before_gif_optimization": 240,
+  "fps": 10,
+  "duration_seconds": 24.0,
+  "model_calls_during_render": 0,
+  "replay": "Original seeds and recorded actions; every observation and evaluation verified. No inferred continuation after termination.",
+  "timing": "10 environment steps per playback second; API waiting omitted, terminal scenes held. Not a model-speed comparison.",
+  "camera": {
+    "lookat": [
+      0.0,
+      0.73,
+      0.15
+    ],
+    "distance": 0.95,
+    "azimuth": 160.0,
+    "elevation": -40.0
+  },
+  "probabilities": "Jev: actual API probabilities. GPT: choices only; no invented probabilities.",
+  "worker_sha256": "614ef0aaec02a4e41664a74d044a08c7cdb0496e3f0faebca875a25e4be8985f",
+  "renderer_sha256": "62bba43e4368e841b579be02f9dde95d04fed327cb891fc42429ef7cd4e14eb3",
+  "episodes": [
+    {
+      "policy": "jev",
+      "case": "reach-v3-0",
+      "model": "jev-1.13.0",
+      "steps": 71,
+      "status": "success",
+      "error_type": null,
+      "trace": "jev/reach-v3-0-trace.jsonl",
+      "trace_sha256": "a0afe617a87fe72b4961abd62ee0d78b976db369066484fb0a727b29d59147ee",
+      "summary_sha256": "b996ff7e4925ed4fe9448f6ee3678b05569e40fd64b22e2e65f91c32801ddc35",
+      "initial_observation_sha256": "c23313a4e044cc26c3d1cb6ec7e87675cc385c9ff9a7eefeaaf6c596802f7d76",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "jev",
+      "case": "reach-v3-1",
+      "model": "jev-1.13.0",
+      "steps": 56,
+      "status": "success",
+      "error_type": null,
+      "trace": "jev/reach-v3-1-trace.jsonl",
+      "trace_sha256": "0a49fa6bbf73f92bb03661dd1a6c156935e5359470632d59ff10d2e3d457a7d5",
+      "summary_sha256": "b996ff7e4925ed4fe9448f6ee3678b05569e40fd64b22e2e65f91c32801ddc35",
+      "initial_observation_sha256": "6ceef35628767a6514131e661bbb8f6d3262c2e80c9ce37d633279d3a206821a",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "jev",
+      "case": "push-v3-0",
+      "model": "jev-1.13.0",
+      "steps": 200,
+      "status": "step_limit",
+      "error_type": null,
+      "trace": "jev/push-v3-0-trace.jsonl",
+      "trace_sha256": "5c279f3bbc0ddb1fd44a01ff93c8d73f6894824234902b87431ec74bca7fd341",
+      "summary_sha256": "b996ff7e4925ed4fe9448f6ee3678b05569e40fd64b22e2e65f91c32801ddc35",
+      "initial_observation_sha256": "9420c03b4040aa95f88e190988cfee7c3c186cfd07fe2bcdb2c18f3b23f8c4be",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "jev",
+      "case": "push-v3-1",
+      "model": "jev-1.13.0",
+      "steps": 78,
+      "status": "success",
+      "error_type": null,
+      "trace": "jev/push-v3-1-trace.jsonl",
+      "trace_sha256": "b9c882f18fb4b87a9ee0a6b76e1395700e09357dddb70e47084b23dfd3709446",
+      "summary_sha256": "b996ff7e4925ed4fe9448f6ee3678b05569e40fd64b22e2e65f91c32801ddc35",
+      "initial_observation_sha256": "b837782900c5c51fb7ec29cf1786b26edf364acc996162a5b7791c1fb7ad37f0",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "jev",
+      "case": "pick-place-v3-0",
+      "model": "jev-1.13.0",
+      "steps": 191,
+      "status": "success",
+      "error_type": null,
+      "trace": "jev/pick-place-v3-0-trace.jsonl",
+      "trace_sha256": "a6a829e799f065e80f1953abd350ab1336469039e2f49eefeb193350e0f25a7d",
+      "summary_sha256": "b996ff7e4925ed4fe9448f6ee3678b05569e40fd64b22e2e65f91c32801ddc35",
+      "initial_observation_sha256": "24c36c4c0bedc8b06696c95f7ade0db94219c3dbf829d300096f4f0a8a03f695",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "jev",
+      "case": "pick-place-v3-1",
+      "model": "jev-1.13.0",
+      "steps": 169,
+      "status": "success",
+      "error_type": null,
+      "trace": "jev/pick-place-v3-1-trace.jsonl",
+      "trace_sha256": "a12dce23abff8683727668e68cee19a5b0424ec0d49d9d9f5b9dbf15d7d3ac19",
+      "summary_sha256": "b996ff7e4925ed4fe9448f6ee3678b05569e40fd64b22e2e65f91c32801ddc35",
+      "initial_observation_sha256": "a42e5e1d02f68731922bf0b43d1ba62d86ec8d723f0662a1fb9748c66efecd58",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "chat",
+      "case": "reach-v3-0",
+      "model": "gpt-6-astra-2026-09-03",
+      "steps": 71,
+      "status": "success",
+      "error_type": null,
+      "trace": "chat/reach-v3-0-trace.jsonl",
+      "trace_sha256": "eba164d8ab8c5d5a737c1a41f0139d26adedd7bb344730026ba2fac50a7363e7",
+      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "initial_observation_sha256": "c23313a4e044cc26c3d1cb6ec7e87675cc385c9ff9a7eefeaaf6c596802f7d76",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "chat",
+      "case": "reach-v3-1",
+      "model": "gpt-6-astra-2026-09-03",
+      "steps": 10,
+      "status": "runtime_error",
+      "error_type": "ReadTimeout",
+      "trace": "chat/reach-v3-1-trace.jsonl",
+      "trace_sha256": "65f4ebddbfbaefc280dda617af670351c5f5a7f8755c6ec37f43b6eb4226e52e",
+      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "initial_observation_sha256": "6ceef35628767a6514131e661bbb8f6d3262c2e80c9ce37d633279d3a206821a",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "chat",
+      "case": "push-v3-0",
+      "model": "gpt-6-astra-2026-09-03",
+      "steps": 200,
+      "status": "step_limit",
+      "error_type": null,
+      "trace": "chat/push-v3-0-trace.jsonl",
+      "trace_sha256": "13436fef004388b94c5f90e415c5eeb89ef54f68915015184f2b8dc062bb39de",
+      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "initial_observation_sha256": "9420c03b4040aa95f88e190988cfee7c3c186cfd07fe2bcdb2c18f3b23f8c4be",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "chat",
+      "case": "push-v3-1",
+      "model": "gpt-6-astra-2026-09-03",
+      "steps": 78,
+      "status": "success",
+      "error_type": null,
+      "trace": "chat/push-v3-1-trace.jsonl",
+      "trace_sha256": "ba5996ad2517d7c336d1b69fac06dc4b8adaf305e906970ccc706dc613395946",
+      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "initial_observation_sha256": "b837782900c5c51fb7ec29cf1786b26edf364acc996162a5b7791c1fb7ad37f0",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "chat",
+      "case": "pick-place-v3-0",
+      "model": "gpt-6-astra-2026-09-03",
+      "steps": 10,
+      "status": "runtime_error",
+      "error_type": "ReadTimeout",
+      "trace": "chat/pick-place-v3-0-trace.jsonl",
+      "trace_sha256": "9d4fdccd9334ac4b0485305d52e23b972e8126567e60588cec8afd4955f26c29",
+      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "initial_observation_sha256": "24c36c4c0bedc8b06696c95f7ade0db94219c3dbf829d300096f4f0a8a03f695",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    },
+    {
+      "policy": "chat",
+      "case": "pick-place-v3-1",
+      "model": "gpt-6-astra-2026-09-03",
+      "steps": 169,
+      "status": "success",
+      "error_type": null,
+      "trace": "chat/pick-place-v3-1-trace.jsonl",
+      "trace_sha256": "f334d53bee2c8029b3146cad39d23545daf9ed5f3122bcc2b7be6d2aeb4fb0ec",
+      "summary_sha256": "32a3bfa5beb2b4a84ccd0ed064cdc95452745828d39d61ba7ab70b5ff97173e1",
+      "initial_observation_sha256": "a42e5e1d02f68731922bf0b43d1ba62d86ec8d723f0662a1fb9748c66efecd58",
+      "max_observation_numeric_error": 0.0,
+      "all_evaluations_match": true
+    }
+  ],
+  "artifacts": {
+    "hierarchy-grid.mp4": {
+      "sha256": "f61c41df6d72a6debb4acc383dd3ea422ee787d25299ce3cfbb491b4418564e8",
+      "bytes": 1894280
+    },
+    "hierarchy-grid.gif": {
+      "sha256": "2653834b805017ab8f58a799127d1aca5bfebec7d23fa30d5b998b79d1bfb930",
+      "bytes": 7592095
+    },
+    "hierarchy-grid.png": {
+      "sha256": "5ddc0d1ba9fdc2fb6b4aa9612eed5357fdce0292e5987e9ca1e8c2b84f543eec",
+      "bytes": 323784
+    }
+  }
+}

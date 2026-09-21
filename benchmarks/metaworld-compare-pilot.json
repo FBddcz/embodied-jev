@@ -1,0 +1,13 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "metaworld-compare-pilot",
+  "backend": "metaworld",
+  "split": "development",
+  "cases": [
+    {
+      "id": "reach-v3-0",
+      "task": "reach-v3",
+      "seed": 0
+    }
+  ]
+}

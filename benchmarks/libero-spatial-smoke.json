@@ -1,0 +1,29 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "libero-spatial-smoke",
+  "backend": "libero",
+  "split": "smoke",
+  "cases": [
+    {
+      "id": "spatial-0-init0",
+      "suite": "libero_spatial",
+      "task_id": 0,
+      "init_index": 0,
+      "seed": 7
+    },
+    {
+      "id": "spatial-1-init0",
+      "suite": "libero_spatial",
+      "task_id": 1,
+      "init_index": 0,
+      "seed": 7
+    },
+    {
+      "id": "spatial-2-init0",
+      "suite": "libero_spatial",
+      "task_id": 2,
+      "init_index": 0,
+      "seed": 7
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "builtin-dev",
+  "backend": "builtin",
+  "split": "development",
+  "cases": [
+    {
+      "id": "transfer-0",
+      "task": "transfer",
+      "seed": 0
+    },
+    {
+      "id": "transfer-1",
+      "task": "transfer",
+      "seed": 1
+    },
+    {
+      "id": "transfer-2",
+      "task": "transfer",
+      "seed": 2
+    },
+    {
+      "id": "stack-0",
+      "task": "stack",
+      "seed": 0
+    },
+    {
+      "id": "stack-1",
+      "task": "stack",
+      "seed": 1
+    },
+    {
+      "id": "stack-2",
+      "task": "stack",
+      "seed": 2
+    },
+    {
+      "id": "barrier-0",
+      "task": "barrier",
+      "seed": 0
+    },
+    {
+      "id": "barrier-1",
+      "task": "barrier",
+      "seed": 1
+    },
+    {
+      "id": "barrier-2",
+      "task": "barrier",
+      "seed": 2
+    }
+  ]
+}

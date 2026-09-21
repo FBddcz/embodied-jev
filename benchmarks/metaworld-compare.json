@@ -1,0 +1,38 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "metaworld-compare",
+  "backend": "metaworld",
+  "split": "development",
+  "cases": [
+    {
+      "id": "reach-v3-0",
+      "task": "reach-v3",
+      "seed": 0
+    },
+    {
+      "id": "reach-v3-1",
+      "task": "reach-v3",
+      "seed": 1
+    },
+    {
+      "id": "push-v3-0",
+      "task": "push-v3",
+      "seed": 0
+    },
+    {
+      "id": "push-v3-1",
+      "task": "push-v3",
+      "seed": 1
+    },
+    {
+      "id": "pick-place-v3-0",
+      "task": "pick-place-v3",
+      "seed": 0
+    },
+    {
+      "id": "pick-place-v3-1",
+      "task": "pick-place-v3",
+      "seed": 1
+    }
+  ]
+}

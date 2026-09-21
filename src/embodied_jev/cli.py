@@ -26,6 +26,21 @@ def main():
     bench.add_argument("--control-mode", choices=["skills", "incremental", "hierarchical"], default="skills")
     bench.add_argument("--shuffle-candidates", action="store_true")
     bench.add_argument("--intervention", help='JSON: {"kind":"object_shift","after_cycle":5,"delta_xy":[0.04,0]}')
+    evaluate = sub.add_parser("evaluate", help="Run a frozen task manifest with independent benchmark success checks")
+    evaluate.add_argument("--manifest", required=True)
+    evaluate.add_argument("--output", required=True, help="New directory; existing results are never overwritten")
+    evaluate.add_argument("--worker-python", help="Python in an isolated Meta-World or LIBERO environment")
+    evaluate.add_argument("--policy", choices=["baseline", "scripted", "noop", "jev", "chat", "claude"], default="baseline")
+    evaluate.add_argument("--max-steps", type=int, default=500)
+    evaluate.add_argument("--max-calls", type=int, default=100)
+    evaluate.add_argument("--timeout", type=float, default=600)
+    evaluate.add_argument("--threshold", type=float, default=0)
+    evaluate.add_argument("--action-scale", type=float, default=.5)
+    evaluate.add_argument("--action-repeat", type=int, default=1, help="Execute each selected external action for this many environment steps, checking termination each step")
+    evaluate.add_argument("--connection-source", choices=["environment", "saved"], default="environment",
+                          help="Reuse the app's saved provider connection without exporting its key")
+    evaluate.add_argument("--control-mode", choices=["skills", "incremental", "hierarchical"], default="skills")
+    evaluate.add_argument("--observation-mode", choices=["privileged", "rgbd", "vision"], default="privileged")
     sub.add_parser("warmup", help="Load MiniCPM5-2B and make a real two-candidate decision")
     args = parser.parse_args()
     if args.command == "serve":
@@ -44,6 +59,14 @@ def main():
         result = policy.choose({"purpose": "Model loading test; no robot motion"},
             "Select ready to indicate readiness.", {"ready": "Ready", "hold": "Hold"}, "ready", [])
         print(json.dumps({"runtime": minicpm_status(), "decision": result}, ensure_ascii=False, indent=2))
+    elif args.command == "evaluate":
+        from .evaluation import run
+        try:
+            report = run(args)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        if not report["aggregate"]["complete"]:
+            raise SystemExit(2)
     else:
         from .runtime import run_headless
         camera_views = {"none": [], "external": ["external"], "wrist": ["wrist"],
