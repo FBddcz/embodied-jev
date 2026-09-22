@@ -10,7 +10,7 @@
 | [jev-askable-arm](https://github.com/TarunTomar122/jev-askable-arm) | 机器人动作基元 | 有界目标位姿与 IK 执行 |
 | [jev-drone](https://github.com/RomanSlack/jev-drone) | 感知、决策与控制分离 | 可选视觉观察、有限候选决策与独立控制循环 |
 | [jevduck](https://github.com/amazedsaint/jevduck) | 可检查、可控制的实验 | 暂停、停止、结果反馈与日志 |
-| [openarm-jev-lab](https://github.com/tripathiarpan20/openarm-jev-lab) | 仿真与界面分离、LIBERO-PRO 实验 | 后台实验与浏览器工作台；本项目尚未接入 LIBERO |
+| [openarm-jev-lab](https://github.com/tripathiarpan20/openarm-jev-lab) | 仿真与界面分离、LIBERO-PRO 实验 | 后台实验与浏览器工作台；原版 LIBERO 视觉对照使用独立接口 |
 | [SemIf](https://github.com/TheoLeeCJ/SemIf) | 有限候选概率读出 | MiniCPM5-2B 本地决策适配 |
 | [MuJoCo Menagerie](https://github.com/google-deepmind/mujoco_menagerie) | Franka Panda 模型与资产 | 机器人模型，保留上游许可与来源 |
 
@@ -23,3 +23,5 @@ SemIf 已公开支持 MiniCPM5-2B；它是独立开源项目。行知的本地 M
 本次查阅的公开对比中，OpenRoboto 比较 Jev 与 GPT，jev-robotics-demo 比较 Jev 与 Claude；[openarm-jev-lab](https://github.com/tripathiarpan20/openarm-jev-lab/blob/c89a73f6ff10094acc3d27e45ef91a31791eadb2/README.md#what-improved)比较同一 Jev 控制器的动作菜单改进。虽然它已经运行 LIBERO-PRO，这些资料并未报告与 OpenVLA、SmolVLA 或 π0 的同条件实测对比。不能据此声称 Jev 优于 VLA。
 
 进一步阅读：[👁️ 视觉模式](VISION.md) · [⚡ 快速推理与源码分析](FAST_INFERENCE.md) · [🆚 模型对比](COMPARISON.md) · [📊 实测结果](VALIDATION.md) · [📄 第三方许可](../THIRD_PARTY_NOTICES.md)
+
+2026-09-22 的官方限制、LIBERO 预演、WidowX 真机与双臂调度源码对照，见 [Jev 接入建议](JEV_INTEGRATION.md)。

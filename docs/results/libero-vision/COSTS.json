@@ -1,0 +1,141 @@
+{
+  "pricing": {
+    "jev_input_per_million": 0.042,
+    "jev_output_per_million": 0,
+    "gpt6_astra_input_per_million": 10,
+    "gpt6_astra_output_per_million": 50,
+    "sources": [
+      "https://docs.typesafe.ai/models",
+      "https://developers.openai.com/api/docs/models/gpt-6-astra"
+    ],
+    "note": "Uncached public-rate estimate; proxy invoices and cache discounts may differ. Unknown usage is not zero."
+  },
+  "methods": {
+    "gpt6": {
+      "requests": 226,
+      "input_tokens": 348030,
+      "output_tokens": 19995,
+      "usage_complete": true,
+      "estimated_usd": 4.4800499999999985,
+      "known_cost_subtotal_usd": 4.4800499999999985,
+      "unpriced_requests": 0,
+      "latency_p50_ms": 3607.4595,
+      "latency_p95_ms": 16330.28725,
+      "models": [
+        "gpt-6-astra-2026-09-03"
+      ],
+      "episodes": 2,
+      "successes": 2,
+      "steps": 915,
+      "wall_seconds": 1449.4754654159988,
+      "setup_seconds": 10.261998750000203,
+      "by_provider": {
+        "chat": {
+          "requests": 226,
+          "input_tokens": 348030,
+          "output_tokens": 19995,
+          "usage_complete": true,
+          "estimated_usd": 4.4800499999999985,
+          "known_cost_subtotal_usd": 4.4800499999999985,
+          "unpriced_requests": 0,
+          "latency_p50_ms": 3607.4595,
+          "latency_p95_ms": 16330.28725,
+          "models": [
+            "gpt-6-astra-2026-09-03"
+          ]
+        }
+      }
+    },
+    "gpt6-jev": {
+      "requests": 75,
+      "input_tokens": 170507,
+      "output_tokens": 18832,
+      "usage_complete": true,
+      "estimated_usd": 0.39400294199999986,
+      "known_cost_subtotal_usd": 0.39400294199999986,
+      "unpriced_requests": 0,
+      "latency_p50_ms": 1240.751,
+      "latency_p95_ms": 14607.5466,
+      "models": [
+        "gpt-6-astra-2026-09-03",
+        "jev-1.13.0"
+      ],
+      "episodes": 1,
+      "successes": 1,
+      "steps": 314,
+      "wall_seconds": 319.71568183300406,
+      "setup_seconds": 5.332425666005292,
+      "by_provider": {
+        "chat": {
+          "requests": 12,
+          "input_tokens": 23056,
+          "output_tokens": 3145,
+          "usage_complete": true,
+          "estimated_usd": 0.38781000000000004,
+          "known_cost_subtotal_usd": 0.38781000000000004,
+          "unpriced_requests": 0,
+          "latency_p50_ms": 10360.539499999999,
+          "latency_p95_ms": 19916.4866,
+          "models": [
+            "gpt-6-astra-2026-09-03"
+          ]
+        },
+        "jev": {
+          "requests": 63,
+          "input_tokens": 147451,
+          "output_tokens": 15687,
+          "usage_complete": true,
+          "estimated_usd": 0.006192942,
+          "known_cost_subtotal_usd": 0.006192942,
+          "unpriced_requests": 0,
+          "latency_p50_ms": 1074.521,
+          "latency_p95_ms": 10601.099699999995,
+          "models": [
+            "jev-1.13.0"
+          ]
+        }
+      }
+    }
+  },
+  "pending_episodes": [
+    {
+      "mode": "gpt6-jev",
+      "id": "microwave-init0",
+      "status": "time_budget",
+      "steps": 1120,
+      "success": false,
+      "metrics": {
+        "requests": 277,
+        "input_tokens": 629942,
+        "output_tokens": 69417,
+        "usage_complete": false,
+        "estimated_usd": null,
+        "known_cost_subtotal_usd": 1.7333650080000003,
+        "unpriced_requests": 1,
+        "latency_p50_ms": 1185.211,
+        "latency_p95_ms": 14867.460999999998,
+        "models": [
+          "gpt-6-astra-2026-09-03",
+          "jev-1.13.0"
+        ]
+      },
+      "note": "分析后待重测，暂不发布回放；费用计入总开销"
+    }
+  ],
+  "retry_attempts": {
+    "requests": 421,
+    "input_tokens": 804823,
+    "output_tokens": 75417,
+    "usage_complete": false,
+    "estimated_usd": null,
+    "known_cost_subtotal_usd": 5.356475522000002,
+    "unpriced_requests": 4,
+    "latency_p50_ms": 2996.551,
+    "latency_p95_ms": 18071.629,
+    "models": [
+      "gpt-6-astra-2026-09-03",
+      "jev-1.13.0"
+    ]
+  },
+  "total_known_cost_including_retries_usd": 11.963893472
+}

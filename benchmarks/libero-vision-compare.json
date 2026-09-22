@@ -1,0 +1,10 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "libero-vision-collaboration-dev",
+  "backend": "libero",
+  "split": "development",
+  "cases": [
+    {"id": "drawer-init0", "suite": "libero_90", "task_id": 0, "init_index": 0, "seed": 0},
+    {"id": "microwave-init0", "suite": "libero_90", "task_id": 33, "init_index": 0, "seed": 0}
+  ]
+}

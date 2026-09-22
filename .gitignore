@@ -1,5 +1,7 @@
 .venv/
 .venv-metaworld/
+.venv-libero/
+.sim/
 __pycache__/
 *.pyc
 *.egg-info/

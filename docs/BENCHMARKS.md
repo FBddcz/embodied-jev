@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 内置 Panda 场景 | 抓取／放置故障、短步与技能对照、感知与扰动 | 已接通；开发种子 0–2，预留测试种子 100–102 |
 | [Meta-World](https://github.com/Farama-Foundation/Metaworld) | 到达、推物、抓放、开抽屉、开门等操控能力 | 已跑通 5 个 MT1 任务 × 3 种子；自选子集，不是完整 MT10／ML10 成绩 |
-| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | 语言任务、空间／物体／目标变化；后续与 VLA 对照 | 已写状态适配器与任务清单；尚未在真实 LIBERO 环境验证 |
+| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | 语言任务、空间／物体／目标变化；后续与 VLA 对照 | RGB-D 视觉对照已真实运行：纯 GPT-6 2/2、GPT-6 + Jev 1/2（先发布三局成功录像）；两个开发任务 |
 | [ManiSkill](https://github.com/haosulab/ManiSkill) / [RoboCasa](https://github.com/robocasa/robocasa) | 更多物体、机器人、场景与长任务 | 后续扩展；当前未接入 |
 
 本轮本地接口验证：内置规则基线 **9/9**，Meta-World 官方脚本策略 **15/15**，均为 **0 次模型调用**。Meta-World 使用官方 `info.success` 判定；这些结果只证明任务、执行与报告链路可用，不证明 Jev 能完成这些任务。外部环境的机器人也不再是当前工作台里的 Panda。
@@ -86,7 +86,7 @@ python -m embodied_jev.evaluation_charts \
 
 图表使用同一任务与种子的配对记录，检查观测、预算、动作、代码指纹和初态是否一致。部分运行会明确标注覆盖不足；无真实调用记录时不生成模型对比图。失败不删除，未返回的 token 不画成零；不把 Jev 的候选概率称为准确率，也不将不同供应商的 token 数直接解释为费用。小样本只适合发现问题，不下排行榜或显著性结论。
 
-## LIBERO 的下一道验证
+## LIBERO 状态接口与视觉对照
 
 标准套件和 LIBERO-PRO 不能混用。当前清单选择原版 `libero_spatial`，明确指定 `task_id`、`init_index` 和随机种子；无效的初态索引直接报错，不循环取模。独立 worker 使用官方 `set_init_state`、`step` 和 `check_success()`，不把目标谓词或成功标记发给策略。
 
@@ -98,7 +98,7 @@ embodied-jev evaluate --manifest benchmarks/libero-spatial-smoke.json \
   --max-steps 10 --output runs/libero-install-check
 ```
 
-此接口还没有实际 LIBERO 成绩。它目前没有图像输入、旋转控制、资产下载、官方评测完整协议或训练算法；不能把它描述成完整 LIBERO 接入或 VLA 排行榜成绩。正式实验前还需固定上游版本、相机、动作频率／分块、初始化等待步数与任务时限。原版 LIBERO 依赖较旧，应在独立环境部署，不能向主项目覆盖安装。
+上述 `evaluate` 为状态接口。新增 **`libero-compare`** 提供双相机 RGB-D、三维航点、XYZ／旋转／夹爪选择、固定资产下载和配对初态检查，已在原版 LIBERO 的关抽屉与关微波炉任务真实运行：纯 GPT-6 **2/2**、GPT-6 + Jev **1/2**（先发布三局成功录像）（每局 1200 秒）。它是开发子集的系统对照，不是完整套件成绩或 VLA 排名。[安装与运行](LIBERO_VISION.md) · [结果与费用](results/libero-vision/RESULTS.md)。使用独立环境，不能向主项目覆盖安装。
 
 ## 报告怎么看
 

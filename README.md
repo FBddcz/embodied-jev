@@ -218,6 +218,28 @@ embodied-jev serve --port 8090
 
 不同输入和控制方式分开看：选择程序提供的技能，与根据图像逐步决定 XYZ 动作，测试的是不同能力。
 
+### 👁️ LIBERO：纯 GPT-6 与 GPT-6 + Jev
+
+**双相机 RGB-D 真实观测；每局成功或运行满 1200 秒停止。** 两组使用同一任务、初态和控制接口，分别由 GPT-6 或 Jev 选择局部动作。
+
+**先发布三局成功录像。** 混合组微波炉在 1120 步、1200 秒内未完成，分析后待重测；当前四局结果为纯 GPT-6 **2/2**、混合组 **1/2**。
+
+| 任务 | 模式 | 结果 | 本局费用估算 | 总耗时 |
+| --- | --- | --- | --- | --- |
+| 关抽屉 | 纯 GPT-6 | **成功** | **$2.15002** | **609.8 秒** |
+| 关抽屉 | GPT-6 + Jev | **成功** | **$0.39400** | **319.7 秒** |
+| 关微波炉 | 纯 GPT-6 | **成功** | **$2.33003** | **839.7 秒** |
+
+**关抽屉：混合组费用少 81.7%、总耗时短 47.6%。** 这是同一初态的开发结果，不能推算完整 LIBERO 成功率；没有训练好的 VLA。
+
+费用包含两层调用。失败与重试计入全部测试开销，未返回用量不会记为免费，详见结果报告。
+
+<a href="docs/media/libero-drawer-comparison.mp4"><img src="docs/media/libero-drawer-poster.png" width="560" alt="LIBERO 关抽屉成功对照：左侧纯 GPT-6，右侧 GPT-6 + Jev"></a>
+
+[🎬 关抽屉 MP4](docs/media/libero-drawer-comparison.mp4) · [🎬 关微波炉 MP4](docs/media/libero-microwave-comparison.mp4) · [结果与全部费用](docs/results/libero-vision/RESULTS.md) · [安装与复现](docs/LIBERO_VISION.md)
+
+**[🌐 在线实验展示页](https://fbddcz.github.io/embodied-jev/)** 按 LIBERO、Meta-World 和 Panda 分类，展示真实录像、决策时间轴与结果。运行 `python scripts/build_site.py`、`python scripts/serve_site.py --port 8123`，打开 [本地实验展示页](http://127.0.0.1:8123)。[GitHub Pages 部署方式](site/README.md)使用静态回放，实时仿真在本地运行。
+
 ### 🧩 预设技能：三个任务，九局实验
 
 GPT-6 Astra 使用**仿真状态＋预设技能**，在三个任务的种子 0、1、2 上 **9/9 完成**。每局 8 个动作、13 次真实模型调用，单次决策平均 2.81 秒，每局平均 42.50 秒。运行中没有切回规则基线，导出记录帧未见禁止接触。
@@ -307,7 +329,7 @@ EMBODIED_MINICPM=1 embodied-jev benchmark --provider minicpm \
 
 报告记录成功与失败、调用次数、延迟、阈值和轨迹。低于概率门槛时单实验暂停，批量评测记为 `uncertain`；没有自动切回规则基线。
 
-更系统的测试使用独立的 **[Benchmark 评测入口](docs/BENCHMARKS.md)**：固定任务清单与种子，对照成功率、API 报告用量、请求延迟、整局耗时和执行步数。Meta-World 直接四通道结果为 Jev **2/6**、GPT-6 **5/6**；修正版层级 v2 为 Jev **5/6**、GPT-6 **5/6**，两者都只剩 `push-v3-0` 步数耗尽。六维图表、加速回放和费用估算见 [实测记录](docs/BENCHMARK_EXPERIMENTS.md)。这些是三任务开发子集，LIBERO 适配仍待真实环境验证。
+更系统的测试使用独立的 **[Benchmark 评测入口](docs/BENCHMARKS.md)**：固定任务清单与种子，对照成功率、API 报告用量、请求延迟、整局耗时和执行步数。Meta-World 直接四通道结果为 Jev **2/6**、GPT-6 **5/6**；修正版层级 v2 为 Jev **5/6**、GPT-6 **5/6**，两者都只剩 `push-v3-0` 步数耗尽。六维图表、加速回放和费用估算见 [实测记录](docs/BENCHMARK_EXPERIMENTS.md)。这些是三任务开发子集；新增 LIBERO 真实视觉对照见 [实验结果](docs/results/libero-vision/RESULTS.md)。
 
 ## 🛠️ 想继续折腾？
 

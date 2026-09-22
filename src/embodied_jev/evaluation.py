@@ -103,12 +103,12 @@ def aggregate(rows, planned):
 
 
 class Worker:
-    def __init__(self, python, log):
+    def __init__(self, python, log, *, script=None):
         self.log = Path(log).open("w")
         env = {k: v for k, v in os.environ.items()
                if not any(word in k.upper() for word in ("KEY", "TOKEN", "PASSWORD", "SECRET"))}
         try:
-            self.process = subprocess.Popen([python, str(Path(__file__).with_name("benchmark_worker.py"))],
+            self.process = subprocess.Popen([python, str(script or Path(__file__).with_name("benchmark_worker.py"))],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log, text=True, env=env)
         except Exception:
             self.log.close()

@@ -1,0 +1,519 @@
+{
+  "protocol": {
+    "version": "libero-rgbd-waypoint-v1",
+    "created_at": "2026-09-22T06:13:23.907916+00:00",
+    "manifest": {
+      "format": "embodied-jev-suite-v1",
+      "name": "libero-vision-collaboration-dev",
+      "backend": "libero",
+      "split": "development",
+      "cases": [
+        {
+          "id": "drawer-init0",
+          "suite": "libero_90",
+          "task_id": 0,
+          "init_index": 0,
+          "seed": 0
+        },
+        {
+          "id": "microwave-init0",
+          "suite": "libero_90",
+          "task_id": 33,
+          "init_index": 0,
+          "seed": 0
+        }
+      ]
+    },
+    "modes": [
+      "gpt6",
+      "gpt6-jev"
+    ],
+    "source_sha256": {
+      "libero_compare.py": "bd45dbc54907d763d6ec4b942b957244a81ddc9e0b77535e76980abeab2f885d",
+      "libero_policy.py": "3d6d1679be8a0efa7706feffc56aab7ceaeaef7ca36e5c705306b07dfe66f479",
+      "libero_worker.py": "1ca34c23e5f1d69bf20f0f068b73e9ca7c4cf44c7f6828d8e92c003e8bf94d25",
+      "benchmark_worker.py": "ad7237c0cbe4e97b687f0a9b74882ea590853716984a386ba262dff6bebb235f",
+      "evaluation.py": "813cd159d3e2eaa3ae40d0230071c298764877eedec6fa73d399cda718431c5d",
+      "evaluation_meter.py": "0037a65084462e9aedfee6f89e78c6cecea16a2923ad8b1b4d588902d9082eeb",
+      "policies.py": "d72ab51cf2abdba8ca105e274d6e3b3d75a87f18fc6e295d113704b0133b5742",
+      "evidence.py": "e1d1d84c5b078372708fdc6e197744e2b6d511be0e6cb3f661efd0a434596197",
+      "connection_store.py": "c9a6b51fb5a2356e15a695e39ea71c358af3ef8d3b258df38ce016134f63b174"
+    },
+    "budget": {
+      "max_steps": null,
+      "max_calls": null,
+      "timeout": 1200.0,
+      "max_usd": 20.0,
+      "action_repeat": 5,
+      "action_scale": 0.5,
+      "camera_size": 384,
+      "mode": "wall-time",
+      "stopping_rule": "official success or rollout wall deadline; cost admission guard remains active"
+    },
+    "pricing": {
+      "jev_input_per_million": 0.042,
+      "jev_output_per_million": 0,
+      "gpt6_astra_input_per_million": 10,
+      "gpt6_astra_output_per_million": 50,
+      "sources": [
+        "https://docs.typesafe.ai/models",
+        "https://developers.openai.com/api/docs/models/gpt-6-astra"
+      ],
+      "note": "Uncached public-rate estimate; proxy invoices and cache discounts may differ. Unknown usage is not zero."
+    },
+    "design": "Both modes use the same GPT visual planner, RGB-D grounding and checkpoint rules. GPT-only uses GPT local control; hybrid uses Jev local control. Custom development subset, not a full LIBERO score."
+  },
+  "episodes": [
+    {
+      "id": "drawer-init0",
+      "case": {
+        "id": "drawer-init0",
+        "suite": "libero_90",
+        "task_id": 0,
+        "init_index": 0,
+        "seed": 0
+      },
+      "mode": "gpt6",
+      "protocol": "libero-rgbd-waypoint-v1",
+      "success": true,
+      "status": "success",
+      "steps": 456,
+      "metadata": {
+        "benchmark": "LIBERO",
+        "libero_revision": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
+        "case": {
+          "id": "drawer-init0",
+          "suite": "libero_90",
+          "task_id": 0,
+          "init_index": 0,
+          "seed": 0
+        },
+        "task_name": "KITCHEN_SCENE10_close_the_top_drawer_of_the_cabinet",
+        "language": "close the top drawer of the cabinet",
+        "initial_state_sha256": "0e6867b26d97a59583bf7aa6f6604389590c00fa0a814fd39edc6c5f534d8964",
+        "settled_state_sha256": "9cdd17765cf86cf80edcf6b044f2987dfd40b9060cde27bf5cd7f9aec8202501",
+        "settle_steps": 10,
+        "versions": {
+          "mujoco": "3.5.0",
+          "robosuite": "1.4.1",
+          "numpy": "1.26.4",
+          "torch": "2.2.2"
+        },
+        "camera_names": {
+          "external": "agentview",
+          "wrist": "robot0_eye_in_hand"
+        },
+        "camera_size": 384,
+        "camera_transform": "vertical flip to top-left origin",
+        "observation": "RGB-D + camera calibration + robot proprioception; no object poses or task predicates",
+        "success_source": "official env.check_success()",
+        "controller": "OSC_POSE",
+        "control_hz": 20,
+        "action_output_min": [
+          -0.05,
+          -0.05,
+          -0.05,
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        "action_output_max": [
+          0.05,
+          0.05,
+          0.05,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "action_frame": "world XYZ and world axis-angle increments; gripper -1=open +1=close",
+        "initial_success": false
+      },
+      "setup_seconds": 6.149591000001237,
+      "rollout_seconds": 602.9995453750016,
+      "wall_seconds": 609.7668773330006,
+      "metrics": {
+        "requests": 112,
+        "usage": {
+          "source": "provider_reported",
+          "attempts": 112,
+          "http_requests": 112,
+          "input_reported_calls": 112,
+          "input_reported_tokens": 172027,
+          "input_complete": true,
+          "output_reported_calls": 112,
+          "output_reported_tokens": 8595,
+          "output_complete": true,
+          "complete": true
+        },
+        "estimated_usd": 2.1500200000000005,
+        "known_cost_subtotal_usd": 2.1500200000000005,
+        "cost_coverage": 112,
+        "latency_p50_ms": 3611.0365,
+        "latency_p95_ms": 13842.96264999999,
+        "models": [
+          "gpt-6-astra-2026-09-03"
+        ],
+        "by_provider": {
+          "chat": {
+            "requests": 112,
+            "source": "provider_reported",
+            "attempts": 112,
+            "http_requests": 112,
+            "input_reported_calls": 112,
+            "input_reported_tokens": 172027,
+            "input_complete": true,
+            "output_reported_calls": 112,
+            "output_reported_tokens": 8595,
+            "output_complete": true,
+            "complete": true
+          }
+        }
+      },
+      "episode_path": "gpt6/drawer-init0/episode.json"
+    },
+    {
+      "id": "drawer-init0",
+      "case": {
+        "id": "drawer-init0",
+        "suite": "libero_90",
+        "task_id": 0,
+        "init_index": 0,
+        "seed": 0
+      },
+      "mode": "gpt6-jev",
+      "protocol": "libero-rgbd-waypoint-v1",
+      "success": true,
+      "status": "success",
+      "steps": 314,
+      "metadata": {
+        "benchmark": "LIBERO",
+        "libero_revision": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
+        "case": {
+          "id": "drawer-init0",
+          "suite": "libero_90",
+          "task_id": 0,
+          "init_index": 0,
+          "seed": 0
+        },
+        "task_name": "KITCHEN_SCENE10_close_the_top_drawer_of_the_cabinet",
+        "language": "close the top drawer of the cabinet",
+        "initial_state_sha256": "0e6867b26d97a59583bf7aa6f6604389590c00fa0a814fd39edc6c5f534d8964",
+        "settled_state_sha256": "9cdd17765cf86cf80edcf6b044f2987dfd40b9060cde27bf5cd7f9aec8202501",
+        "settle_steps": 10,
+        "versions": {
+          "mujoco": "3.5.0",
+          "robosuite": "1.4.1",
+          "numpy": "1.26.4",
+          "torch": "2.2.2"
+        },
+        "camera_names": {
+          "external": "agentview",
+          "wrist": "robot0_eye_in_hand"
+        },
+        "camera_size": 384,
+        "camera_transform": "vertical flip to top-left origin",
+        "observation": "RGB-D + camera calibration + robot proprioception; no object poses or task predicates",
+        "success_source": "official env.check_success()",
+        "controller": "OSC_POSE",
+        "control_hz": 20,
+        "action_output_min": [
+          -0.05,
+          -0.05,
+          -0.05,
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        "action_output_max": [
+          0.05,
+          0.05,
+          0.05,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "action_frame": "world XYZ and world axis-angle increments; gripper -1=open +1=close",
+        "initial_success": false
+      },
+      "setup_seconds": 5.332425666005292,
+      "rollout_seconds": 314.03959325000324,
+      "wall_seconds": 319.71568183300406,
+      "metrics": {
+        "requests": 75,
+        "usage": {
+          "source": "provider_reported",
+          "attempts": 75,
+          "http_requests": 75,
+          "input_reported_calls": 75,
+          "input_reported_tokens": 170507,
+          "input_complete": true,
+          "output_reported_calls": 75,
+          "output_reported_tokens": 18832,
+          "output_complete": true,
+          "complete": true
+        },
+        "estimated_usd": 0.39400294199999986,
+        "known_cost_subtotal_usd": 0.39400294199999986,
+        "cost_coverage": 75,
+        "latency_p50_ms": 1240.751,
+        "latency_p95_ms": 14607.5466,
+        "models": [
+          "gpt-6-astra-2026-09-03",
+          "jev-1.13.0"
+        ],
+        "by_provider": {
+          "chat": {
+            "requests": 12,
+            "source": "provider_reported",
+            "attempts": 12,
+            "http_requests": 12,
+            "input_reported_calls": 12,
+            "input_reported_tokens": 23056,
+            "input_complete": true,
+            "output_reported_calls": 12,
+            "output_reported_tokens": 3145,
+            "output_complete": true,
+            "complete": true
+          },
+          "jev": {
+            "requests": 63,
+            "source": "provider_reported",
+            "attempts": 63,
+            "http_requests": 63,
+            "input_reported_calls": 63,
+            "input_reported_tokens": 147451,
+            "input_complete": true,
+            "output_reported_calls": 63,
+            "output_reported_tokens": 15687,
+            "output_complete": true,
+            "complete": true
+          }
+        }
+      },
+      "episode_path": "gpt6-jev/drawer-init0/episode.json"
+    },
+    {
+      "id": "microwave-init0",
+      "case": {
+        "id": "microwave-init0",
+        "suite": "libero_90",
+        "task_id": 33,
+        "init_index": 0,
+        "seed": 0
+      },
+      "mode": "gpt6",
+      "protocol": "libero-rgbd-waypoint-v1",
+      "success": true,
+      "status": "success",
+      "steps": 459,
+      "metadata": {
+        "benchmark": "LIBERO",
+        "libero_revision": "8f1084e3132a39270c3a13ebe37270a43ece2a01",
+        "case": {
+          "id": "microwave-init0",
+          "suite": "libero_90",
+          "task_id": 33,
+          "init_index": 0,
+          "seed": 0
+        },
+        "task_name": "KITCHEN_SCENE6_close_the_microwave",
+        "language": "close the microwave",
+        "initial_state_sha256": "f515a13640a4307207fc9fdcf9613a9a1e9d1b915aa4ab15c570b806d5ded711",
+        "settled_state_sha256": "87a20865ba7427c0ad64ed878178c4ae85c827370fe0f328cf9a3ea2a5efca3d",
+        "settle_steps": 10,
+        "versions": {
+          "mujoco": "3.5.0",
+          "robosuite": "1.4.1",
+          "numpy": "1.26.4",
+          "torch": "2.2.2"
+        },
+        "camera_names": {
+          "external": "agentview",
+          "wrist": "robot0_eye_in_hand"
+        },
+        "camera_size": 384,
+        "camera_transform": "vertical flip to top-left origin",
+        "observation": "RGB-D + camera calibration + robot proprioception; no object poses or task predicates",
+        "success_source": "official env.check_success()",
+        "controller": "OSC_POSE",
+        "control_hz": 20,
+        "action_output_min": [
+          -0.05,
+          -0.05,
+          -0.05,
+          -0.5,
+          -0.5,
+          -0.5
+        ],
+        "action_output_max": [
+          0.05,
+          0.05,
+          0.05,
+          0.5,
+          0.5,
+          0.5
+        ],
+        "action_frame": "world XYZ and world axis-angle increments; gripper -1=open +1=close",
+        "initial_success": false
+      },
+      "setup_seconds": 4.112407749998965,
+      "rollout_seconds": 835.244601792001,
+      "wall_seconds": 839.7085880829982,
+      "metrics": {
+        "requests": 114,
+        "usage": {
+          "source": "provider_reported",
+          "attempts": 114,
+          "http_requests": 114,
+          "input_reported_calls": 114,
+          "input_reported_tokens": 176003,
+          "input_complete": true,
+          "output_reported_calls": 114,
+          "output_reported_tokens": 11400,
+          "output_complete": true,
+          "complete": true
+        },
+        "estimated_usd": 2.3300300000000007,
+        "known_cost_subtotal_usd": 2.3300300000000007,
+        "cost_coverage": 114,
+        "latency_p50_ms": 3575.44,
+        "latency_p95_ms": 17792.33004999999,
+        "models": [
+          "gpt-6-astra-2026-09-03"
+        ],
+        "by_provider": {
+          "chat": {
+            "requests": 114,
+            "source": "provider_reported",
+            "attempts": 114,
+            "http_requests": 114,
+            "input_reported_calls": 114,
+            "input_reported_tokens": 176003,
+            "input_complete": true,
+            "output_reported_calls": 114,
+            "output_reported_tokens": 11400,
+            "output_complete": true,
+            "complete": true
+          }
+        }
+      },
+      "episode_path": "gpt6/microwave-init0/episode.json"
+    }
+  ],
+  "complete": true,
+  "sources_unchanged": true,
+  "retry_costs_file": "retry-costs.json",
+  "publication_complete": false,
+  "pending": [
+    {
+      "mode": "gpt6-jev",
+      "id": "microwave-init0",
+      "status": "time_budget",
+      "steps": 1120,
+      "success": false,
+      "metrics": {
+        "requests": 277,
+        "input_tokens": 629942,
+        "output_tokens": 69417,
+        "usage_complete": false,
+        "estimated_usd": null,
+        "known_cost_subtotal_usd": 1.7333650080000003,
+        "unpriced_requests": 1,
+        "latency_p50_ms": 1185.211,
+        "latency_p95_ms": 14867.460999999998,
+        "models": [
+          "gpt-6-astra-2026-09-03",
+          "jev-1.13.0"
+        ]
+      },
+      "note": "分析后待重测，暂不发布回放；费用计入总开销"
+    }
+  ],
+  "methods": {
+    "gpt6": {
+      "requests": 226,
+      "input_tokens": 348030,
+      "output_tokens": 19995,
+      "usage_complete": true,
+      "estimated_usd": 4.4800499999999985,
+      "known_cost_subtotal_usd": 4.4800499999999985,
+      "unpriced_requests": 0,
+      "latency_p50_ms": 3607.4595,
+      "latency_p95_ms": 16330.28725,
+      "models": [
+        "gpt-6-astra-2026-09-03"
+      ],
+      "episodes": 2,
+      "successes": 2,
+      "steps": 915,
+      "wall_seconds": 1449.4754654159988,
+      "setup_seconds": 10.261998750000203,
+      "by_provider": {
+        "chat": {
+          "requests": 226,
+          "input_tokens": 348030,
+          "output_tokens": 19995,
+          "usage_complete": true,
+          "estimated_usd": 4.4800499999999985,
+          "known_cost_subtotal_usd": 4.4800499999999985,
+          "unpriced_requests": 0,
+          "latency_p50_ms": 3607.4595,
+          "latency_p95_ms": 16330.28725,
+          "models": [
+            "gpt-6-astra-2026-09-03"
+          ]
+        }
+      }
+    },
+    "gpt6-jev": {
+      "requests": 75,
+      "input_tokens": 170507,
+      "output_tokens": 18832,
+      "usage_complete": true,
+      "estimated_usd": 0.39400294199999986,
+      "known_cost_subtotal_usd": 0.39400294199999986,
+      "unpriced_requests": 0,
+      "latency_p50_ms": 1240.751,
+      "latency_p95_ms": 14607.5466,
+      "models": [
+        "gpt-6-astra-2026-09-03",
+        "jev-1.13.0"
+      ],
+      "episodes": 1,
+      "successes": 1,
+      "steps": 314,
+      "wall_seconds": 319.71568183300406,
+      "setup_seconds": 5.332425666005292,
+      "by_provider": {
+        "chat": {
+          "requests": 12,
+          "input_tokens": 23056,
+          "output_tokens": 3145,
+          "usage_complete": true,
+          "estimated_usd": 0.38781000000000004,
+          "known_cost_subtotal_usd": 0.38781000000000004,
+          "unpriced_requests": 0,
+          "latency_p50_ms": 10360.539499999999,
+          "latency_p95_ms": 19916.4866,
+          "models": [
+            "gpt-6-astra-2026-09-03"
+          ]
+        },
+        "jev": {
+          "requests": 63,
+          "input_tokens": 147451,
+          "output_tokens": 15687,
+          "usage_complete": true,
+          "estimated_usd": 0.006192942,
+          "known_cost_subtotal_usd": 0.006192942,
+          "unpriced_requests": 0,
+          "latency_p50_ms": 1074.521,
+          "latency_p95_ms": 10601.099699999995,
+          "models": [
+            "jev-1.13.0"
+          ]
+        }
+      }
+    }
+  }
+}

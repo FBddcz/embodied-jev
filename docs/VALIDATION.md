@@ -12,7 +12,11 @@
 
 页面中第二局相同 seed 的实测为 88 步、176 次请求、79.71 秒，也完成终态判定，下放失抓同样出现。两局均无图像输入和规则代选。
 
-[结果摘要与限制](JEV_RESULTS.md) · [完整输入、概率与物理记录](JEV_EVALUATION.md) · [带真实概率的 8 倍速动图](media/jev-hierarchical.gif)。Meta-World 层级对照的仿真接口、任务清单、worker 和回放脚本已随仓库发布；LIBERO/VLA 等后续路线仍未完成真实评测。
+[结果摘要与限制](JEV_RESULTS.md) · [完整输入、概率与物理记录](JEV_EVALUATION.md) · [带真实概率的 8 倍速动图](media/jev-hierarchical.gif)。Meta-World 层级对照的仿真接口、任务清单、worker 和回放脚本已随仓库发布。
+
+## LIBERO 真实视觉对照
+
+关抽屉与关微波炉两个开发任务，双相机 RGB-D 和本体反馈，每局 1200 秒。当前四局为纯 GPT-6 **2/2**、GPT-6 + Jev **1/2**，先发布三局成功录像。抽屉费用估算为 **$2.15002 / $0.39400**，混合组节省 **81.7%**；混合组微波炉待重测，全部失败和重试费用另计。当前没有训练好的 VLA。[结果与回放](results/libero-vision/RESULTS.md) · [方法](LIBERO_VISION.md)
 
 ## 逐步视觉规划
 

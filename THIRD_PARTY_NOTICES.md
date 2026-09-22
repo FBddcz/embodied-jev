@@ -15,3 +15,9 @@ MuJoCo is Apache-2.0. Three.js, Lucide, Vite, FastAPI, HTTPX and the other insta
 MiniCPM5-2B weights are downloaded only on explicit provider enablement and use. They are not included in the repository. See https://huggingface.co/openbmb/MiniCPM5-2B for the model card and applicable license.
 
 The repositories in `docs/REFERENCES.md` informed the architecture. Their source code, model weights and recorded performance results have not been copied into this implementation.
+
+## LIBERO experiment and gallery
+
+The optional simulator uses the external official LIBERO source/assets at commit `8f1084e3132a39270c3a13ebe37270a43ece2a01`, robosuite and MuJoCo. The downloader preserves LIBERO's LICENSE; simulator assets and Python environments are not vendored into this repository.
+
+[Dimweaker/jev-libero](https://github.com/Dimweaker/jev-libero/tree/3bdad985b225aeccc39fbe5863c6eea2e81c515a) informed the task selection, layered-control presentation and synchronized replay design. Its recordings, results and implementation are not redistributed here. This project's gallery uses its own recorded experiments.

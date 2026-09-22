@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101d25"><meta name="description" content="EmbodiedJev 行知实验室：探索 Jev 与 GPT-6 在 LIBERO、Meta-World 与 Panda 仿真中的真实决策、轨迹、速度和费用。">
+<title>行知实验室 · EmbodiedJev</title><link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./style.css"><script type="module" src="./app.js"></script>
+</head><body>
+<a class="skip" href="#experiments">跳到实验回放</a>
+<header class="masthead wrap">
+<a class="brand" href="./"><span class="brand-symbol" aria-hidden="true">行</span><span>EmbodiedJev <small>行知实验室</small></span></a>
+<nav aria-label="主导航"><a href="#experiments">实验回放</a><a href="#method">控制方式</a><a class="repo-link" href="https://github.com/FBddcz/embodied-jev" target="_blank" rel="noreferrer">GitHub ↗</a></nav></header>
+<main class="wrap">
+<section class="hero"><div><p class="eyebrow"><span class="live-dot"></span> THE EMBODIED DECISION LAB <span class="edition">/ 01</span></p>
+<h1>看见决策，<br><span>比较协作。</span></h1><p class="hero-copy">从一帧观测，到一次真实交互。<br>把模型的选择、机器人的动作与实验代价放在一起看。</p></div>
+<div class="hero-side"><div class="orbit" aria-hidden="true"><i></i><i></i><i></i><span>↗</span></div><p><strong>观察 → 规划 → 动作</strong><br>真实仿真 · 可追溯结果</p><div class="hero-label">LIBERO <span>/</span> META-WORLD <span>/</span> PANDA</div></div></section>
+<section id="experiments" aria-label="实验目录"><div class="section-line"><span class="eyebrow">EXPLORE THE EXPERIMENTS</span><span id="record-count" class="mono"></span></div>
+<div id="categories" class="category-tabs" role="group" aria-label="按实验环境筛选"></div><div id="cards" class="experiment-cards"></div>
+<p id="empty-state" class="empty-state" hidden>LIBERO 视觉对照正在验证中。完成真实运行后，这里会展示录像、决策和统计数据。</p></section>
+<section id="replay" class="replay" aria-label="交互实验回放" aria-busy="true">
+<div class="replay-heading"><span id="experiment-kicker" class="eyebrow"></span><span id="experiment-badge" class="badge"></span></div>
+<div class="replay-body"><div class="video-column">
+<div class="video-frame"><video id="video" controls playsinline preload="metadata" aria-label="实验录像"></video></div>
+<div class="video-caption"><p id="playback-note"></p><label>播放速度 <select id="speed" aria-label="播放速度"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select></label></div>
+<div class="experiment-heading"><h2 id="experiment-title"></h2><p id="experiment-description"></p></div></div>
+<aside id="decision-panel" class="decision-panel" aria-label="当前决策">
+<div class="panel-heading"><span class="eyebrow">INSIDE THE DECISION</span><span id="decision-index" class="mono">—</span></div>
+<label id="track-control" hidden>查看决策 <select id="decision-track" aria-label="查看哪组决策"></select></label>
+<p class="tiny-label">当前阶段</p><h3 id="stage">—</h3><p class="tiny-label">动作目的</p><p id="intent" class="decision-copy">选择一个实验，跟随真实记录查看。</p>
+<p class="tiny-label">可见依据 / 反馈</p><p id="evidence" class="muted"></p><div id="probabilities" class="probabilities"></div>
+<div class="decision-foot"><span id="latency" class="mono"></span><span id="probability-note"></span></div>
+<svg id="trajectory" viewBox="0 0 300 130" role="img" aria-label="末端 XY 轨迹"><path id="trajectory-grid" d="M20 30H280M20 65H280M20 100H280M65 10V120M150 10V120M235 10V120"/><path id="trajectory-path"/><circle id="trajectory-dot" r="4"/></svg>
+<span class="tiny-label">TCP / XY 轨迹 · 决策边界</span></aside></div>
+<div class="timeline-wrap"><div class="section-line"><span class="tiny-label">DECISION TRACK · 点击跳转</span><div class="step-controls"><button id="previous" aria-label="上一个决策">←</button><button id="next" aria-label="下一个决策">→</button></div></div><div id="timeline" class="timeline" aria-label="决策时间轴"></div></div>
+<div id="metrics" class="metrics"></div><div class="record-footer"><p id="experiment-note"></p><div id="record-links"></div></div></section>
+<section id="chart-section" class="chart-section" hidden><div class="section-line"><h2>结果与代价</h2><span class="tiny-label">同条件 · 小样本 · 独立判定</span></div><img id="chart" alt="本实验的成功率、请求延迟与用量对照" loading="lazy"></section>
+<section id="method" class="method-section"><div class="section-line"><div><p class="eyebrow">HOW THE COMPARISON WORKS</p><h2>让分工成为可测量的变量。</h2></div><a href="https://github.com/FBddcz/embodied-jev/blob/main/docs/LIBERO_VISION.md">方法与复现 ↗</a></div>
+<div class="method-grid">
+<article><span class="method-number">01 / OBSERVE</span><h3>共同的真实观测</h3><p>LIBERO 双相机 RGB-D 与机器人本体反馈。GPT-6 从图像选择目标，深度与标定把目标像素转换为三维航点。</p><span class="method-tag">RGB-D + PROPRIOCEPTION</span></article>
+<article><span class="method-number">02 / COLLABORATE</span><h3>纯 GPT-6，或 GPT-6 + Jev</h3><p>两组共用视觉规划与阶段检查。纯 GPT-6 组由 GPT-6 选择局部动作；混合组由 Jev 根据目标误差与实时反馈选择。</p><span class="method-tag">SAME WAYPOINT CONTRACT</span></article>
+<article><span class="method-number">03 / MEASURE</span><h3>动作、等待与费用都算</h3><p>相同初态、预算和官方成功条件。两层调用一起统计；回放注明时间口径，成功与失败都由实际轨迹说明。</p><span class="method-tag">OUTCOME · LATENCY · COST</span></article>
+</div><p class="scope-note">不同实验分别展示：Meta-World 使用结构化状态，Panda 包含自建技能与视觉演示，LIBERO 使用相机观测。当前没有接入训练好的 VLA，也不把开发子集当作完整 benchmark 排名。</p></section>
+<section class="start-section"><div><p class="eyebrow">FROM REPLAY TO YOUR OWN RUN</p><h2>在你的电脑上，<br>开始下一次实验。</h2><p>这里是公开的静态回放。实时仿真与模型调用在本地工作台运行。</p></div><div><pre><code>git clone https://github.com/FBddcz/embodied-jev.git
+cd embodied-jev
+# 按 README 安装，启动本地工作台
+embodied-jev serve --port 8090</code></pre><a class="primary-link" href="https://github.com/FBddcz/embodied-jev#-零机器人基础快速上手">安装与源代码 <span>↗</span></a></div></section></main>
+<footer class="wrap"><span>行而有据，知而能行。</span><span>EmbodiedJev · Open-source robotics experiments</span></footer>
+<noscript><p class="wrap">请启用 JavaScript 查看交互回放，或在 <a href="https://github.com/FBddcz/embodied-jev">GitHub</a> 查看视频与数据。</p></noscript>
+</body></html>

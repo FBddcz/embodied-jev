@@ -136,7 +136,7 @@ class MetaWorld:
 class Libero:
     def __init__(self, case, horizon, observation_mode="privileged"):
         from libero.libero import benchmark
-        from libero.libero.envs import ControlEnv
+        from libero.libero.envs.env_wrapper import ControlEnv
         self.case, self.steps, self.observation_mode = case, 0, observation_mode
         suite = benchmark.get_benchmark_dict()[case["suite"]](task_order_index=0)
         task_id = case["task_id"]

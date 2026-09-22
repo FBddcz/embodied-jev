@@ -18,6 +18,8 @@ jobs:
       - run: pytest -q
       - run: npx playwright install --with-deps chromium
       - run: npm run test:ui
+      - run: python scripts/build_site.py
+      - run: npm run test:site
       - uses: actions/upload-artifact@v4
         if: always()
         with:

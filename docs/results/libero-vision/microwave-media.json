@@ -1,0 +1,15 @@
+{
+  "speed": 8.0,
+  "fps": 15,
+  "duration_seconds": 106.46666666666667,
+  "wall_seconds": 835.244601792001,
+  "timeline": "shared rollout wall time including all model waits; setup excluded",
+  "video_sha256": "0ce0005e56d1cad8daa349d651dfa03580c84a9252e7788f6fecfc73eb269724",
+  "episodes": [
+    {
+      "sha256": "65b0dc8fccc8e473c95923c412c63bdf7a09978266f46eeb5d73ec0717dc943c",
+      "mode": "gpt6",
+      "success": true
+    }
+  ]
+}

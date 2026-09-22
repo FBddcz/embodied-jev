@@ -42,6 +42,9 @@ def main():
     evaluate.add_argument("--control-mode", choices=["skills", "incremental", "hierarchical"], default="skills")
     evaluate.add_argument("--observation-mode", choices=["privileged", "rgbd", "vision"], default="privileged")
     sub.add_parser("warmup", help="Load MiniCPM5-2B and make a real two-candidate decision")
+    libero = sub.add_parser("libero-compare", help="Paired LIBERO camera-grounded GPT-only / GPT+Jev control")
+    from .libero_compare import add_arguments
+    add_arguments(libero)
     args = parser.parse_args()
     if args.command == "serve":
         import uvicorn
@@ -59,6 +62,14 @@ def main():
         result = policy.choose({"purpose": "Model loading test; no robot motion"},
             "Select ready to indicate readiness.", {"ready": "Ready", "hold": "Hold"}, "ready", [])
         print(json.dumps({"runtime": minicpm_status(), "decision": result}, ensure_ascii=False, indent=2))
+    elif args.command == "libero-compare":
+        from .libero_compare import run
+        try:
+            report = run(args)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        if not report["complete"]:
+            raise SystemExit(2)
     elif args.command == "evaluate":
         from .evaluation import run
         try:

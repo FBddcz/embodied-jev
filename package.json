@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "build:site": "python3 scripts/build_site.py",
+    "test:site": "playwright test --config playwright.site.config.js"
   },
   "dependencies": {
     "three": "0.180.0",

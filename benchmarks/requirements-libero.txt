@@ -1,0 +1,18 @@
+# Isolated simulator environment; do not install over the workbench environment.
+# LIBERO source/assets: 8f1084e3132a39270c3a13ebe37270a43ece2a01
+mujoco==3.5.0
+robosuite==1.4.1
+numpy==1.26.4
+torch==2.2.2
+gym==0.26.2
+bddl==3.6.0
+easydict>=1.9,<2
+PyYAML>=6,<7
+matplotlib>=3.5,<4
+opencv-python>=4.6,<4.12
+cloudpickle>=2,<4
+h5py>=3.8,<4
+imageio>=2.31,<3
+Pillow>=11,<13
+tqdm>=4.65,<5
+scipy>=1.10,<2
