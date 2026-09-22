@@ -158,9 +158,9 @@ test("community replay shows attribution, task and unknown costs without affecti
   const catalog = await (await request.get("/catalog.json")).json();
   const projectCount = catalog.experiments.length;
   const item = { ...catalog.experiments[0], id: "community-test-record", origin: "community",
-    title: "社区测试作品", author: { name: "测试作者 <b>literal</b>", github: "example-author", url: "https://github.com/example-author" },
+    title: "社区测试作品" + "x".repeat(100), author: { name: "测试作者 <b>literal</b>" + "x".repeat(70), github: "example-author", url: "https://github.com/example-author" },
     date: "2026-09-22", task: "推软块 · seed 2", method: "规则选择器", result: "partial",
-    badge: "社区复现 · 测试作者 · 2026-09-22", poster: "", chart: "", decisions: [], decision_tracks: [],
+    badge: "社区复现 · 测试作者" + "x".repeat(70) + " · 2026-09-22", poster: "", chart: "", decisions: [], decision_tracks: [],
     metrics: [{ label: "费用估算", value: "未提供" }],
     note: "社区作者自行报告，尚未经项目独立复核；不计入项目官方实验统计。",
   };
