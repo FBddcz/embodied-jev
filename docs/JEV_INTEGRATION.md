@@ -20,10 +20,25 @@
 | [robojev · 76ebe5c](https://github.com/alee792/robojev/tree/76ebe5c964fef105e3f2e44e0c5315f1519b5e78) | WidowX 真机实验；Jev 选目标、放置关系、动作基元；事件触发调用，丢弃过期响应 | 对 Piper 最有借鉴价值的是执行循环与推理分离。作者坦承对一个纸杯和桌面高度拟合；场景相机、VLM 命名层等未在真机闭环验证 |
 | [UR5e + Jev · ffffb2e](https://github.com/JoeSun-421/robotic_agent_use_jev/tree/ffffb2e27edd4717970e5c03fbbbb2a90a979a33) | Qwen 视觉分类，Jev 选目标、双臂调度、运动类别和恢复策略；代码执行 IK | 借鉴双臂分工和技能选择。但执行端仍绑定仿真物体／箱体坐标，不等于全链路只靠真实视觉；公开演示仍待补齐 |
 | [OpenRoboto · 7a4ed8b](https://github.com/openroboto-ai/jev-robot-control/tree/7a4ed8b72c3c17d7aa790678ed9660df67c10dd3) | 意图 → XYZ／夹爪选择；结构化几何和接触输入 | 与现有 Meta-World 分层接法接近；公开对比每模型仅一局、非相机感知，不能据此证明通用机器人能力 |
+| [Jev-as-Policy · cac97e7](https://github.com/YuanKJing/Jev-as-Policy/tree/cac97e79845bf56a5b2ef0e6d4928238bf5caee7) | 意图 → XYZ／夹爪选择；连续 Cartesian servo；API 等待期间继续执行；抓取／下放阶段降速；新观测重新计算目标 | 结构最接近当前控制器，但仓库明确是 **MuJoCo 仿真、无硬件驱动**；几何、接触和抓取状态来自仿真真值，不能当相机 VLA 结果 |
 | [RoboJEV · 30f0aae](https://github.com/lykycy123/RoboJEV/tree/30f0aae82db1d96e4977a95321990238597c83e0) | 结构化状态与分层选择；独立规则基线、多种子 | 借鉴评价方法。新挑战集跨障碍抓放为 Jev 5/10、规则 8/10，提醒我们必须实测 Jev 相比规则是否有额外收益 |
 | [jev-realtime-sdk · 61ad2bf](https://github.com/chy4pro/jev-realtime-sdk/tree/61ad2bf5f37e0159185d9430b3d127a70b507fc8) | 代码执行快循环，Jev 执行慢决策循环；动作有效期、过期响应处理 | 借鉴软件接口。该版本只验证模拟执行器，尚无真实执行器部署，不能当作真机成熟度证据 |
+| [Piper Astra + Jev · 10d671e](https://github.com/RobotKitAI/piper-astra-jev/tree/10d671e01d467475084033e7af9f6595886ab7b3) | 真实 AgileX Piper；Astra 直接看图；Jev 配合 Grounding DINO／SAM3；夹爪状态确认后才允许抬升；深度失效时用物体几何 | 最贴近后续 Piper 试验的公开参考。8 个单次演示不是成功率基准；代码、硬件和相机标定仍需逐项复核 |
 
 **jev-libero 跑得好，包含候选生成、物理预演和任务条件的贡献。** 它的 `microwave.json` 直接向选择器提供预测关门角度、目标接触、障碍力和是否完成；Jev 从已有这些证据的候选里选择。物理预测来自 MuJoCo，不是 Jev 自己预测未来画面。[任务配置源码](https://github.com/Dimweaker/jev-libero/blob/3bdad985b225aeccc39fbe5863c6eea2e81c515a/src/jev_libero/tasks/microwave.json) · [分层选择](https://github.com/Dimweaker/jev-libero/blob/3bdad985b225aeccc39fbe5863c6eea2e81c515a/src/jev_libero/policy.py)
+
+### Jev-as-Policy 具体能借什么
+
+它的代码把已知几何计算留在本地：根据意图生成当前 Cartesian 目标，Jev 只选择每轴方向和夹爪动作；随后用阻尼最小二乘 IK 和连续伺服跟踪目标。API 等待时，物理线程继续按当前短命令运行；命令有过期时间，暂停／重置通过 generation 丢弃旧结果；接近抓取和下放高度时降低速度。依赖观测更新的目标会在下一次决策前重新读取，而不是沿用请求开始时的旧状态。
+
+这些做法适合移植到本项目的**执行层**，但不能原样解决微波炉失败：Jev-as-Policy 的仿真 `observation()` 可以直接读取物体坐标、关节、接触几何和 `cube_on_goal`。本项目真视觉路径必须由相机跟踪、夹爪电流／位置或力传感器提供同等的“抓住／接触／物体有进展”证据；未知就保持未知，不能用 TCP 位移代替。
+
+### 对 Piper 的实际落地顺序
+
+1. 先用 `RobotKitAI/piper-astra-jev` 的**只读标定和无力矩检查**复核 192.168.4.4 上的 Piper 型号、CAN 接口、相机和夹爪反馈；不直接启用电机。
+2. 在仿真中实现 Jev-as-Policy 的双循环：本地 20–50 Hz 限位／过期／急停层，Jev 只在动作边界或进展变化时做低频 Choice。
+3. 真机先做单臂低速、空载、无物体的末端跟踪，再做夹爪闭合状态确认，最后才做单物体抓放。GPT-6 与 GPT-6 + Jev 必须共享感知、IK、速度和安全层。
+4. 每局记录观测时间戳、模型请求、命令过期、夹爪闭合宽度／电流、目标位移和人工急停；比较纯 GPT-6、GPT-6 + Jev、确定性规则三组。
 
 ## 适合 LIBERO 和 Piper 的接法
 
