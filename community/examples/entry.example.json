@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "your-libero-task-2026-09-22",
+  "author": {"name": "你的展示名字", "github": "your-github-name"},
+  "date": "2026-09-22",
+  "task": "填写实际运行的任务名称、任务编号和 seed",
+  "environment": "libero",
+  "method": "填写真实模型版本和控制方式，例如 GPT-6 + Jev",
+  "result": "partial",
+  "protocol": "https://github.com/your-github-name/your-repo/blob/main/PROTOCOL.md",
+  "reproduction_url": "https://github.com/your-github-name/your-repo/blob/main/README.md",
+  "source_url": "https://github.com/your-github-name/your-repo",
+  "video_url": "https://your-github-name.github.io/your-repo/replay.mp4",
+  "description": "这是填写模板，不是真实实验成绩。请替换全部示例字段后投稿。",
+  "playback": "请填写是否加速、加速倍数，以及是否省略模型等待时间。",
+  "metrics": {"steps": null, "wall_seconds": null, "estimated_cost_usd": null}
+}

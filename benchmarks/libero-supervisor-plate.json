@@ -1,0 +1,15 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "libero-supervisor-v2-push-plate-dev",
+  "backend": "libero",
+  "split": "development",
+  "cases": [
+    {
+      "id": "push-plate-init0",
+      "suite": "libero_goal",
+      "task_id": 5,
+      "init_index": 0,
+      "seed": 0
+    }
+  ]
+}

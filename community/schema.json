@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EmbodiedJev community reproduction entry",
+  "description": "Community self-reported recording. Run scripts/community_entries.py --validate for additional URL, date, filename, and filesystem checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "author", "date", "task", "environment", "method", "result", "protocol", "reproduction_url", "source_url", "video_url"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?$"},
+    "author": {
+      "type": "object", "additionalProperties": false, "required": ["name", "github"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 100},
+        "github": {"type": "string", "pattern": "^(?!.*--)[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"}
+      }
+    },
+    "date": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "task": {"type": "string", "minLength": 1, "maxLength": 200},
+    "environment": {"enum": ["libero", "metaworld", "panda", "other"]},
+    "method": {"type": "string", "minLength": 1, "maxLength": 200},
+    "result": {"enum": ["success", "failure", "partial"]},
+    "protocol": {"$ref": "#/$defs/githubUrl"},
+    "reproduction_url": {"$ref": "#/$defs/githubUrl"},
+    "source_url": {"$ref": "#/$defs/githubUrl"},
+    "video_url": {"$ref": "#/$defs/videoUrl"},
+    "poster_url": {"$ref": "#/$defs/imageUrl"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 120},
+    "description": {"type": "string", "minLength": 1, "maxLength": 1200},
+    "playback": {"type": "string", "minLength": 1, "maxLength": 500},
+    "metrics": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "steps": {"type": ["integer", "null"], "minimum": 0},
+        "wall_seconds": {"type": ["number", "null"], "minimum": 0},
+        "estimated_cost_usd": {"type": ["number", "null"], "minimum": 0},
+        "cost_basis": {"type": "string", "minLength": 1, "maxLength": 500}
+      },
+      "if": {"required": ["estimated_cost_usd"], "properties": {"estimated_cost_usd": {"type": "number"}}},
+      "then": {"required": ["cost_basis"]}
+    }
+  },
+  "$defs": {
+    "githubUrl": {"type": "string", "format": "uri", "maxLength": 2048, "pattern": "^https://github\\.com/[A-Za-z0-9-]+/[^/?#]+(?:/[^?]*)?(?:#[^?]*)?$"},
+    "mediaUrl": {"type": "string", "format": "uri", "maxLength": 2048, "pattern": "^https://(?:github\\.com/user-attachments/assets/[^/?#]+|github\\.com/[^/?#]+/[^/?#]+/raw/[^?#]+|raw\\.githubusercontent\\.com/[^/?#]+/[^/?#]+/[^/?#]+/[^?#]+|user-images\\.githubusercontent\\.com/[^/?#]+/[^?#]+|[a-z0-9-]+\\.github\\.io/[^?#]+)$"},
+    "videoUrl": {
+      "allOf": [
+        {"$ref": "#/$defs/mediaUrl"},
+        {"pattern": "(?:^https://github\\.com/user-attachments/assets/[^/?#]+|\\.(?:[mM][pP]4|[wW][eE][bB][mM]))$"}
+      ]
+    },
+    "imageUrl": {
+      "allOf": [
+        {"$ref": "#/$defs/mediaUrl"},
+        {"pattern": "(?:^https://github\\.com/user-attachments/assets/[^/?#]+|\\.(?:[pP][nN][gG]|[jJ][pP][eE]?[gG]|[wW][eE][bB][pP]))$"}
+      ]
+    }
+  }
+}

@@ -1,12 +1,18 @@
 """Build the gallery using only explicitly selected published records."""
 import argparse
 import gzip
+import importlib.util
 import json
 from pathlib import Path
 import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
 REPO = "https://github.com/FBddcz/embodied-jev"
+
+# Resolve beside this script so CLI and import-based build checks use the same validator.
+_community_spec = importlib.util.spec_from_file_location("community_entries", Path(__file__).with_name("community_entries.py"))
+_community = importlib.util.module_from_spec(_community_spec)
+_community_spec.loader.exec_module(_community)
 
 
 def build(output):
@@ -75,12 +81,23 @@ def build(output):
             "decisions": decisions, "links": [link("实验说明", doc), link("原始数据", f"docs/results/{record}.json.gz")]})
     published = ROOT / "docs/results/libero-vision/index.json"
     if published.exists():
-        libero = json.loads(published.read_text())
-        for item in libero["experiments"]:
+        legacy = [item for item in json.loads(published.read_text())["experiments"]
+                  if item["id"] in {"libero-drawer", "libero-microwave"}]
+        for item in legacy:
             for field in ("video", "poster", "chart", "download"):
                 if item.get(field):
                     asset(item[field])
-        experiments = libero["experiments"] + experiments
+        experiments = legacy + experiments
+    supervised = ROOT / "docs/results/libero-supervisor-plate/index.json"
+    if supervised.exists():
+        latest = json.loads(supervised.read_text())["experiments"]
+        for item in latest:
+            for field in ("video", "poster", "chart", "download"):
+                if item.get(field):
+                    asset(item[field])
+        replaced = {item["id"] for item in latest}
+        experiments = latest + [item for item in experiments if item["id"] not in replaced]
+    experiments.extend(_community.load_entries(ROOT))
     catalog = {"format": "embodied-jev-gallery-v1", "repository": REPO, "experiments": experiments,
                "categories": [{"id": "all", "label": "全部实验"}, {"id": "libero", "label": "LIBERO · 视觉协作"},
                               {"id": "metaworld", "label": "Meta-World · 标准任务"}, {"id": "panda", "label": "Panda · 机制演示"}]}

@@ -28,28 +28,53 @@ function renderCategories() {
   }));
 }
 function filtered() {
-  return catalog.experiments.filter((item) => category === "all" || item.category === category);
+  return catalog.experiments.filter((item) => item.origin !== "community" && (category === "all" || item.category === category));
+}
+function card(entry) {
+  const button = node("button", undefined, "experiment-card");
+  button.type = "button"; button.setAttribute("aria-pressed", String(selected?.id === entry.id));
+  let cover;
+  if (entry.poster) {
+    cover = node("img", undefined, "card-image");
+    cover.src = entry.poster; cover.alt = ""; cover.loading = "lazy";
+  } else {
+    cover = node("div", "▶", "card-image card-placeholder");
+    cover.setAttribute("aria-hidden", "true");
+  }
+  const copy = node("div", undefined, "card-copy");
+  copy.append(node("small", entry.kicker), node("strong", entry.title), node("p", entry.badge));
+  if (entry.origin === "community") {
+    copy.append(node("p", "@" + entry.author.github + " · " + entry.method, "card-author"),
+      node("p", "任务：" + entry.task), node("p", "作者报告：" + resultLabel(entry.result)));
+  }
+  button.append(cover, copy);
+  button.addEventListener("click", () => {
+    select(entry.id);
+    if (entry.origin === "community") $("replay").scrollIntoView({ block: "start" });
+  });
+  return button;
+}
+function resultLabel(result) { return { success: "成功", failure: "未完成", partial: "部分完成" }[result] || result; }
+function renderCommunity() {
+  const entries = catalog.experiments.filter((entry) => entry.origin === "community");
+  text("community-count", entries.length + " CONTRIBUTIONS");
+  $("community-empty").hidden = entries.length > 0;
+  $("community-cards").replaceChildren(...entries.map(card));
 }
 function renderCards() {
   const entries = filtered();
   $("empty-state").hidden = entries.length > 0;
   text("record-count", entries.length + " RECORDED EXPERIMENTS");
-  $("cards").replaceChildren(...entries.map((entry) => {
-    const button = node("button", undefined, "experiment-card");
-    button.type = "button"; button.setAttribute("aria-pressed", String(selected?.id === entry.id));
-    const image = node("img", undefined, "card-image");
-    image.src = entry.poster; image.alt = ""; image.loading = "lazy";
-    const copy = node("div", undefined, "card-copy");
-    copy.append(node("small", entry.kicker), node("strong", entry.title), node("p", entry.badge));
-    button.append(image, copy);
-    button.addEventListener("click", () => select(entry.id));
-    return button;
-  }));
+  $("cards").replaceChildren(...entries.map(card));
+  renderCommunity();
 }
-function select(id) {
-  selected = catalog.experiments.find((item) => item.id === id) || catalog.experiments[0];
+function select(id, { updateHash = true } = {}) {
+  const currentId = id === "libero-v2-microwave" ? "libero-microwave" : id;
+  selected = catalog.experiments.find((item) => item.id === currentId) || catalog.experiments[0];
   if (!selected) return;
-  video.pause(); video.src = selected.video; video.poster = selected.poster;
+  video.pause(); video.src = selected.video;
+  if (selected.poster) video.poster = selected.poster;
+  else video.removeAttribute("poster");
   video.playbackRate = Number($("speed").value);
   video.load(); activeIndex = -1; pendingSeek = null; activeTrack = 0;
   const tracks = selected.decision_tracks || [];
@@ -59,10 +84,26 @@ function select(id) {
   }));
   $("replay").hidden = false;
   $("replay").classList.toggle("wide", !decisionsForSelection().length);
+  $("decision-panel").hidden = !decisionsForSelection().length;
+  document.querySelector(".timeline-wrap").hidden = !decisionsForSelection().length;
   $("replay").setAttribute("aria-busy", "false");
   text("experiment-kicker", selected.kicker); text("experiment-badge", selected.badge);
   text("experiment-title", selected.title); text("experiment-description", selected.description);
   text("playback-note", selected.playback); text("experiment-note", selected.note);
+  const details = $("contributor-details");
+  details.hidden = selected.origin !== "community";
+  details.replaceChildren();
+  if (!details.hidden) {
+    const author = node("a", selected.author.name + " (@" + selected.author.github + ")");
+    author.href = selected.author.url; author.target = "_blank"; author.rel = "noreferrer";
+    for (const [label, value] of [["👤 作者", author], ["📅 实验日期", selected.date],
+      ["🧪 任务", selected.task], ["🧠 方法", selected.method], ["📋 作者报告", resultLabel(selected.result)]]) {
+      const field = node("div"), data = node("dd");
+      if (typeof value === "string") data.textContent = value;
+      else data.append(value);
+      field.append(node("dt", label), data); details.append(field);
+    }
+  }
   $("metrics").replaceChildren(...selected.metrics.map((item) => {
     const cell = node("div", undefined, "metric");
     cell.append(node("span", item.label), node("strong", item.value)); return cell;
@@ -78,7 +119,7 @@ function select(id) {
   if (selected.chart) $("chart").src = selected.chart;
   else $("chart").removeAttribute("src");
   renderTimeline();
-  history.replaceState(null, "", "#run=" + encodeURIComponent(selected.id));
+  if (updateHash) history.replaceState(null, "", "#run=" + encodeURIComponent(selected.id));
   renderCards(); updateDecision(true);
 }
 function renderTimeline() {
@@ -90,7 +131,7 @@ function renderTimeline() {
     button.addEventListener("click", () => seek(i)); return button;
   }));
   if (!decisions.length) {
-    $("timeline").append(node("span", "六局决策已叠加在录像画面内；可暂停或调整播放速度查看。", "timeline-note"));
+    $("timeline").append(node("span", "此录像未提供逐步决策时间轴。", "timeline-note"));
   }
 }
 function seek(index) {
@@ -105,9 +146,9 @@ function seek(index) {
 function updateDecision(force = false, at = pendingSeek ?? video.currentTime) {
   const decisions = decisionsForSelection();
   if (!decisions.length) {
-    text("stage", "六局并排对照"); text("intent", "观看录像内的阶段、动作和模型决策。");
+    text("stage", "实验录像"); text("intent", "观看录像与作者提供的复现说明。");
     text("evidence", selected?.note); text("latency", "");
-    text("probability-note", "各回合数据见原始记录"); text("decision-index", "6 PAIRS");
+    text("probability-note", "各回合数据见原始记录"); text("decision-index", "—");
     $("probabilities").replaceChildren();
     $("trajectory-path").setAttribute("d", ""); $("trajectory-dot").setAttribute("visibility", "hidden");
     $("previous").disabled = $("next").disabled = true; return;
@@ -176,13 +217,20 @@ $("decision-track").addEventListener("change", () => {
 });
 $("previous").addEventListener("click", () => seek(activeIndex - 1));
 $("next").addEventListener("click", () => seek(activeIndex + 1));
+window.addEventListener("hashchange", () => {
+  if (!catalog) return;
+  const id = new URLSearchParams(location.hash.slice(1)).get("run");
+  if (id && id !== selected?.id) select(id);
+});
 try {
   const response = await fetch("./catalog.json");
   if (!response.ok) throw new Error("catalog unavailable");
   catalog = await response.json();
   renderCategories();
   const id = new URLSearchParams(location.hash.slice(1)).get("run");
-  select(id || catalog.experiments[0]?.id);
+  const section = !id && location.hash ? location.hash.slice(1) : null;
+  select(id || catalog.experiments[0]?.id, { updateHash: !section });
+  if (section) $(section)?.scrollIntoView({ block: "start" });
 } catch {
   $("empty-state").hidden = false; text("empty-state", "实验目录暂时无法加载。请刷新页面，或前往 GitHub 查看原始视频与结果。");
   $("replay").hidden = true;

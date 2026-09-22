@@ -1,0 +1,108 @@
+name: "🎬 社区复现投稿"
+description: "把你的实验、录像和署名提交到 EmbodiedJev 展示页。"
+title: "[社区复现] 平台 · 任务 · 方法"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎分享成功、失败或部分完成的真实记录！提交后由维护者整理为 PR，合并后出现在展示页。
+        投稿标记为作者报告，不自动计入项目实验统计。请勿上传 API 密钥。
+  - type: input
+    id: author_name
+    attributes:
+      label: 展示名字
+      placeholder: "小明"
+    validations:
+      required: true
+  - type: input
+    id: author_github
+    attributes:
+      label: GitHub 用户名
+      placeholder: "your-github-name，不带 @ 或网址"
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: 实际实验日期
+      placeholder: "YYYY-MM-DD"
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 仿真平台
+      options:
+        - libero
+        - metaworld
+        - panda
+        - other
+    validations:
+      required: true
+  - type: input
+    id: task
+    attributes:
+      label: 任务、任务 ID 与 seed／初始状态
+    validations:
+      required: true
+  - type: input
+    id: method
+    attributes:
+      label: 模型实际版本与控制方法
+      placeholder: "GPT-6 + Jev；注明模型返回版本和架构"
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: 运行结果
+      options:
+        - success（成功）
+        - failure（未完成）
+        - partial（部分完成）
+    validations:
+      required: true
+  - type: textarea
+    id: video
+    attributes:
+      label: 录像和可选封面
+      description: "拖入 MP4 或粘贴 GitHub 附件／raw／github.io 直接链接，注明加速倍数及是否省略模型等待。"
+    validations:
+      required: true
+  - type: input
+    id: protocol
+    attributes:
+      label: 实验协议链接
+      description: "公开 GitHub 链接，包含观测、预算、seed 与成功判定。"
+      placeholder: "https://github.com/OWNER/REPO/blob/main/PROTOCOL.md"
+    validations:
+      required: true
+  - type: input
+    id: reproduction_url
+    attributes:
+      label: 复现步骤链接
+      description: "公开 GitHub 链接，包含依赖版本与实际运行命令。"
+      placeholder: "https://github.com/OWNER/REPO/blob/main/README.md"
+    validations:
+      required: true
+  - type: input
+    id: source_url
+    attributes:
+      label: 代码与结果链接
+      description: "公开 GitHub 链接，推荐固定到本次运行的 commit。"
+      placeholder: "https://github.com/OWNER/REPO/tree/COMMIT"
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: 可选指标
+      description: "步数、实际总耗时、美元费用及计费来源；未知请留空，不要用 0 代替。"
+      placeholder: "steps / wall_seconds / estimated_cost_usd / cost_basis"
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: 公开展示
+      options:
+        - label: "我有权公开这些内容，同意展示页保留我的名字、GitHub 账号、日期及实验信息，结果按作者报告标注。"
+          required: true

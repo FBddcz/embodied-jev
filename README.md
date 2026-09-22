@@ -2,6 +2,17 @@
 
 # 🤖 EmbodiedJev · 行知
 
+## 🌐 [点击进入在线实验展示 →](https://fbddcz.github.io/embodied-jev/)
+
+**🎬 直接看真实录像 · 🆚 对比模型决策 · ⚡ 看速度 · 💰 看费用**
+
+[![在线实验展示](https://img.shields.io/badge/🌐_LIVE_DEMO-打开行知实验室-237b55?style=for-the-badge)](https://fbddcz.github.io/embodied-jev/)
+[![社区复现投稿](https://img.shields.io/badge/🤝_COMMUNITY-上传你的复现-7358b8?style=for-the-badge)](https://github.com/FBddcz/embodied-jev/issues/new?template=community-reproduction.yml)
+
+**无需安装，打开就能看。** 🤝 欢迎分享你的复现，展示 **名字 · GitHub 账号 · 日期 · 任务 · 方法 · 结果**！
+
+[🎥 浏览实验](https://fbddcz.github.io/embodied-jev/#experiments) · [🧑‍🔬 社区作品](https://fbddcz.github.io/embodied-jev/#community) · [📖 投稿与复现指南](docs/COMMUNITY.md)
+
 ### 把具身 AI 实验，搬到你的浏览器里。
 
 **📦 开箱体验三大仿真任务 · 🧠 本地小模型 / 云端 API · 🎮 看得见的每一步决策**
@@ -222,7 +233,7 @@ embodied-jev serve --port 8090
 
 **双相机 RGB-D 真实观测；每局成功或运行满 1200 秒停止。** 两组使用同一任务、初态和控制接口，分别由 GPT-6 或 Jev 选择局部动作。
 
-**先发布三局成功录像。** 混合组微波炉在 1120 步、1200 秒内未完成，分析后待重测；当前四局结果为纯 GPT-6 **2/2**、混合组 **1/2**。
+**保留抽屉两组对照与纯 GPT-6 成功关微波炉的三局录像。** v1 四局开发测试为纯 GPT-6 **2/2**、混合组 **1/2**。新版候选选择器已实现，推盘子测试已暂停，尚无完整配对结果；不同协议分别统计。
 
 | 任务 | 模式 | 结果 | 本局费用估算 | 总耗时 |
 | --- | --- | --- | --- | --- |
@@ -239,6 +250,10 @@ embodied-jev serve --port 8090
 [🎬 关抽屉 MP4](docs/media/libero-drawer-comparison.mp4) · [🎬 关微波炉 MP4](docs/media/libero-microwave-comparison.mp4) · [结果与全部费用](docs/results/libero-vision/RESULTS.md) · [安装与复现](docs/LIBERO_VISION.md)
 
 **[🌐 在线实验展示页](https://fbddcz.github.io/embodied-jev/)** 按 LIBERO、Meta-World 和 Panda 分类，展示真实录像、决策时间轴与结果。运行 `python scripts/build_site.py`、`python scripts/serve_site.py --port 8123`，打开 [本地实验展示页](http://127.0.0.1:8123)。[GitHub Pages 部署方式](site/README.md)使用静态回放，实时仿真在本地运行。
+
+**🤝 你的复现，也可以出现在这里。** [填写投稿表并上传录像](https://github.com/FBddcz/embodied-jev/issues/new?template=community-reproduction.yml)，或按[投稿指南](docs/COMMUNITY.md)提交结果 JSON 的 PR；收录后自动展示作者、账号、日期、任务、方法和结果。成功与失败都欢迎，社区记录注明「作者报告」。
+
+**🦾 下一步：双臂 Piper 真机实验。** [部署方案](docs/PIPER_DEPLOYMENT.md)已整理共同感知、GPT-6／Jev 候选选择对照、坐标标定和分阶段验收。目前为方案阶段，尚未部署或执行真机动作。
 
 ### 🧩 预设技能：三个任务，九局实验
 

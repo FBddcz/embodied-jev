@@ -1,0 +1,15 @@
+{
+  "format": "embodied-jev-suite-v1",
+  "name": "libero-supervisor-v2-microwave-dev",
+  "backend": "libero",
+  "split": "development",
+  "cases": [
+    {
+      "id": "microwave-init0",
+      "suite": "libero_90",
+      "task_id": 33,
+      "init_index": 0,
+      "seed": 0
+    }
+  ]
+}

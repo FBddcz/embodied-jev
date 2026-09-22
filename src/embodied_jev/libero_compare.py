@@ -55,6 +55,9 @@ def verify_pair(reference, current):
 
 
 def run_episode(args, case, mode, directory, connections, reference=None):
+    if getattr(args, "architecture", "waypoint-v1") == "supervisor-v2" and mode != "noop":
+        from .libero_supervisor import run_episode as supervised_episode
+        return supervised_episode(args, case, mode, directory, connections, reference)
     wall_time = getattr(args, "budget_mode", "bounded") == "wall-time"
     directory.mkdir(parents=True, exist_ok=False)
     (directory / "frames").mkdir()
@@ -195,10 +198,15 @@ def run(args):
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=False)
     frozen = source_hashes()
+    architecture = getattr(args, "architecture", "waypoint-v1")
+    version = PROTOCOL
+    if architecture == "supervisor-v2":
+        from .libero_supervisor import PROTOCOL as version
+        frozen["libero_supervisor.py"] = hashlib.sha256(Path(__file__).with_name("libero_supervisor.py").read_bytes()).hexdigest()
     (output / "reproduction").mkdir()
-    for name in SOURCES:
+    for name in frozen:
         shutil.copy2(Path(__file__).with_name(name), output / "reproduction" / name)
-    protocol = {"version": PROTOCOL, "created_at": datetime.now(timezone.utc).isoformat(),
+    protocol = {"version": version, "architecture": architecture, "created_at": datetime.now(timezone.utc).isoformat(),
                 "manifest": manifest, "modes": args.modes, "source_sha256": frozen,
                 "budget": {name: getattr(args, name) for name in ("max_steps", "max_calls", "timeout", "max_usd", "action_repeat", "action_scale", "camera_size")},
                 "pricing": {"jev_input_per_million": .042, "jev_output_per_million": 0,
@@ -207,6 +215,14 @@ def run(args):
                     "note": "Uncached public-rate estimate; proxy invoices and cache discounts may differ. Unknown usage is not zero."},
                 "design": "Both modes use the same GPT visual planner, RGB-D grounding and checkpoint rules. GPT-only uses GPT local control; hybrid uses Jev local control. Custom development subset, not a full LIBERO score."}
     protocol["budget"]["mode"] = getattr(args, "budget_mode", "bounded")
+    if architecture == "supervisor-v2":
+        protocol["design"] = ("Both modes use temporal BEFORE/NOW dual-camera GPT candidate generation (2-3 candidates), "
+            "then GPT or Jev selects one candidate with normal/cautious speed or reobserve. "
+            "Both execute identical deterministic numeric servo for at most four blocks per checkpoint. "
+            "No object ground truth, force/contact truth or future simulation results enter models. "
+            "New architecture: not a single-factor comparison with waypoint-v1.")
+        protocol["candidate_control"] = {"max_blocks": 4, "cautious_magnitude_multiplier": .4,
+            "stall_blocks": 2, "stall_movement_m": .001, "observation": "previous and current external/wrist RGB + calibrated depth grounding"}
     if protocol["budget"]["mode"] == "wall-time":
         protocol["budget"].update(max_steps=None, max_calls=None,
             stopping_rule="official success or rollout wall deadline; cost admission guard remains active")
@@ -223,7 +239,7 @@ def run(args):
     for case in manifest["cases"]:
         reference = None
         for mode in args.modes:
-            if source_hashes() != frozen:
+            if any(hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() != digest for name, digest in frozen.items()):
                 raise ValueError("Source changed after protocol freeze; start a fresh experiment")
             row = run_episode(args, case, mode, output / mode / case["id"], connections, reference)
             if reference is None and "metadata" in row:
@@ -234,12 +250,14 @@ def run(args):
             if row["status"] in {"setup_error", "runtime_error", "interrupted"}:
                 return report
     report["complete"] = True
-    report["sources_unchanged"] = source_hashes() == frozen
+    report["sources_unchanged"] = all(hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() == digest for name, digest in frozen.items())
     write_json(output / "summary.json", report)
     return report
 
 
 def add_arguments(parser):
+    parser.add_argument("--architecture", choices=["waypoint-v1", "supervisor-v2"], default="waypoint-v1",
+                        help="supervisor-v2 uses temporal visual candidates, one semantic selection and code-owned servo")
     parser.add_argument("--budget-mode", choices=["bounded", "wall-time"], default="bounded",
                         help="wall-time stops at success/deadline without step or request caps; keeps the cost guard")
     parser.add_argument("--manifest", required=True)

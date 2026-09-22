@@ -146,9 +146,13 @@ class Worker:
             except subprocess.TimeoutExpired:
                 self.process.kill()
                 self.process.wait()
-        self.process.stdin.close()
-        self.process.stdout.close()
-        self.log.close()
+        # A dead child can raise again while closing buffered stdin. Cleanup
+        # must not replace the original error or prevent saving episode costs.
+        for handle in (self.process.stdin, self.process.stdout, self.log):
+            try:
+                handle.close()
+            except (OSError, ValueError):
+                pass
 
 
 def motor_questions():

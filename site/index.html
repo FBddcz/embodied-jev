@@ -9,10 +9,10 @@
 <a class="skip" href="#experiments">跳到实验回放</a>
 <header class="masthead wrap">
 <a class="brand" href="./"><span class="brand-symbol" aria-hidden="true">行</span><span>EmbodiedJev <small>行知实验室</small></span></a>
-<nav aria-label="主导航"><a href="#experiments">实验回放</a><a href="#method">控制方式</a><a class="repo-link" href="https://github.com/FBddcz/embodied-jev" target="_blank" rel="noreferrer">GitHub ↗</a></nav></header>
+<nav aria-label="主导航"><a href="#experiments">🎬 实验</a><a href="#method">控制方式</a><a href="#community">🤝 社区</a><a class="repo-link" href="https://github.com/FBddcz/embodied-jev" target="_blank" rel="noreferrer">GitHub ↗</a></nav></header>
 <main class="wrap">
 <section class="hero"><div><p class="eyebrow"><span class="live-dot"></span> THE EMBODIED DECISION LAB <span class="edition">/ 01</span></p>
-<h1>看见决策，<br><span>比较协作。</span></h1><p class="hero-copy">从一帧观测，到一次真实交互。<br>把模型的选择、机器人的动作与实验代价放在一起看。</p></div>
+<h1>看见决策，<br><span>比较协作。</span></h1><p class="hero-copy">从一帧观测，到一次真实交互。<br>🎬 看回放，⚡ 比速度，💰 算费用。<br>🤝 复现实验，留下你的名字。</p><div class="hero-actions"><a class="primary-link" href="#experiments">🎬 浏览实验 <span>↓</span></a><a class="secondary-link" href="#community">🤝 分享你的复现 ↗</a></div></div>
 <div class="hero-side"><div class="orbit" aria-hidden="true"><i></i><i></i><i></i><span>↗</span></div><p><strong>观察 → 规划 → 动作</strong><br>真实仿真 · 可追溯结果</p><div class="hero-label">LIBERO <span>/</span> META-WORLD <span>/</span> PANDA</div></div></section>
 <section id="experiments" aria-label="实验目录"><div class="section-line"><span class="eyebrow">EXPLORE THE EXPERIMENTS</span><span id="record-count" class="mono"></span></div>
 <div id="categories" class="category-tabs" role="group" aria-label="按实验环境筛选"></div><div id="cards" class="experiment-cards"></div>
@@ -22,7 +22,7 @@
 <div class="replay-body"><div class="video-column">
 <div class="video-frame"><video id="video" controls playsinline preload="metadata" aria-label="实验录像"></video></div>
 <div class="video-caption"><p id="playback-note"></p><label>播放速度 <select id="speed" aria-label="播放速度"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select></label></div>
-<div class="experiment-heading"><h2 id="experiment-title"></h2><p id="experiment-description"></p></div></div>
+<div class="experiment-heading"><h2 id="experiment-title"></h2><p id="experiment-description"></p><dl id="contributor-details" class="contributor-details" hidden></dl></div></div>
 <aside id="decision-panel" class="decision-panel" aria-label="当前决策">
 <div class="panel-heading"><span class="eyebrow">INSIDE THE DECISION</span><span id="decision-index" class="mono">—</span></div>
 <label id="track-control" hidden>查看决策 <select id="decision-track" aria-label="查看哪组决策"></select></label>
@@ -34,6 +34,13 @@
 <div class="timeline-wrap"><div class="section-line"><span class="tiny-label">DECISION TRACK · 点击跳转</span><div class="step-controls"><button id="previous" aria-label="上一个决策">←</button><button id="next" aria-label="下一个决策">→</button></div></div><div id="timeline" class="timeline" aria-label="决策时间轴"></div></div>
 <div id="metrics" class="metrics"></div><div class="record-footer"><p id="experiment-note"></p><div id="record-links"></div></div></section>
 <section id="chart-section" class="chart-section" hidden><div class="section-line"><h2>结果与代价</h2><span class="tiny-label">同条件 · 小样本 · 独立判定</span></div><img id="chart" alt="本实验的成功率、请求延迟与用量对照" loading="lazy"></section>
+<section id="community" class="community-section" aria-labelledby="community-title">
+<div class="section-line"><div><p class="eyebrow">BUILT TOGETHER · REPRODUCE & SHARE</p><h2 id="community-title">🤝 下一条实验，署上你的名字。</h2></div><span id="community-count" class="mono"></span></div>
+<p class="community-copy">复现已有任务，或带来新的方法。每份作品都展示 <strong>名字、GitHub 账号、实验日期、任务、方法与结果</strong>，并链接到你的代码。成功、失败、部分完成，都值得分享。</p>
+<div class="community-steps"><article><span>01 / 🧪 复现</span><p>按实验说明运行，保留版本、初态、预算和真实结果。</p></article><article><span>02 / 📤 投稿</span><p>填写 GitHub 投稿表，拖入录像；也可以提交 JSON 的 PR。</p></article><article><span>03 / 🎉 展示</span><p>收录合并后自动上线，保留你的署名与复现链接。</p></article></div>
+<div class="community-actions"><a class="primary-link" href="https://github.com/FBddcz/embodied-jev/issues/new?template=community-reproduction.yml" target="_blank" rel="noreferrer">📤 投稿 / 上传录像 <span>↗</span></a><a class="secondary-link" href="https://github.com/FBddcz/embodied-jev/blob/main/docs/COMMUNITY.md" target="_blank" rel="noreferrer">📖 复现与投稿指南 ↗</a></div>
+<p class="community-note">社区结果注明「作者报告」，独立于项目实验统计。投稿提交后，经过收录合并才会显示在这里。</p>
+<div id="community-cards" class="experiment-cards"></div><p id="community-empty" class="community-empty">🌱 社区作品席位已开放，期待第一份真实复现。</p></section>
 <section id="method" class="method-section"><div class="section-line"><div><p class="eyebrow">HOW THE COMPARISON WORKS</p><h2>让分工成为可测量的变量。</h2></div><a href="https://github.com/FBddcz/embodied-jev/blob/main/docs/LIBERO_VISION.md">方法与复现 ↗</a></div>
 <div class="method-grid">
 <article><span class="method-number">01 / OBSERVE</span><h3>共同的真实观测</h3><p>LIBERO 双相机 RGB-D 与机器人本体反馈。GPT-6 从图像选择目标，深度与标定把目标像素转换为三维航点。</p><span class="method-tag">RGB-D + PROPRIOCEPTION</span></article>
