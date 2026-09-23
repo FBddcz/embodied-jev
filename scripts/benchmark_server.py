@@ -136,6 +136,10 @@ class ServerBenchmark:
 
     def save_summary(self):
         latencies = [value for row in self.episodes for value in row["model_latency_ms"]]
+        def complete_total(field):
+            values = [row[field] for row in self.episodes]
+            return sum(values) if all(value is not None for value in values) else None
+
         self.save("summary.json", {
             "format": "embodied-jev-api-experiment-summary-v1", "updated_at": utc_now(),
             "commit": self.commit, "provider": "chat", "configured_model": self.model,
@@ -143,8 +147,8 @@ class ServerBenchmark:
             "aggregate": {
                 "episodes": len(self.episodes), "successes": sum(row["success"] for row in self.episodes),
                 "model_calls": sum(row["model_calls"] for row in self.episodes),
-                "input_tokens": sum(row["input_tokens"] for row in self.episodes),
-                "output_tokens": sum(row["output_tokens"] for row in self.episodes),
+                "input_tokens": complete_total("input_tokens"),
+                "output_tokens": complete_total("output_tokens"),
                 "latency_mean_ms": statistics.mean(latencies) if latencies else None,
                 "latency_median_ms": statistics.median(latencies) if latencies else None,
                 "forbidden_contact_episodes": sum(row["forbidden_contact"] for row in self.episodes),

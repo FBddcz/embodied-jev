@@ -38,11 +38,23 @@ def test_http_request_contract_and_probability_semantics(monkeypatch, provider):
     assert answer["selected_probability"] == .8
     assert answer["provider_confidence"] == .31
     assert policy.calls == 1 and policy.tokens == 32
+    usage = policy.token_usage()
+    assert usage["input"] == {"tokens": 32, "known_tokens": 32, "known_calls": 1, "complete": True}
+    assert usage["output"] == {"tokens": None, "known_tokens": 0, "known_calls": 0, "complete": False}
     assert policy.model == "test-resolved-model"
     assert policy.last_input == {"state": {"observation": {"tcp": [.4, 0, .2]}, "recent_outcomes": []},
                                  "decision": {"type": "choice", "instructions": "Choose", "criteria": {"a": "Move", "b": "Hold"}}}
     policy.choose({}, "Choose", {"lift": "Lift"}, "lift", [])
     assert policy.last_input is None
+
+
+def test_explicit_zero_token_usage_is_complete():
+    policy = DecisionPolicy("jev", connection={"url": "https://example.invalid", "key": "", "model": "fixture"})
+    policy.calls = 1
+    policy._response_metadata({"usage": {"input_tokens": 0, "output_tokens": 0}})
+    assert policy.token_usage()["input"]["tokens"] == 0
+    assert policy.token_usage()["output"]["tokens"] == 0
+    assert policy.token_usage()["complete"]
 
 
 def test_singleton_does_not_load_or_call_model(monkeypatch):
@@ -89,6 +101,31 @@ def test_recorded_jev_mismatch_preserves_choice_probabilities_and_execution(monk
         # Other typed providers still enforce their strict contract.
         with pytest.raises(ValueError, match="highest-probability"):
             validate_answer(response["answers"]["action"], row["decision"]["probabilities"])
+    finally:
+        session.stop()
+
+
+def test_runtime_snapshot_and_export_keep_unreported_usage_unknown(monkeypatch):
+    from embodied_jev.runtime import Session
+
+    response = json.loads((Path(__file__).parent / "fixtures" / "jev-choice-probability-mismatch.json").read_text())
+    response.pop("usage")
+    monkeypatch.setattr(DecisionPolicy, "_post", staticmethod(lambda url, **kwargs: httpx.Response(
+        200, request=httpx.Request("POST", url), json=response)))
+    session = Session(provider="jev", connection={"url": "https://example.invalid", "key": "fixture-secret", "model": "fixture"},
+                      seed=7, control_mode="incremental", max_cycles=1, threshold=0, speed=0)
+    try:
+        session.start()
+        session.worker.join(5)
+        assert not session.worker.is_alive()
+        snapshot, exported = session.snapshot(), session.export()
+        for view in (snapshot, exported):
+            assert view["model_calls"] == 1
+            assert view["input_tokens"] is None and view["output_tokens"] is None
+            assert view["token_usage"]["input"]["known_tokens"] == 0
+            assert view["token_usage"]["output"]["known_tokens"] == 0
+            assert not view["token_usage"]["complete"]
+            assert "fixture-secret" not in json.dumps(view)
     finally:
         session.stop()
 

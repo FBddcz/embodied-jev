@@ -51,6 +51,24 @@ def validate_intervention(value):
     return {"kind": value["kind"], "after_cycle": value["after_cycle"], "delta_xy": list(delta)}
 
 
+def _token_usage(policy):
+    summarize = getattr(policy, "token_usage", None)
+    if callable(summarize):
+        return summarize()
+    # Test/custom policies may not expose per-call accounting. Do not present
+    # their counters as complete after a call whose usage cannot be verified.
+    attempts = getattr(policy, "calls", 0)
+    input_known = getattr(policy, "tokens", 0)
+    output_known = getattr(policy, "output_tokens", 0)
+    complete = attempts == 0
+    return {"source": "unavailable", "attempts": attempts,
+            "input": {"tokens": input_known if complete else None, "known_tokens": input_known,
+                      "known_calls": 0, "complete": complete},
+            "output": {"tokens": output_known if complete else None, "known_tokens": output_known,
+                       "known_calls": 0, "complete": complete},
+            "complete": complete}
+
+
 class Session:
     def __init__(self, task="transfer", seed=0, provider="baseline", preview=True,
                  threshold=.55, max_cycles=30, speed=1.5, connection=None,
@@ -676,6 +694,7 @@ class Session:
 
     def snapshot(self):
         with self.lock:
+            token_usage = _token_usage(self.policy)
             return {"id": self.id, "status": self.status, "stage": self.stage, "phase": self.phase,
                     "task": self.world.task, "seed": self.world.seed, "speed": self.speed,
                     "cycles": self.cycles, "max_cycles": self.max_cycles, "provider": self.policy.provider,
@@ -692,8 +711,8 @@ class Session:
                     "last_decision": self.last_decision, "last_intent": self.last_intent,
                     "last_decision_inputs": dict(self.last_decision_inputs),
                     "frame_count": len(self.frames),
-                    "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
-                    "output_tokens": self.policy.output_tokens,
+                    "model_calls": self.policy.calls, "input_tokens": token_usage["input"]["tokens"],
+                    "output_tokens": token_usage["output"]["tokens"], "token_usage": token_usage,
                     "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
                     "wall_seconds": round((self.finished or time.perf_counter()) - self.started, 2) if self.started else 0}
 
@@ -718,6 +737,7 @@ class Session:
         with self.lock:
             from .incremental import PROMPT_VERSION as INCREMENTAL_VERSION
             from .hierarchical import PROMPT_VERSION as HIERARCHICAL_VERSION
+            token_usage = _token_usage(self.policy)
             return {"format": "embodied-jev-episode-v1", "id": self.id, "task": self.world.task,
                     "seed": self.world.seed, "scene_hash": self.world.scene_hash, "provider": self.policy.provider,
                     "profile_id": self.profile_id, "scene_config": copy.deepcopy(self.world.scene_config),
@@ -734,8 +754,8 @@ class Session:
                                        INCREMENTAL_VERSION if self.control_mode == "incremental" else POLICY_VERSION),
                     "history": list(self.history), "frames": list(self.frames),
                     "events": list(self.events),
-                    "model_calls": self.policy.calls, "input_tokens": self.policy.tokens,
-                    "output_tokens": self.policy.output_tokens,
+                    "model_calls": self.policy.calls, "input_tokens": token_usage["input"]["tokens"],
+                    "output_tokens": token_usage["output"]["tokens"], "token_usage": token_usage,
                     "model_runtime": minicpm_status() if self.policy.provider == "minicpm" else None,
                     "model_latency_ms": list(self.policy.latencies), "last_decision": self.last_decision,
                     "last_intent": self.last_intent,

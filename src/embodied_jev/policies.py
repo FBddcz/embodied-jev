@@ -109,6 +109,8 @@ class DecisionPolicy:
         self.tokens = 0
         self.latencies = []
         self.output_tokens = 0
+        self.input_token_calls = 0
+        self.output_token_calls = 0
         self.last_input = None
         self.connection = dict(connection or environment_connection(provider))
         self.model = MODEL if provider == "minicpm" else provider if provider == "baseline" else self.connection["model"]
@@ -138,13 +140,37 @@ class DecisionPolicy:
         usage = body.get("usage") or {}
         if not isinstance(usage, dict):
             raise ValueError("Invalid token usage")
-        counts = [usage.get(name) or 0 for name in (input_key, output_key)]
-        if any(type(count) is not int or count < 0 for count in counts):
+        counts = [usage.get(name) for name in (input_key, output_key)]
+        # Preserve the prior falsey-boolean handling without treating False as
+        # a provider-reported zero; explicit integer zero remains measurable.
+        counts = [None if count is False else count for count in counts]
+        if any(count is not None and (type(count) is not int or count < 0) for count in counts):
             raise ValueError("Invalid token counts")
         key = self.connection.get("key", "")
         self.model = model.replace(key, "[已隐藏]") if key else model
-        self.tokens += counts[0]
-        self.output_tokens += counts[1]
+        if counts[0] is not None:
+            self.tokens += counts[0]
+            self.input_token_calls += 1
+        if counts[1] is not None:
+            self.output_tokens += counts[1]
+            self.output_token_calls += 1
+
+    def token_usage(self):
+        input_complete = self.input_token_calls == self.calls
+        output_complete = self.output_token_calls == self.calls
+        source = ("local_tokenizer" if self.provider == "minicpm" else
+                  "not_applicable" if self.provider == "baseline" else "provider_reported")
+        return {
+            "source": source,
+            "attempts": self.calls,
+            "input": {"tokens": self.tokens if input_complete else None,
+                      "known_tokens": self.tokens, "known_calls": self.input_token_calls,
+                      "complete": input_complete},
+            "output": {"tokens": self.output_tokens if output_complete else None,
+                       "known_tokens": self.output_tokens, "known_calls": self.output_token_calls,
+                       "complete": output_complete},
+            "complete": input_complete and output_complete,
+        }
 
     def choose(self, observation, question, options, baseline_choice, history):
         start = time.perf_counter()
@@ -531,4 +557,7 @@ class DecisionPolicy:
             logits = torch.nn.functional.linear(hidden, weights).float()
             probs = torch.softmax(logits, -1).cpu().tolist()
         self.tokens += len(ids)
+        # This path scores one-token candidates without generating output tokens.
+        self.input_token_calls += 1
+        self.output_token_calls += 1
         return {"choice": keys[max(range(len(keys)), key=probs.__getitem__)], "probabilities": dict(zip(keys, probs))}

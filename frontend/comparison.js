@@ -371,8 +371,14 @@ export async function createComparison(container, { api, toast }) {
     card.querySelector(".lane-stat-title").textContent = replayMode
       ? "整轮累计统计（非该帧）"
       : "本路累计统计";
+    const inputTokens = session.input_tokens == null
+      ? `未知（已知 ${session.token_usage?.input?.known_tokens?.toLocaleString() ?? 0}，${session.token_usage?.input?.known_calls ?? 0}/${session.model_calls} 次）`
+      : session.input_tokens.toLocaleString();
+    const outputTokens = session.output_tokens == null
+      ? `未知（已知 ${session.token_usage?.output?.known_tokens?.toLocaleString() ?? 0}，${session.token_usage?.output?.known_calls ?? 0}/${session.model_calls} 次）`
+      : session.output_tokens.toLocaleString();
     card.querySelector(".lane-statistics").textContent =
-      `调用 ${session.model_calls} 次 · 输入 ${session.input_tokens} / 输出 ${session.output_tokens || 0} tokens · 时长 ${numeric(session.wall_seconds, 2)} s`;
+      `调用 ${session.model_calls} 次 · 输入 ${inputTokens} / 输出 ${outputTokens} tokens · 时长 ${numeric(session.wall_seconds, 2)} s`;
     card.querySelector(".lane-message").textContent = replayMode
       ? recorded?.clamped
         ? "本路已到达当前录制末帧。"
