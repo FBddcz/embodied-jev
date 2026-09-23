@@ -42,8 +42,11 @@ def read_rows(report):
         seen.add(key)
         if type(row["success"]) is not bool:
             raise ValueError("Success must come from the physical result")
-        for field in ("cycles", "model_calls", "input_tokens", "output_tokens", "wall_seconds"):
+        for field in ("cycles", "model_calls", "wall_seconds"):
             number(row[field], field)
+        for field in ("input_tokens", "output_tokens"):
+            if row[field] is not None:
+                number(row[field], field)
         for latency in row["model_latency_ms"]:
             number(latency, "model_latency_ms")
         if len(row["model_latency_ms"]) != row["model_calls"]:
@@ -150,22 +153,43 @@ def main():
 
     ax = axes[3]
     ax.set_title("d  Token usage reported by the API", loc="left", pad=12)
-    input_tokens = np.asarray([row["input_tokens"] for row in rows], dtype=float) / 1000
-    output_tokens = np.asarray([row["output_tokens"] for row in rows], dtype=float) / 1000
-    ax.bar(range(len(rows)), input_tokens, width=.62, color=TEAL, label="Input")
-    ax.bar(range(len(rows)), output_tokens, bottom=input_tokens, width=.62, color=ORANGE, label="Output")
+    known_heights = []
+    unknown_trials = []
+    for index, row in enumerate(rows):
+        input_tokens = row["input_tokens"]
+        output_tokens = row["output_tokens"]
+        bottom = 0
+        if input_tokens is not None:
+            input_height = input_tokens / 1000
+            ax.bar(index, input_height, width=.62, color=TEAL)
+            bottom += input_height
+        if output_tokens is not None:
+            output_height = output_tokens / 1000
+            ax.bar(index, output_height, bottom=bottom, width=.62, color=ORANGE)
+            bottom += output_height
+        known_heights.append(bottom)
+        if input_tokens is None or output_tokens is None:
+            unknown_trials.append(index)
+    token_axis_top = max(known_heights, default=0) * 1.3 or 1
+    for index in unknown_trials:
+        ax.text(index, token_axis_top * .94, "?", ha="center", va="top", color=INK, weight="bold")
     ax.set(xticks=range(len(rows)), xticklabels=short, ylabel="Tokens (thousands)",
-           ylim=(0, max(input_tokens + output_tokens) * 1.25 or 1))
+           ylim=(0, token_axis_top))
     ax.set_axisbelow(True)
     ax.grid(axis="y", color="#E6ECEA", linewidth=.5)
     ax.legend(handles=[Patch(color=TEAL, label="Input"), Patch(color=ORANGE, label="Output")],
               fontsize=6, loc="upper left", ncol=2)
-    ax.text(0, -.22, "T: transfer · S: stack · B: barrier; digit: seed", transform=ax.transAxes, size=6)
+    ax.text(0, -.22, "T: transfer · S: stack · B: barrier; digit: seed · ?: incomplete usage",
+            transform=ax.transAxes, size=6)
 
     calls = sum(row["model_calls"] for row in rows)
-    tokens_in = sum(row["input_tokens"] for row in rows)
-    tokens_out = sum(row["output_tokens"] for row in rows)
-    fig.text(.055, .055, f"{calls} API calls · {tokens_in:,} input / {tokens_out:,} output tokens. All attempted trials retained.", size=6)
+    tokens_in_known = sum(row["input_tokens"] for row in rows if row["input_tokens"] is not None)
+    tokens_out_known = sum(row["output_tokens"] for row in rows if row["output_tokens"] is not None)
+    tokens_in = tokens_in_known if all(row["input_tokens"] is not None for row in rows) else None
+    tokens_out = tokens_out_known if all(row["output_tokens"] is not None for row in rows) else None
+    input_label = f"{tokens_in:,}" if tokens_in is not None else f"incomplete (known {tokens_in_known:,})"
+    output_label = f"{tokens_out:,}" if tokens_out is not None else f"incomplete (known {tokens_out_known:,})"
+    fig.text(.055, .055, f"{calls} API calls · {input_label} input / {output_label} output tokens. All attempted trials retained.", size=6)
     fig.text(.055, .027, "Known geometry/contact states; bounded action menu. Descriptive development trials, not a general model ranking.", size=6)
     fig.savefig(output.with_suffix(".svg"), facecolor="white")
     svg = output.with_suffix(".svg")
@@ -175,6 +199,7 @@ def main():
     plt.close(fig)
     print(json.dumps({"trials": len(rows), "successes": successes, "calls": calls,
                       "input_tokens": tokens_in, "output_tokens": tokens_out,
+                      "input_tokens_known": tokens_in_known, "output_tokens_known": tokens_out_known,
                       "outputs": [output.with_suffix('.' + ext).name for ext in ('svg', 'pdf', 'png', 'csv')]}, indent=2))
 
 

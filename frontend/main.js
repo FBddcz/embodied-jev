@@ -1164,8 +1164,10 @@ function renderState(s) {
   updateControlAvailability();
   $("#preview-state").textContent = s.preview ? "ON" : "OFF";
   $("#model-calls").textContent = "调用 " + s.model_calls + " 次";
-  $("#tokens").textContent =
-    "输入 " + s.input_tokens.toLocaleString() + " tokens";
+  const inputTokens = s.input_tokens == null
+    ? `未知（已知 ${s.token_usage?.input?.known_tokens?.toLocaleString() ?? 0}，${s.token_usage?.input?.known_calls ?? 0}/${s.model_calls} 次）`
+    : s.input_tokens.toLocaleString();
+  $("#tokens").textContent = "输入 " + inputTokens + " tokens";
   $("#timeline").max = Math.max(0, s.frame_count - 1);
   if (!replayMode) {
     $("#timeline").value = s.frame_count - 1;
